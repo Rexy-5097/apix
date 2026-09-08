@@ -11,9 +11,9 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-09-08 |
-| **Phase** | Checkpoint 1A — statistical architecture + formula specification |
-| **Health** | 🟢 GREEN — Checkpoint 0 merged; 1A PR open for review |
-| **Next Milestone** | CHECKPOINT 2 — synthetic statistical core |
+| **Phase** | Checkpoint 2 — deterministic statistical core |
+| **Health** | 🟢 GREEN — Checkpoints 0 and 1A merged; Checkpoint 2 PR open |
+| **Next Milestone** | CHECKPOINT 3 — live collection vertical slice |
 | **AgentOS profile** | `flagship` — 9 standards, 11 agents, 8 quality gates |
 | **AgentOS grade** | 93/100 (upstream baseline; see below) |
 
@@ -24,10 +24,11 @@
 | Task | Status | Owner | Blocked By | Priority |
 |------|--------|-------|-----------|----------|
 | CHECKPOINT 0 bootstrap | `DONE` | Rexy-5097 | — | — |
-| Statistics package layout (ADR-0061) | `IN_REVIEW` | Rexy-5097 | — | High |
-| Formula specification v1 (frozen) | `IN_REVIEW` | Rexy-5097 | — | High |
-| Golden values + invariant tests | `IN_REVIEW` | Rexy-5097 | — | High |
-| Audit of the formula spec by the human owner | `PENDING` | Human | 1A PR | High |
+| CHECKPOINT 1A methodology freeze | `DONE` | Rexy-5097 | — | — |
+| Deterministic APIx-L core | `IN_REVIEW` | Rexy-5097 | — | High |
+| Review Checkpoint 2 PR | `PENDING` | slazyverse, Basant-creator | — | High |
+| TPD estimator | `NOT_STARTED` | Rexy-5097 | Checkpoint 2 merge | — |
+| Bootstrap / uncertainty | `NOT_STARTED` | Rexy-5097 | Checkpoint 2 merge | — |
 
 ---
 
@@ -75,16 +76,23 @@ Eight open empirical questions are tracked in `docs/methodology/apix_formula_spe
 
 ---
 
-## Completed This Session (Checkpoint 1A)
+## Completed This Session (Checkpoint 2)
 
-- [x] Verified Checkpoint 0 merged at `c267f12` — not assumed from the prior report
-- [x] Measured the `statistics/` stdlib shadow (E1–E6); migrated to `src/apix/`
-- [x] ADR-0061 with the evidence
-- [x] **Froze `docs/methodology/apix_formula_spec_v1.md`** — sections A–T
-- [x] 16 hand-calculated golden values in `tests/fixtures/statistical_golden_values.yaml`
-- [x] 40 methodology invariant tests; INV-1 proven non-vacuous by corruption test
-- [x] Adversarial review — 13 findings, 3 specification gaps closed before freezing
-- [x] Confirmed no statistical implementation exists
+- [x] Verified Checkpoint 1A merged at `530ef1a` — not assumed from the prior report
+- [x] Typed domain models for spec A, B, O — `src/apix/schemas/`
+- [x] Admissibility, deduplication, matching primitives, tier ladder
+- [x] Jevons elementary relative in the normative log form, plus the median/MAD rule
+- [x] Cell chaining, carry, freshness, suppression and new-cell entry
+- [x] Young / Modified Laspeyres with live-set renormalisation
+- [x] Deterministic APIx-L assembly with quality metrics and the version vector
+- [x] Annual linking, isolated from the per-period path
+- [x] All 16 golden values reproduced by the production code
+- [x] 155 tests: every locked threshold crossed in both directions, property-based coverage
+- [x] Bit-identical reproducibility verified across 8 input permutations
+- [x] **Found and fixed a real defect**: deduplication omitted route, collapsing
+      2,800 quotes to 140 on a full-frame day. Caught by the benchmark, not by a
+      unit test — every dedup test used a single route
+- [x] Performance measured: 1.03s for 15,120 quotes / 72 routes
 
 ---
 

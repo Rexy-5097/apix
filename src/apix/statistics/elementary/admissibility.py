@@ -132,7 +132,12 @@ def filter_admissible(
         else:
             reason, detail = failure
             excluded.append(
-                ExcludedObservation(observation_id=obs.observation_id, reason=reason, detail=detail)
+                ExcludedObservation(
+                    observation_id=obs.observation_id,
+                    reason=reason,
+                    detail=detail,
+                    source_id=obs.source_id,
+                )
             )
 
     return AdmissibilityResult(admissible=tuple(admissible), excluded=tuple(excluded))
@@ -144,15 +149,19 @@ def exclusion_rate_by_source(
     """Exclusion rate per source — spec A.6.
 
     A rising rate is the earliest available signal that a site has been
-    redesigned, so this is a published diagnostic rather than an internal
-    counter. Callers supply ``total_by_source`` because the excluded records
-    alone cannot know the denominator.
+    redesigned, so this is a published alarm rather than an internal counter.
+    Callers supply ``total_by_source`` because the excluded records alone cannot
+    know the denominator.
+
+    The source is read from :attr:`ExcludedObservation.source_id`. An earlier
+    implementation tried to recover it by string-parsing a ``source=`` token out
+    of ``detail`` — a token nothing ever emitted — so the function structurally
+    returned 0.0 for every source and the alarm could never fire.
     """
     counts: dict[str, int] = {}
     for item in excluded:
-        source = item.detail.split("source=")[-1] if "source=" in item.detail else ""
-        if source:
-            counts[source] = counts.get(source, 0) + 1
+        if item.source_id:
+            counts[item.source_id] = counts.get(item.source_id, 0) + 1
     return {
         source: counts.get(source, 0) / total
         for source, total in sorted(total_by_source.items())

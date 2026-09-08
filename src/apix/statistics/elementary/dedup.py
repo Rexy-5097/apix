@@ -81,8 +81,9 @@ def deduplicate(observations: Iterable[Observation]) -> DedupResult:
         :attr:`ExclusionReason.DUPLICATE`, never dropped.
 
     Tie-breaking: when two duplicates share the same ``observation_ts`` to the
-    microsecond, the one with the lexicographically smaller ``observation_id``
-    wins. An arbitrary-but-fixed rule is required — leaving it to dictionary or
+    microsecond, the one with the lexicographically **larger** ``observation_id``
+    wins — the comparison below is ``>`` on the ``(ts, id)`` tuple.
+    An arbitrary-but-fixed rule is required: leaving the tie to dictionary or
     input order would make the output depend on collection order and break
     spec P.2.
     """

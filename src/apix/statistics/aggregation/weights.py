@@ -109,6 +109,14 @@ def renormalise_over_live_set(
     if missing:
         raise WeightError(f"live members have no weight assigned: {missing}")
 
+    # Spec G.5: a negative weight is a defect, not a value. This is the only
+    # weight function on the publication path, so without this check a negative
+    # weight would reach a published level, or would be converted into a routine
+    # route suppression that hides a data defect as a coverage problem.
+    negative = sorted(k for k in live_ids if weights[k] < 0)
+    if negative:
+        raise WeightError(f"negative weights are a defect, not a value (spec G.5): {negative}")
+
     total = sum(weights[k] for k in live_ids)
     if total <= 0:
         raise WeightError(

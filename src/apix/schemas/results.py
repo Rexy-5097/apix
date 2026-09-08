@@ -39,6 +39,7 @@ class ExcludedObservation:
     observation_id: str
     reason: ExclusionReason
     detail: str = ""
+    source_id: str = ""
 
 
 @dataclass(frozen=True, slots=True)

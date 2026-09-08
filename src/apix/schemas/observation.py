@@ -39,19 +39,42 @@ class Entitlements:
         if self.checked_baggage_kg < 0:
             raise ValueError(f"checked_baggage_kg must be >= 0, got {self.checked_baggage_kg}")
 
+    def _meets_flex_conditions(self) -> bool:
+        """Spec B.4: change is FREE and cancellation is FREE or FEE."""
+        return self.change_permitted is ChangePolicy.FREE and self.cancellation_permitted in (
+            ChangePolicy.FREE,
+            ChangePolicy.FEE,
+        )
+
     def fare_class(self) -> FareClass:
         """Derive the canonical fare class — spec B.4, LOCKED mapping.
 
-        FLEX is tested first: the spec's STANDARD condition is explicitly
-        "checked_baggage_kg > 0 **and not FLEX**", so FLEX takes precedence.
+        Evaluation order follows the spec's own qualifications:
+
+        ===============  ==========================================
+        ``HAND_ONLY``    ``checked_baggage_kg == 0``  (unqualified)
+        ``FLEX``         change FREE and cancellation FREE or FEE
+        ``STANDARD``     ``checked_baggage_kg > 0`` **and not FLEX**
+        ===============  ==========================================
+
+        Only STANDARD carries the "and not FLEX" exclusion. HAND_ONLY does not,
+        so it is not displaced by FLEX and is tested first. That yields a total
+        partition in which every condition is used exactly as written.
+
+        **REPORTED AMBIGUITY (AMB-4).** A zero-baggage, fully flexible fare
+        satisfies both the HAND_ONLY and the FLEX condition literally, and the
+        spec does not say which wins. That is a real product — several carriers
+        sell a flexible hand-baggage-only fare. This implementation takes the
+        reading the spec's own qualification structure implies; it is raised for
+        the methodology owner's confirmation rather than treated as settled,
+        because getting it wrong pools a hand-baggage-only fare with a
+        checked-baggage fare in the same cell, which is exactly the comparison
+        spec B.4 exists to prevent.
         """
-        if self.change_permitted is ChangePolicy.FREE and self.cancellation_permitted in (
-            ChangePolicy.FREE,
-            ChangePolicy.FEE,
-        ):
-            return FareClass.FLEX
         if self.checked_baggage_kg == 0:
             return FareClass.HAND_ONLY
+        if self._meets_flex_conditions():
+            return FareClass.FLEX
         return FareClass.STANDARD
 
 

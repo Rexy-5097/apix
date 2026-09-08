@@ -461,9 +461,15 @@ def test_fare_class_is_derived_from_entitlements_not_labels() -> None:
     assert Entitlements(0, ChangePolicy.NONE, ChangePolicy.NONE).fare_class() is FareClass.HAND_ONLY
     assert Entitlements(15, ChangePolicy.FEE, ChangePolicy.FEE).fare_class() is FareClass.STANDARD
     assert Entitlements(15, ChangePolicy.FREE, ChangePolicy.FREE).fare_class() is FareClass.FLEX
-    # FLEX wins even with no checked baggage: spec B.4 makes STANDARD explicitly
-    # "baggage > 0 AND NOT FLEX", so FLEX is tested first.
-    assert Entitlements(0, ChangePolicy.FREE, ChangePolicy.FEE).fare_class() is FareClass.FLEX
+    # Only STANDARD carries the "and not FLEX" exclusion in spec B.4; HAND_ONLY
+    # is unqualified, so a zero-baggage fare is HAND_ONLY even when it is fully
+    # flexible. Getting this backwards pools a hand-baggage-only fare with a
+    # checked-baggage fare in one cell — the comparison B.4 exists to prevent.
+    # Raised as AMB-4: the spec does not say which condition wins.
+    assert Entitlements(0, ChangePolicy.FREE, ChangePolicy.FEE).fare_class() is FareClass.HAND_ONLY
+    assert Entitlements(0, ChangePolicy.FREE, ChangePolicy.FREE).fare_class() is FareClass.HAND_ONLY
+    # With baggage, the FLEX condition does decide.
+    assert Entitlements(20, ChangePolicy.FREE, ChangePolicy.FEE).fare_class() is FareClass.FLEX
 
 
 def test_negative_baggage_is_rejected() -> None:

@@ -23,9 +23,8 @@ from decimal import Decimal
 from apix.schemas.enums import (
     APWBucket,
     CellStatus,
-    Channel,
     ChangePolicy,
-    FareClass,
+    Channel,
     SourceType,
     Tier,
 )
@@ -40,7 +39,9 @@ from apix.statistics.elementary.matching import build_matched_set, cell_key_for
 from apix.statistics.index.apix_l import calculate_apix_l, cell_id
 
 T = date(2026, 9, 8)
-ROUTES = [f"{o}-{d}" for o in ("DEL", "BOM", "BLR", "MAA", "CCU") for d in ("HYD", "GOI", "PNQ", "AMD")]
+ROUTES = [
+    f"{o}-{d}" for o in ("DEL", "BOM", "BLR", "MAA", "CCU") for d in ("HYD", "GOI", "PNQ", "AMD")
+]
 CARRIERS = ("6E", "AI", "IX", "QP", "SG")
 
 
@@ -152,7 +153,7 @@ def main() -> int:
     print(f"APIx-L level               : {result.level:.4f}")
     print(f"live routes                : {result.quality.live_routes}/{len(ROUTES)}")
     print()
-    print(f"Bootstrap projection (spec N.4 / OQ-5): 1000 draws x full path")
+    print("Bootstrap projection (spec N.4 / OQ-5): 1000 draws x full path")
     print(f"  = {total * 1000 / 60:.1f} minutes at this scale, single-threaded.")
     print("  Recorded as a measurement, not a promise — OQ-5 stays OPEN until it")
     print("  is measured on real collected data of realistic composition.")
