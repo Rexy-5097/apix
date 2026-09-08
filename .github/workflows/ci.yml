@@ -1,0 +1,97 @@
+name: APIx CI
+
+# The APIx quality gate. A green run here is what "known-safe checkpoint" means
+# in docs/engineering/checkpoint-policy.md.
+#
+# The architecture job runs first and is the one that must never be made
+# advisory: it enforces the deterministic statistics boundary from dossier
+# section 05, which is a published methodology guarantee rather than a style
+# preference.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  architecture:
+    name: Architecture boundary (statistics determinism)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip pytest
+
+      - name: Enforce the statistics/ determinism boundary
+        # Dossier section 05: statistics calculates, ML/AI explains.
+        # The published index must be reproducible from
+        # (snapshot_id, methodology_version, weight_version, code_version) alone.
+        run: python -m pytest tests/test_architecture.py -v
+
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+
+      - name: ruff check
+        run: ruff check .
+
+      - name: ruff format --check
+        run: ruff format --check .
+
+  types:
+    name: Types (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install mypy
+        run: python -m pip install --upgrade pip mypy
+
+      - name: mypy
+        # Scoped to the APIx layers. The vendored AgentOS framework tree is
+        # excluded in pyproject.toml and validated by its own tooling.
+        run: mypy schemas ingestion statistics analytics ai api experiments
+
+  tests:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install project (dev extras)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: pytest
+        run: python -m pytest -ra

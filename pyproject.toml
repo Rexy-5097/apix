@@ -1,0 +1,87 @@
+[project]
+name = "apix"
+version = "0.1.0"
+description = "A quality-adjusted, high-frequency airfare price index for India, and the auditable infrastructure that produces it."
+readme = "README.md"
+license = { file = "LICENSE" }
+# Dossier section 13 specifies Python 3.12 for the collection layer.
+requires-python = ">=3.12"
+
+# Runtime dependencies are added per checkpoint, not up front. Task 0 is
+# bootstrap only: nothing in dossier sections 06-12 is implemented yet, so
+# nothing that implements it is declared here.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "hypothesis>=6.0",   # property tests for the statistics invariants (dossier s13)
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "pyyaml>=6.0",       # required by the AgentOS tooling in tools/scripts/
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Explicit package list. The dossier section 13 layout puts the layers at the
+# repository root rather than under a src/ directory.
+packages = [
+  "schemas",
+  "ingestion",
+  "statistics",
+  "statistics.elementary",
+  "statistics.aggregation",
+  "statistics.tpd",
+  "statistics.uncertainty",
+  "statistics.index",
+  "analytics",
+  "ai",
+  "api",
+  "experiments",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "invariant: statistical invariants that must hold for any correct implementation",
+  "golden: golden values computed by hand before either implementation existed",
+  "slow: excluded from the fast pre-merge run",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# The AgentOS framework tree is vendored upstream code. It is validated by
+# tools/scripts/validate_agentos.py, not by the APIx linter.
+extend-exclude = [
+  "runtime",
+  "tools/scripts",
+  "validation",
+  ".venv",
+  # Markdown is excluded deliberately. ruff formats fenced Python blocks inside
+  # Markdown, and docs/agentos/UPSTREAM_PATCHES.md quotes upstream AgentOS code
+  # *verbatim* as evidence of what the template actually ships. Reformatting
+  # those snippets would misrepresent the defect being documented, which matters
+  # more than their style. Prose code samples are illustrative, not compiled.
+  "*.md",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+# The statistics layer carries the published numbers. It is held to a stricter
+# standard than the layers that only display them.
+[[tool.mypy.overrides]]
+module = "statistics.*"
+disallow_untyped_defs = true
+disallow_any_unimported = true

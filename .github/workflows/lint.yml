@@ -1,0 +1,55 @@
+name: APIx Lint
+
+# Configuration and documentation linting.
+#
+# Python linting lives in ci.yml (ruff, mypy) so the two do not overlap. This
+# workflow covers the YAML that configures AgentOS and the CI, plus internal
+# documentation links.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  yaml-lint:
+    name: YAML Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install yamllint
+        run: python -m pip install --upgrade pip yamllint
+
+      - name: Lint APIx-owned configuration YAML
+        # Scoped to YAML APIx owns. The vendored AgentOS tree (.agentos/,
+        # profiles/, runtime/policies/, validation/) ships with trailing
+        # whitespace and stray blank lines — e.g. runtime/policies/tools.yaml:8 —
+        # which would fail every APIx pull request on a defect APIx did not
+        # introduce and does not own. That tree is validated by the AgentOS
+        # validator in validate.yml instead, so the signal is not lost.
+        # Same boundary as tools/ci/check_markdown_links.py.
+        run: |
+          yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" \
+            PROJECT_CONFIG.yaml apix_bootstrap.yaml .github/workflows/
+
+  link-check:
+    name: Internal link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check internal markdown links
+        run: python tools/ci/check_markdown_links.py
