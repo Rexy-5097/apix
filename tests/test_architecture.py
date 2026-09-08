@@ -66,11 +66,21 @@ class Module:
     name: str
     path: Path
     imports: frozenset[str]
+    qualified_imports: frozenset[str] = frozenset()
 
 
 def _top_level(dotted: str) -> str:
     """Return the root package of a dotted import path."""
     return dotted.split(".", 1)[0]
+
+
+def _first_two(dotted: str) -> str:
+    """Return the first two segments, e.g. ``apix.analytics``.
+
+    Needed because ADR-0061's src layout makes every in-project import start
+    with ``apix``; the layer being imported is the *second* segment.
+    """
+    return ".".join(dotted.split(".")[:2])
 
 
 def _display_name(path: Path) -> str:
@@ -95,20 +105,24 @@ def _walk_imports(root: Path) -> list[Module]:
         tree = ast.parse(source, filename=str(path))
 
         imported: set[str] = set()
+        qualified: set[str] = set()
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     imported.add(_top_level(alias.name))
+                    qualified.add(_first_two(alias.name))
             # ``node.level > 0`` is a relative import: it cannot reach another
             # top-level layer, so it is always in-bounds and is skipped here.
             elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                 imported.add(_top_level(node.module))
+                qualified.add(_first_two(node.module))
 
         modules.append(
             Module(
                 name=_display_name(path),
                 path=path,
                 imports=frozenset(imported),
+                qualified_imports=frozenset(qualified),
             )
         )
 
@@ -147,6 +161,19 @@ def test_statistics_layer_is_deterministic() -> None:
     )
 
 
+def _upper_layer_imports(module: Module) -> set[str]:
+    """Upper-layer packages this module imports, under the src layout.
+
+    ADR-0061 moved the layers under ``src/apix/``, so an absolute import of the
+    analytics layer reads ``apix.analytics`` — whose *top-level* package is
+    ``apix``. Matching only top-level names would therefore never fire, leaving
+    INV-11 unenforced while appearing to pass. This inspects the second segment
+    whenever the first is ``apix``.
+    """
+    offending = module.imports & FORBIDDEN_LAYERS
+    return offending | (module.qualified_imports & {f"apix.{layer}" for layer in FORBIDDEN_LAYERS})
+
+
 def test_statistics_layer_does_not_depend_on_upper_layers() -> None:
     """statistics/ must not import analytics/ or ai/.
 
@@ -156,7 +183,7 @@ def test_statistics_layer_does_not_depend_on_upper_layers() -> None:
     violations: list[str] = []
 
     for module in _walk_imports(STATISTICS_ROOT):
-        offending = module.imports & FORBIDDEN_LAYERS
+        offending = _upper_layer_imports(module)
         if offending:
             violations.append(f"  {module.name} imports {sorted(offending)}")
 
@@ -191,6 +218,26 @@ def test_detector_sees_from_imports(tmp_path: Path) -> None:
     modules = _walk_imports(tmp_path)
 
     assert modules[0].imports & FORBIDDEN == {"sklearn"}
+
+
+@pytest.mark.parametrize("layer", sorted(FORBIDDEN_LAYERS))
+def test_upper_layer_import_is_detected_under_the_src_layout(layer: str, tmp_path: Path) -> None:
+    """Regression for a boundary check that could not fire.
+
+    Before ADR-0061 the layers sat at the repository root, so ``import
+    analytics`` had ``analytics`` as its top-level package and the check worked.
+    After the move to ``src/apix/`` the same import reads ``apix.analytics``,
+    whose top-level package is ``apix`` — so the check silently stopped being
+    able to detect anything while continuing to pass.
+
+    INV-11 is the removal test of dossier section 12. A check that reports a
+    safety it is not measuring is worse than no check.
+    """
+    planted = tmp_path / "planted.py"
+    planted.write_text(f"from apix.{layer}.thing import f\n", encoding="utf-8")
+
+    module = _walk_imports(tmp_path)[0]
+    assert _upper_layer_imports(module) == {f"apix.{layer}"}
 
 
 def test_detector_ignores_relative_imports(tmp_path: Path) -> None:
