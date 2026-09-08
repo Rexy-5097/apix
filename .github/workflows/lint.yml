@@ -29,11 +29,17 @@ jobs:
       - name: Install yamllint
         run: python -m pip install --upgrade pip yamllint
 
-      - name: Lint configuration YAML
+      - name: Lint APIx-owned configuration YAML
+        # Scoped to YAML APIx owns. The vendored AgentOS tree (.agentos/,
+        # profiles/, runtime/policies/, validation/) ships with trailing
+        # whitespace and stray blank lines — e.g. runtime/policies/tools.yaml:8 —
+        # which would fail every APIx pull request on a defect APIx did not
+        # introduce and does not own. That tree is validated by the AgentOS
+        # validator in validate.yml instead, so the signal is not lost.
+        # Same boundary as tools/ci/check_markdown_links.py.
         run: |
           yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" \
-            .agentos/ profiles/ runtime/policies/ validation/manifest.yaml \
-            PROJECT_CONFIG.yaml apix_bootstrap.yaml
+            PROJECT_CONFIG.yaml apix_bootstrap.yaml .github/workflows/
 
   link-check:
     name: Internal link check

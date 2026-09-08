@@ -63,6 +63,12 @@ extend-exclude = [
   "tools/scripts",
   "validation",
   ".venv",
+  # Markdown is excluded deliberately. ruff formats fenced Python blocks inside
+  # Markdown, and docs/agentos/UPSTREAM_PATCHES.md quotes upstream AgentOS code
+  # *verbatim* as evidence of what the template actually ships. Reformatting
+  # those snippets would misrepresent the defect being documented, which matters
+  # more than their style. Prose code samples are illustrative, not compiled.
+  "*.md",
 ]
 
 [tool.ruff.lint]
