@@ -27,12 +27,11 @@ first commit, because it is far harder to restore than to keep.
 repository structure (empty, with per-layer READMEs); `tests/test_architecture.py`;
 CI (`ci.yml`, `validate.yml`, `lint.yml`); CODEOWNERS; PR template;
 `.githooks/pre-commit` identity guard; `.gitattributes`; engineering docs;
-ADR-0057…0060; the dossier vendored to `docs/dossier/`.
+ADR-0057…0060; the dossier vendored to `docs/dossier/`; `main` branch protection.
 
 **Intentionally excluded:** every APIx feature. `docs/methodology/apix_formula_spec_v1.md`
 is **not** written — it is Checkpoint 1, and dossier section 13 requires it frozen
-before the first line of statistics code. Branch protection is not applied (see
-Risk).
+before the first line of statistics code.
 
 ## Owner
 
@@ -97,11 +96,10 @@ guarantee rather than introducing a new rule.
 
 ## Risk
 
-- **Branch protection is not yet applied** — the repository did not exist when
-  this branch was prepared. Until it is, `main` is unprotected and CODEOWNERS
-  only requests review rather than requiring it. Steps in
-  `docs/engineering/branch-protection.md`; note that private repositories on the
-  GitHub Free plan cannot use it at all.
+- ~~Branch protection is not yet applied~~ — **applied and verified** on
+  2026-09-08. PR required, 1 approval, CODEOWNER review required, stale reviews
+  dismissed, all 7 checks required and strict, force-push and deletion blocked,
+  linear history, conversation resolution, enforced for admins.
 - **`statistics/` shadows the stdlib `statistics` module.** The dossier specifies
   this layout, so it is flagged rather than unilaterally changed. CI is
   unaffected — the boundary check is static and never imports the package — but

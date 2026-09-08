@@ -1,12 +1,14 @@
 # Branch protection for `main`
 
-> **STATUS: NOT YET APPLIED.**
+> **STATUS: APPLIED — 2026-09-08, by @Rexy-5097.**
 >
-> Branch protection could not be configured during Task 0 because no GitHub
-> identity was authenticated on the bootstrap machine and the repository
-> `Rexy-5097/apix` does not exist yet. Nothing in this document describes a
-> setting that is currently active. Apply it as described below, then update
-> this status line with the date and who applied it.
+> Every setting below is in force and was verified by reading the protection
+> back from the API, not assumed from a successful write. `Rexy-5097/apix` is
+> public, so the GitHub Free plan permits classic branch protection in full —
+> the private-repo limitation noted at the bottom of this file did not apply.
+>
+> Verify at any time:
+> `gh api repos/Rexy-5097/apix/branches/main/protection`
 
 `main` is the protected integration branch. Every merged pull request should
 leave it in a state a teammate could clone and build.
