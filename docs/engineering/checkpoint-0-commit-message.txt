@@ -1,0 +1,57 @@
+feat(repo): bootstrap APIx — AgentOS, Agent Skills, CI and governance
+
+Establishes the APIx repository baseline against the v2.1 engineering dossier
+(MoSPI problem statement 26056). Bootstrap only — no APIx feature code.
+
+AgentOS
+- Vendored raptors-way@2cf150f (VERSION 1.0.0), template .git removed.
+- Initialised through the supported workflow:
+  bootstrap_project.py --config apix_bootstrap.yaml, profile `flagship`
+  (all 9 standards, 11 agents, 8 quality gates). The config is committed so the
+  initialisation is reproducible rather than a one-off interactive session.
+- Four upstream defects found. UP-001 (hardcoded author-specific REPO_ROOT) and
+  UP-004 (artifact validator walks the repository unscoped) are patched, because
+  without them the framework reports a score that is not about this project.
+  UP-002 and UP-003 are reported and deliberately left alone; UP-003 in
+  particular would require inventing metrics that were never measured. All four
+  are recorded with measurements and reproduction steps in
+  docs/agentos/UPSTREAM_PATCHES.md.
+- Validator: 93/100, identical to a pristine upstream clone. No regression.
+
+Agent Skills
+- addyosmani/agent-skills 0.6.9 vendored: 25 skills, 7 shared checklists,
+  skills-lock.json. Copied rather than symlinked, so the set survives a Windows
+  clone and a skill upgrade is a reviewable diff.
+- Closed the upstream references/ portability gap (issue #361) that would have
+  left ten skills citing checklists that were never installed.
+
+Architecture boundary
+- tests/test_architecture.py enforces dossier section 05: nothing under
+  statistics/ may import sklearn, lightgbm, xgboost, torch, anthropic or openai,
+  nor the analytics/ or ai/ layers above it.
+- The check is static — it parses with ast and never imports the layer — and it
+  tests itself by planting each forbidden import, because a boundary test that
+  cannot fail reports a safety it is not checking.
+
+Governance
+- CODEOWNERS, PR template, branching, ownership and checkpoint policies.
+- .githooks/pre-commit refuses commits from an unrecognised identity, from an
+  identity that does not match the branch owner, and directly to main.
+- CI: architecture boundary, ruff, mypy, pytest, AgentOS health with a
+  no-regression baseline, YAML lint, internal link check.
+
+Structure
+- Dossier section 13 layout created, empty: schemas, ingestion, statistics
+  (elementary, aggregation, tpd, uncertainty, index), analytics, ai, api,
+  dashboard, experiments, docs, tests. Each with a README stating its owner,
+  its checkpoint, and the rules that govern it.
+- The dossier itself is vendored to docs/dossier/ as the source of truth.
+
+Flagged, not silently resolved
+- statistics/ at the repository root shadows the stdlib statistics module. CI is
+  unaffected (the boundary check is static), but this must be settled
+  deliberately at Checkpoint 1 before the first module lands there.
+
+Refs: CHECKPOINT-0
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

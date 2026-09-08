@@ -1,0 +1,76 @@
+#!/bin/sh
+# APIx commit-identity guard.
+#
+# The ownership policy requires that the Git identity used for a commit is the
+# contributor who owns the task, and that the branch prefix matches that same
+# contributor. Git does not verify author fields, so without a check like this
+# the rule is only a convention — and the usual failure is silent: work lands
+# under whichever identity happened to be configured globally.
+#
+# Enable once per clone:
+#     git config core.hooksPath .githooks
+#
+# Bypass is possible with --no-verify. That is deliberate: this guard exists to
+# prevent accidents, not to be a security control. Using it to commit under
+# another contributor's identity is a policy violation regardless.
+
+set -e
+
+name=$(git config user.name)
+email=$(git config user.email)
+# symbolic-ref resolves the branch name even before the first commit exists,
+# where `rev-parse --abbrev-ref HEAD` fails. That matters here: the bootstrap
+# commit is the repository's first, so the branch is still unborn when this
+# hook runs for it. `-q` yields an empty result on a detached HEAD.
+branch=$(git symbolic-ref --short -q HEAD || echo "DETACHED")
+
+fail() {
+    echo "APIx pre-commit: $1" >&2
+    echo "" >&2
+    echo "  branch     : $branch" >&2
+    echo "  user.name  : ${name:-<unset>}" >&2
+    echo "  user.email : ${email:-<unset>}" >&2
+    echo "" >&2
+    echo "  See docs/engineering/ownership-policy.md" >&2
+    echo "  Set the per-repository identity:" >&2
+    echo "      git config user.name  \"<contributor>\"" >&2
+    echo "      git config user.email \"<their GitHub email>\"" >&2
+    exit 1
+}
+
+if [ -z "$name" ] || [ -z "$email" ]; then
+    fail "no Git identity configured for this repository."
+fi
+
+# Recognised contributors and the branch segment each one owns.
+case "$name" in
+    Rexy-5097)      handle="rexy"   ;;
+    slazyverse)     handle="slazy"  ;;
+    Basant-creator) handle="basant" ;;
+    *)
+        fail "'$name' is not an APIx contributor identity.
+  Expected one of: Rexy-5097, slazyverse, Basant-creator."
+        ;;
+esac
+
+# Detached HEAD: the identity is still checked, but there is no branch to map.
+if [ "$branch" = "DETACHED" ]; then
+    exit 0
+fi
+
+case "$branch" in
+    main)
+        fail "direct commits to main are not allowed.
+  Work happens on <type>/<contributor>/<scope> branches.
+  See docs/engineering/branching-policy.md."
+        ;;
+    */"$handle"/*)
+        # Branch owner matches the committing identity.
+        ;;
+    *)
+        fail "branch owner does not match the committing identity.
+  '$name' commits on branches of the form <type>/$handle/<scope>."
+        ;;
+esac
+
+exit 0

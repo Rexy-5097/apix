@@ -1,0 +1,26 @@
+# APIx — AgentOS bootstrap configuration
+# Consumed by: python tools/scripts/bootstrap_project.py --config apix_bootstrap.yaml
+# Values are taken from the APIx v2.1 engineering dossier, which is authoritative.
+project:
+  name: "APIx"
+  version: "0.1.0"
+  # flagship = all 9 standards, all 11 agents, all 8 quality gates.
+  # Chosen because APIx spans deterministic statistics, data engineering, API and UI,
+  # and is a multi-contributor project with a hard architectural boundary to enforce.
+  profile: "flagship"
+  framework: "FastAPI + Next.js"
+  languages:
+    - "Python"
+    - "TypeScript"
+    - "SQL"
+  owner: "Rexy-5097"
+  goals: >-
+    A quality-adjusted, high-frequency airfare price index for India and the auditable
+    infrastructure that produces it. Built against MoSPI problem statement 26056
+    (Data Informatics & Innovation Division). Publishes two estimators from one set of
+    canonical observations: APIx-L (Jevons elementary short index, then Young / Modified
+    Laspeyres aggregation) as the deterministic CPI-aligned headline, and APIx-TPD
+    (Time Product Dummy hedonic regression, rolling-window spliced) as an independent
+    quality-adjusted estimate. The statistics layer is deterministic and imports no
+    stochastic dependency; analytics and AI read the index and never write it.
+  deadline: "2026-12-31"

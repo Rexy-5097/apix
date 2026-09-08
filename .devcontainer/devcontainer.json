@@ -1,0 +1,39 @@
+{
+  "name": "AgentOS Development",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "postCreateCommand": "pip install pyyaml ruff yamllint pre-commit && pre-commit install && echo 'AgentOS dev container ready. Run: make bootstrap'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.ruff",
+        "redhat.vscode-yaml",
+        "davidanson.vscode-markdownlint",
+        "streetsidesoftware.code-spell-checker",
+        "eamodio.gitlens",
+        "bierner.markdown-preview-github-styles"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.rulers": [120],
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.ruff"
+        },
+        "[markdown]": {
+          "editor.wordWrap": "on"
+        },
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true
+      }
+    }
+  },
+  "forwardPorts": [],
+  "remoteUser": "vscode"
+}

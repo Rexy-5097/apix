@@ -1,0 +1,85 @@
+name: AgentOS Validate
+
+# AgentOS health check, adapted for APIx.
+#
+# WHY THIS IS A NO-REGRESSION CHECK AND NOT A 100/100 CHECK
+# ---------------------------------------------------------
+# AGENTOS.md section 12 states the expected output is "Overall Grade: 100/100 |
+# Final Status: PASS". The upstream template at raptors-way@2cf150f cannot
+# produce that on any machine. Measured on a pristine upstream clone, with no
+# APIx content present, the grade is 93/100 FAIL, caused by two upstream
+# defects recorded in docs/agentos/UPSTREAM_PATCHES.md:
+#
+#   UP-002  DOCUMENTATION_INDEX.md uses absolute file:///Users/... links,
+#           producing 75 broken references and Cross-reference 0/100.
+#   UP-003  production_validation/productivity_metrics.csv is absent from the
+#           shipped template, producing Production 80/100.
+#
+# Gating APIx on an unreachable 100 would mean a permanently red pipeline, and
+# suppressing the check entirely would mean no signal at all. So this job
+# asserts the grade has not regressed below the measured upstream baseline.
+# Raise AGENTOS_BASELINE_GRADE when an upstream defect is fixed; never lower it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  AGENTOS_BASELINE_GRADE: '93'
+
+jobs:
+  validate:
+    name: AgentOS Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Run AgentOS validator and enforce the baseline
+        run: |
+          set -o pipefail
+          # The validator exits non-zero while any category is below 100, so its
+          # exit status is captured rather than allowed to end the step.
+          python tools/scripts/validate_agentos.py | tee agentos_report.txt || true
+
+          grade=$(grep -oP 'Overall Grade\s*:\s*\K[0-9]+' agentos_report.txt | head -1)
+
+          if [ -z "$grade" ]; then
+            echo "::error::Could not parse an Overall Grade from the validator report."
+            exit 1
+          fi
+
+          echo "AgentOS grade: ${grade}/100 (baseline ${AGENTOS_BASELINE_GRADE})"
+
+          if [ "$grade" -lt "$AGENTOS_BASELINE_GRADE" ]; then
+            echo "::error::AgentOS health regressed to ${grade}, below the ${AGENTOS_BASELINE_GRADE} baseline."
+            exit 1
+          fi
+
+          if [ "$grade" -gt "$AGENTOS_BASELINE_GRADE" ]; then
+            echo "::notice::AgentOS health improved to ${grade}. Raise AGENTOS_BASELINE_GRADE to lock the gain in."
+          fi
+
+      - name: Bootstrap self-test
+        run: python tools/scripts/bootstrap_project.py --self-test
+
+      - name: Synthetic validation suite
+        run: python validation/runner/execute_suite.py
+
+      - name: Upload AgentOS report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentos-health-report
+          path: agentos_report.txt
