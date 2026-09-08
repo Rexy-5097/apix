@@ -11,9 +11,9 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-09-08 |
-| **Phase** | Task 0 — bootstrap (CHECKPOINT 0) |
-| **Health** | 🟢 GREEN — bootstrap complete, PR open for review |
-| **Next Milestone** | CHECKPOINT 1 — contracts and methodology specification |
+| **Phase** | Checkpoint 1A — statistical architecture + formula specification |
+| **Health** | 🟢 GREEN — Checkpoint 0 merged; 1A PR open for review |
+| **Next Milestone** | CHECKPOINT 2 — synthetic statistical core |
 | **AgentOS profile** | `flagship` — 9 standards, 11 agents, 8 quality gates |
 | **AgentOS grade** | 93/100 (upstream baseline; see below) |
 
@@ -23,9 +23,11 @@
 
 | Task | Status | Owner | Blocked By | Priority |
 |------|--------|-------|-----------|----------|
-| Repository bootstrap | `IN_REVIEW` | Rexy-5097 | — | High |
-| Review + merge bootstrap PR | `PENDING` | slazyverse, Basant-creator | — | High |
-| Tag `checkpoint-0` after merge | `PENDING` | Rexy-5097 | PR merge | High |
+| CHECKPOINT 0 bootstrap | `DONE` | Rexy-5097 | — | — |
+| Statistics package layout (ADR-0061) | `IN_REVIEW` | Rexy-5097 | — | High |
+| Formula specification v1 (frozen) | `IN_REVIEW` | Rexy-5097 | — | High |
+| Golden values + invariant tests | `IN_REVIEW` | Rexy-5097 | — | High |
+| Audit of the formula spec by the human owner | `PENDING` | Human | 1A PR | High |
 
 ---
 
@@ -46,14 +48,18 @@ Git commit identity is set **per repository**, never globally, and is checked by
 
 ---
 
-## Technical Debt
+## Technical Debt / Open empirical questions
 
-| Item | Severity | Filed | Notes |
-|------|----------|-------|-------|
-| AgentOS UP-002 — `DOCUMENTATION_INDEX.md` absolute `file:///` links, 75 broken refs | Low | 2026-09-08 | Upstream defect, reported not patched. See `docs/agentos/UPSTREAM_PATCHES.md` |
-| AgentOS UP-003 — `production_validation/productivity_metrics.csv` absent | Low | 2026-09-08 | Upstream. Not patched: fabricating metrics to green a gate is the failure mode this project is written against |
-| `statistics/` shadows the stdlib `statistics` module | Medium | 2026-09-08 | Dossier-specified layout. Must be settled deliberately at Checkpoint 1 before the first module lands. CI is unaffected — the architecture test is static |
-| AgentOS `Makefile` hardcodes `python3` | Low | 2026-09-08 | Not present on a standard Windows install. Call scripts directly |
+Eight open empirical questions are tracked in `docs/methodology/apix_formula_spec_v1.md` §S.
+**None may be resolved by choosing a plausible value.**
+
+| Item | Severity | Notes |
+|------|----------|-------|
+| OQ-1…OQ-8 | Various | Collection window, match-coverage floor, sell-out bias, DGCA weights, bootstrap runtime, CPI benchmark, lead-time distribution, licensed feed |
+| **R-12** — dossier invariant self-contradictory | Medium | *"Scaling every price by k scales the index by k; the price relatives are unchanged."* Split into INV-4a/INV-4b. **Awaiting dossier author's confirmation** |
+| CODEOWNERS self-approval deadlock | Medium | `*` and most paths are owned by @Rexy-5097, who authors most PRs. GitHub forbids self-approval, so a code-owner requirement cannot be met by the author |
+| AgentOS UP-002 / UP-003 | Low | Upstream, reported not patched |
+| AgentOS `Makefile` hardcodes `python3` | Low | Call scripts directly on Windows |
 
 ---
 
@@ -62,27 +68,23 @@ Git commit identity is set **per repository**, never globally, and is checked by
 | ADR | Decision | Date |
 |-----|----------|------|
 | [ADR-0057](../artifacts/decisions/ADR-0057-adopt-agentos-flagship-profile.md) | Adopt AgentOS with the `flagship` profile | 2026-09-08 |
-| [ADR-0058](../artifacts/decisions/ADR-0058-patch-agentos-validator-repo-root.md) | Patch the AgentOS validator's hardcoded repo root; report the other two defects | 2026-09-08 |
-| [ADR-0059](../artifacts/decisions/ADR-0059-enforce-statistics-determinism-in-ci.md) | Enforce the statistics determinism boundary statically in CI | 2026-09-08 |
-| [ADR-0060](../artifacts/decisions/ADR-0060-vendor-agent-skills-into-repository.md) | Vendor Agent Skills into the repository rather than rely on per-machine install | 2026-09-08 |
+| [ADR-0058](../artifacts/decisions/ADR-0058-patch-agentos-validator-repo-root.md) | Patch the AgentOS validator; report the other defects | 2026-09-08 |
+| [ADR-0059](../artifacts/decisions/ADR-0059-enforce-statistics-determinism-in-ci.md) | Enforce the determinism boundary statically in CI | 2026-09-08 |
+| [ADR-0060](../artifacts/decisions/ADR-0060-vendor-agent-skills-into-repository.md) | Vendor Agent Skills into the repository | 2026-09-08 |
+| [ADR-0061](../artifacts/decisions/ADR-0061-statistics-package-layout.md) | **Statistics package layout — adopt `src/apix/`** | 2026-09-08 |
 
 ---
 
-## Completed This Session
+## Completed This Session (Checkpoint 1A)
 
-- [x] Read the APIx v2.1 dossier in full (38 pages)
-- [x] AgentOS template vendored from `raptors-way@2cf150f`, `.git` removed
-- [x] AgentOS bootstrap run with `--config apix_bootstrap.yaml`, profile `flagship`
-- [x] `PROJECT_CONFIG.yaml` generated and verified
-- [x] AgentOS validator run — 16 of 18 categories at 100/100; the 2 failures proven pre-existing upstream
-- [x] Bootstrap self-test PASS
-- [x] Agent Skills 0.6.9 installed — 25 skills, 7 shared checklists, `skills-lock.json`
-- [x] `references/` portability gap (upstream #361) closed and all citations verified
-- [x] Repository structure created per dossier section 13 — no feature code
-- [x] `tests/test_architecture.py` written, self-testing, verified against a planted violation
-- [x] CI baseline: `ci.yml`, `validate.yml`, `lint.yml`
-- [x] CODEOWNERS, PR template, engineering documentation
-- [x] Dossier vendored to `docs/dossier/` as the source of truth
+- [x] Verified Checkpoint 0 merged at `c267f12` — not assumed from the prior report
+- [x] Measured the `statistics/` stdlib shadow (E1–E6); migrated to `src/apix/`
+- [x] ADR-0061 with the evidence
+- [x] **Froze `docs/methodology/apix_formula_spec_v1.md`** — sections A–T
+- [x] 16 hand-calculated golden values in `tests/fixtures/statistical_golden_values.yaml`
+- [x] 40 methodology invariant tests; INV-1 proven non-vacuous by corruption test
+- [x] Adversarial review — 13 findings, 3 specification gaps closed before freezing
+- [x] Confirmed no statistical implementation exists
 
 ---
 

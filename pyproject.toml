@@ -26,22 +26,13 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-# Explicit package list. The dossier section 13 layout puts the layers at the
-# repository root rather than under a src/ directory.
-packages = [
-  "schemas",
-  "ingestion",
-  "statistics",
-  "statistics.elementary",
-  "statistics.aggregation",
-  "statistics.tpd",
-  "statistics.uncertainty",
-  "statistics.index",
-  "analytics",
-  "ai",
-  "api",
-  "experiments",
-]
+# src layout. The dossier section 13 tree is rooted at `apix/`, so the layers it
+# lists are the contents of the `apix` package, not of the repository root.
+# See ADR-0061 for why the root layout was abandoned.
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -79,9 +70,10 @@ python_version = "3.12"
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+mypy_path = "src"
 # The statistics layer carries the published numbers. It is held to a stricter
 # standard than the layers that only display them.
 [[tool.mypy.overrides]]
-module = "statistics.*"
+module = "apix.statistics.*"
 disallow_untyped_defs = true
 disallow_any_unimported = true

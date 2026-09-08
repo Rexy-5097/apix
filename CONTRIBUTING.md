@@ -47,7 +47,7 @@ Run the relevant automated tests. Add invariant or property tests where they
 apply. **Verify the failure cases**, not only the happy path. Confirm the
 acceptance criteria from DEFINE.
 
-For anything under `statistics/`, coverage is the wrong target. An index engine
+For anything under `src/apix/statistics/`, coverage is the wrong target. An index engine
 can reach full line coverage while computing the wrong number. See the invariant
 list in [CLAUDE.md](CLAUDE.md).
 
@@ -90,12 +90,12 @@ a known-good project state.
 
 ### The statistics layer is deterministic
 
-`statistics/` must never import `sklearn`, `lightgbm`, `xgboost`, `torch`,
-`anthropic` or `openai`, nor `analytics/` nor `ai/`.
+`src/apix/statistics/` must never import `sklearn`, `lightgbm`, `xgboost`, `torch`,
+`anthropic` or `openai`, nor `src/apix/analytics/` nor `src/apix/ai/`.
 
 `tests/test_architecture.py` enforces this in CI. Do not weaken, skip, or mark
-it advisory. If your change seems to need it, the change belongs in `analytics/`
-or `ai/`.
+it advisory. If your change seems to need it, the change belongs in `src/apix/analytics/`
+or `src/apix/ai/`.
 
 ### The formula specification comes first
 

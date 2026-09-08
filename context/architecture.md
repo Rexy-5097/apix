@@ -34,10 +34,10 @@ Layer 3 — Analytics   [reads the index, never writes it]
 STATISTICS CALCULATES.  ML/AI EXPLAINS.
 ```
 
-`statistics/` may not import `sklearn`, `lightgbm`, `xgboost`, `torch`,
-`anthropic`, `openai`, nor `analytics/` nor `ai/`.
+`src/apix/statistics/` may not import `sklearn`, `lightgbm`, `xgboost`, `torch`,
+`anthropic`, `openai`, nor `src/apix/analytics/` nor `src/apix/ai/`.
 
-`tests/test_architecture.py` parses every module under `statistics/` with `ast`
+`tests/test_architecture.py` parses every module under `src/apix/statistics/` with `ast`
 and fails the build on violation. It is a required status check. See
 [ADR-0059](../artifacts/decisions/ADR-0059-enforce-statistics-determinism-in-ci.md).
 

@@ -34,7 +34,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # The statistics layer. Deterministic by construction.
-STATISTICS_ROOT = REPO_ROOT / "statistics"
+STATISTICS_ROOT = REPO_ROOT / "src" / "apix" / "statistics"
 
 # Dossier section 05, verbatim. Do not extend this set without a methodology
 # review: adding a name here is a statement about reproducibility, not style.
@@ -52,6 +52,10 @@ FORBIDDEN: frozenset[str] = frozenset(
 # Layers that are allowed to read the index but never to write it. The
 # statistics layer must not depend on them either, or the removal test in
 # dossier section 12 fails.
+#
+# Under the src layout these are submodules of `apix`, so an absolute import
+# reads `apix.analytics`. The detector records top-level packages, so it also
+# checks the second segment for imports rooted at `apix`.
 FORBIDDEN_LAYERS: frozenset[str] = frozenset({"analytics", "ai"})
 
 

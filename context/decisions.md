@@ -77,6 +77,7 @@
 | [ADR-0058](../artifacts/decisions/ADR-0058-patch-agentos-validator-repo-root.md) | Patch the AgentOS validator repo root; report the other two defects | Accepted | 2026-09-08 | High |
 | [ADR-0059](../artifacts/decisions/ADR-0059-enforce-statistics-determinism-in-ci.md) | Enforce the statistics determinism boundary statically in CI | Accepted | 2026-09-08 | High |
 | [ADR-0060](../artifacts/decisions/ADR-0060-vendor-agent-skills-into-repository.md) | Vendor Agent Skills into the repository | Accepted | 2026-09-08 | High |
+| [ADR-0061](../artifacts/decisions/ADR-0061-statistics-package-layout.md) | Statistics package layout — adopt `src/apix/` | Accepted | 2026-09-08 | High |
 
 ---
 
