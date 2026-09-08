@@ -11,7 +11,7 @@ STATISTICS CALCULATES.  ML/AI EXPLAINS.
 Nothing here may import `sklearn`, `lightgbm`, `xgboost`, `torch`, `anthropic`
 or `openai`, nor `analytics/` nor `ai/`.
 
-Enforced by [`tests/test_architecture.py`](../tests/test_architecture.py), which
+Enforced by [`tests/test_architecture.py`](../../../tests/test_architecture.py), which
 fails the build. **Do not weaken, skip or mark that test advisory.**
 
 The published index must be reproducible from
@@ -52,7 +52,7 @@ Two consequences that must not be blurred:
 
 Line coverage is the wrong target: an index engine can reach full coverage while
 computing the wrong number. The invariant list is in
-[CLAUDE.md](../CLAUDE.md#testing-means-invariants-not-coverage).
+[CLAUDE.md](../../../CLAUDE.md#testing-means-invariants-not-coverage).
 
 Determinism extends to stochastic procedures. The bootstrap seed is derived
 deterministically from the version vector and recorded with the output, so two

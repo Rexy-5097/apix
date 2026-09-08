@@ -1,7 +1,14 @@
 # Methodology
 
-> **GATE: `apix_formula_spec_v1.md` does not exist yet, and no statistics code
-> may be written until it does.**
+> **GATE CLEARED (Checkpoint 1A, 2026-09-08).**
+> [`apix_formula_spec_v1.md`](apix_formula_spec_v1.md) is written and frozen for
+> `methodology_version 2.0`. Golden values are frozen in
+> [`tests/fixtures/statistical_golden_values.yaml`](../../tests/fixtures/statistical_golden_values.yaml)
+> and the specification has been through an
+> [adversarial review](adversarial_review_v1.md).
+>
+> Statistics implementation may begin at Checkpoint 2 — **written from the
+> specification, not from the tests** (see R-10).
 
 ## The one artifact that must exist before any statistics code
 
@@ -76,10 +83,11 @@ Each must have a test that crosses it in **both** directions.
 
 ## Planned documents
 
-| Document | Purpose | Checkpoint |
-|---|---|---|
-| `apix_formula_spec_v1.md` | The frozen symbol-by-symbol specification | 1 |
-| `golden_values.md` | Values computed by hand before implementation | 1 |
+| Document | Purpose | Checkpoint | Status |
+|---|---|---|---|
+| [`apix_formula_spec_v1.md`](apix_formula_spec_v1.md) | The frozen symbol-by-symbol specification | 1A | **DONE** |
+| [`../../tests/fixtures/statistical_golden_values.yaml`](../../tests/fixtures/statistical_golden_values.yaml) | 16 values computed by hand before implementation | 1A | **DONE** |
+| [`adversarial_review_v1.md`](adversarial_review_v1.md) | Doubt-driven review of the specification | 1A | **DONE** |
 | `experiments.md` | The six controlled scenarios and their results | 2 |
 | `validation.md` | Short-window validation, with n stated | 4 |
 | `publication_policy.md` | Release calendar, vintages, revision triggers | 4 |

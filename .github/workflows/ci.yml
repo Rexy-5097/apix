@@ -76,7 +76,7 @@ jobs:
       - name: mypy
         # Scoped to the APIx layers. The vendored AgentOS framework tree is
         # excluded in pyproject.toml and validated by its own tooling.
-        run: mypy schemas ingestion statistics analytics ai api experiments
+        run: mypy src/apix
 
   tests:
     name: Tests (pytest)

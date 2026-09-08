@@ -48,20 +48,20 @@ legible to a statistician is out of scope by construction.
 STATISTICS CALCULATES.  ML/AI EXPLAINS.
 ```
 
-`statistics/` must never import:
+`src/apix/statistics/` must never import:
 
 ```
 sklearn   lightgbm   xgboost   torch   anthropic   openai
 ```
 
-nor `analytics/` nor `ai/`.
+nor `src/apix/analytics/` nor `src/apix/ai/`.
 
 The published index must be reproducible from
 `(snapshot_id, methodology_version, weight_version, code_version)` alone.
 
 This is enforced by `tests/test_architecture.py`, which runs in CI and fails the
 build. **Do not weaken, skip or mark that test advisory.** If a change seems to
-require it, the change belongs in `analytics/` or `ai/` instead.
+require it, the change belongs in `src/apix/analytics/` or `src/apix/ai/` instead.
 
 Removal test: delete the Claude API integration and the whole analytics layer.
 Collection, cleaning, deduplication, Jevons, Young/Modified Laspeyres, TPD and
@@ -79,22 +79,28 @@ If that file is not frozen, writing index code is out of order. Say so.
 ## Repository layout
 
 ```
-schemas/       canonical contracts — written before any collector
-ingestion/     collectors, compliance gate, snapshot store
-statistics/    deterministic, no ML imports, invariant-tested
-  elementary/    jevons.py, matching.py (tier ladder)
-  aggregation/   young_laspeyres.py, weights.py
-  tpd/           specification.py, estimator.py, splice.py
-  uncertainty/   bootstrap.py
-  index/         apix.py, publication.py, vintages.py
-analytics/     anomaly, forecasting, shock, decomposition
-ai/            explanation, parser diagnosis, schema mapping
-api/           FastAPI, SDMX serialisers
-dashboard/     Next.js
-experiments/   the six controlled scenarios, ablations
-docs/          methodology, engineering, dossier
-tests/         incl. test_architecture.py, property tests
+src/apix/
+  schemas/       canonical contracts — written before any collector
+  ingestion/     collectors, compliance gate, snapshot store
+  statistics/    deterministic, no ML imports, invariant-tested
+    elementary/    jevons.py, matching.py (tier ladder)
+    aggregation/   young_laspeyres.py, weights.py
+    tpd/           specification.py, estimator.py, splice.py
+    uncertainty/   bootstrap.py
+    index/         apix.py, publication.py, vintages.py
+  analytics/     anomaly, forecasting, shock, decomposition
+  ai/            explanation, parser diagnosis, schema mapping
+  api/           FastAPI, SDMX serialisers
+  experiments/   the six controlled scenarios, ablations
+dashboard/       Next.js
+docs/            methodology, engineering, dossier
+tests/           incl. test_architecture.py, property tests
 ```
+
+Imports are absolute from the package root: `from apix.statistics.elementary
+import jevons`. The `src/` prefix exists because the dossier's tree is rooted at
+`apix/` and because a root-level `statistics/` shadows Python's standard-library
+`statistics` module — ADR-0061.
 
 The AgentOS framework tree (`runtime/`, `agents/`, `standards/`, `workflows/`,
 `checklists/`, `templates/`, `profiles/`, `validation/`, `tools/scripts/`) is

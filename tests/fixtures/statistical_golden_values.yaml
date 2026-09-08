@@ -1,0 +1,398 @@
+# APIx golden values — hand-calculated expected results
+#
+# Frozen at Checkpoint 1A, BEFORE any statistics implementation exists.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# Dossier section 15 names the risk directly: "Two developers implement the
+# aggregation differently." Its stated mitigation is a frozen formula
+# specification with a symbol table, and *golden values computed by hand before
+# either implementation*.
+#
+# Every `expected` below was derived by hand from
+# docs/methodology/apix_formula_spec_v1.md and is reproduced here with its
+# working. When the engine is written at Checkpoint 2, it must reproduce these
+# numbers. If it does not, the engine is wrong — not this file.
+#
+# RULE: changing an `expected` value requires a methodology_version bump and an
+# ADR. It is never a test fix.
+#
+# TOLERANCE
+# ---------
+# Comparisons use relative tolerance 1e-12 (spec Q.1), not bit equality, because
+# these are exact statements in real arithmetic evaluated in binary floating
+# point. G-09 demonstrates why: it evaluates to 106.00000000000001.
+
+meta:
+  methodology_version: "2.0"
+  spec: docs/methodology/apix_formula_spec_v1.md
+  frozen_at_checkpoint: "1A"
+  frozen_date: "2026-09-08"
+  owner: "@Rexy-5097"
+  relative_tolerance: 1.0e-12
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JEVONS ELEMENTARY RELATIVE — spec §D.2
+# ─────────────────────────────────────────────────────────────────────────────
+
+cases:
+
+  - id: G-01
+    name: Jevons relative, uniform price change
+    spec_ref: "§D.2"
+    invariant: null
+    given:
+      matched_items:
+        - {id: i1, p_t_minus_7: 5000.00, p_t: 5500.00}
+        - {id: i2, p_t_minus_7: 4000.00, p_t: 4400.00}
+        - {id: i3, p_t_minus_7: 8000.00, p_t: 8800.00}
+    hand_working: |
+      ratios      = 5500/5000, 4400/4000, 8800/8000 = 1.1, 1.1, 1.1
+      ln ratios   = ln(1.1) x 3
+      mean ln     = ln(1.1)
+      J           = exp(ln(1.1)) = 1.1
+      Every item moved by the same factor, so the geometric mean is that factor.
+    expected:
+      J: 1.1
+
+  - id: G-02
+    name: Jevons relative, offsetting moves (geometric mean, not arithmetic)
+    spec_ref: "§D.2"
+    invariant: null
+    given:
+      matched_items:
+        - {id: i1, p_t_minus_7: 100.00, p_t: 200.00}   # x2
+        - {id: i2, p_t_minus_7: 100.00, p_t:  50.00}   # x0.5
+        - {id: i3, p_t_minus_7: 100.00, p_t: 100.00}   # x1
+    hand_working: |
+      J = (2 x 0.5 x 1)^(1/3) = 1^(1/3) = 1.0
+
+      This case discriminates the formula. An ARITHMETIC mean of ratios would give
+      (2 + 0.5 + 1)/3 = 1.1667 — a spurious 16.67% rise from prices that offset
+      exactly. An implementation returning 1.1667 has used the wrong mean.
+    expected:
+      J: 1.0
+
+  - id: G-03
+    name: Jevons relative, identical prices
+    spec_ref: "§D.2"
+    invariant: "INV-3"
+    given:
+      matched_items:
+        - {id: i1, p_t_minus_7: 7250.00, p_t: 7250.00}
+        - {id: i2, p_t_minus_7: 3100.00, p_t: 3100.00}
+        - {id: i3, p_t_minus_7: 9999.00, p_t: 9999.00}
+    hand_working: |
+      All ratios = 1. ln(1) = 0. mean = 0. J = exp(0) = 1.0
+      Chained onto a base of 100, the level stays exactly 100.
+    expected:
+      J: 1.0
+      level_from_base_100: 100.0
+
+  - id: G-04
+    name: Scale invariance — both periods scaled by k
+    spec_ref: "§D.2"
+    invariant: "INV-4a"
+    given:
+      base_case: G-01
+      k: 3.0
+      matched_items:
+        - {id: i1, p_t_minus_7: 15000.00, p_t: 16500.00}
+        - {id: i2, p_t_minus_7: 12000.00, p_t: 13200.00}
+        - {id: i3, p_t_minus_7: 24000.00, p_t: 26400.00}
+    hand_working: |
+      Each ratio is (k x p_t)/(k x p_t-7) = p_t/p_t-7 — k cancels.
+      J is therefore identical to G-01 = 1.1, UNCHANGED.
+
+      A currency redenomination must not move a price index.
+    expected:
+      J: 1.1
+
+  - id: G-15
+    name: Homogeneity — current period only scaled by k
+    spec_ref: "§D.2"
+    invariant: "INV-4b"
+    given:
+      base_case: G-01
+      k: 2.0
+      matched_items:
+        - {id: i1, p_t_minus_7: 5000.00, p_t: 11000.00}
+        - {id: i2, p_t_minus_7: 4000.00, p_t:  8800.00}
+        - {id: i3, p_t_minus_7: 8000.00, p_t: 17600.00}
+    hand_working: |
+      Each ratio becomes k x (p_t/p_t-7) = 2 x 1.1 = 2.2
+      J = (2.2^3)^(1/3) = 2.2 = k x J(G-01)
+
+      Paired with G-04 this pins down the dossier's ambiguous single sentence
+      (see spec §Q, REPORTED INCONSISTENCY): scaling BOTH periods leaves the index
+      alone; scaling ONE period scales it by k. Both are true, of different things.
+    expected:
+      J: 2.2
+
+  - id: G-14
+    name: Outlier flagging by median/MAD within a cell
+    spec_ref: "§D.7"
+    invariant: null
+    given:
+      log_relatives: [0.01, 0.02, 0.03, 0.04, 0.50]
+    hand_working: |
+      median            = 0.03
+      abs deviations    = 0.02, 0.01, 0.00, 0.01, 0.47
+      MAD = median of those, sorted 0.00,0.01,0.01,0.02,0.47 -> 0.01
+      threshold         = 5 x MAD = 0.05         (MAD is NOT rescaled by 1.4826)
+      |0.50 - 0.03| = 0.47 > 0.05                -> FLAGGED
+      every other deviation <= 0.02              -> kept
+    expected:
+      median: 0.03
+      mad: 0.01
+      threshold: 0.05
+      flagged_indices: [4]
+      kept_count: 4
+
+  - id: G-16
+    name: Outlier rule is inert when MAD is zero
+    spec_ref: "§D.7 (degenerate dispersion)"
+    invariant: null
+    given:
+      log_relatives: [0.0, 0.0, 0.0, 0.0, 0.25]
+    hand_working: |
+      median = 0.0; deviations 0,0,0,0,0.25; MAD = median = 0.0
+      threshold = 5 x 0 = 0, so the lone differing item would be flagged, and in a
+      cell where all-but-one price is unchanged, so would every other non-identical
+      item. That is the detector destroying the data it protects.
+
+      Spec §D.7 therefore locks: when MAD = 0, NO flagging occurs.
+    expected:
+      mad: 0.0
+      flagged_indices: []
+      kept_count: 5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CELL CHAINING — spec §E
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - id: G-05
+    name: Cell index level, chained weekly
+    spec_ref: "§E.1, §E.2"
+    invariant: "INV-6"
+    given:
+      base_level: 100.0
+      relatives_in_order: [1.10, 0.95, 1.00]
+    hand_working: |
+      I(c,t0)      = 100                       (base, by construction)
+      I(c,t0+7)    = 100    x 1.10 = 110.0
+      I(c,t0+14)   = 110.0  x 0.95 = 104.5
+      I(c,t0+21)   = 104.5  x 1.00 = 104.5
+
+      Note the lag is 7 DAYS, not one period. Each cell advances on its own weekly
+      chain; a Monday cell is never differenced against a Tuesday cell (§C.2).
+    expected:
+      levels: [100.0, 110.0, 104.5, 104.5]
+      final_level: 104.5
+
+  - id: G-12
+    name: Carry rule when the relative is undefined
+    spec_ref: "§E.4, §I"
+    invariant: "INV-7"
+    given:
+      cell_level_t_minus_7: 100.0
+      matched_item_count: 2          # below min_matched_items_per_cell = 3
+      parent_relative: 1.05
+    hand_working: |
+      |M| = 2 < 3, so J(c,t) is UNDEFINED and the cell publishes no relative.
+      Carry rule: I(c,t) = I(c,t-7) x J(parent(c),t) = 100 x 1.05 = 105.0
+
+      The cell inherits the parent's RELATIVE, never the parent's LEVEL. Inheriting
+      the level would teleport the cell onto the parent's path and erase its own
+      accumulated history.
+    expected:
+      J: null                        # undefined, not 1.0
+      level: 105.0
+      action: "CARRY"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# YOUNG / MODIFIED LASPEYRES AGGREGATION — spec §F
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - id: G-11
+    name: Weight normalisation
+    spec_ref: "§F.4, §G.5"
+    invariant: "INV-1, INV-2"
+    given:
+      raw_weights: {c1: 3.0, c2: 5.0, c3: 2.0}
+    hand_working: |
+      sum = 3 + 5 + 2 = 10
+      normalised = 0.3, 0.5, 0.2 -> sums to 1.0 exactly
+    expected:
+      normalised_weights: {c1: 0.3, c2: 0.5, c3: 0.2}
+      sum: 1.0
+
+  - id: G-06
+    name: Route index — weighted mean of cell LEVELS
+    spec_ref: "§F.2"
+    invariant: null
+    given:
+      cells:
+        - {id: c1, weight: 0.5, level: 110.0}
+        - {id: c2, weight: 0.3, level:  90.0}
+        - {id: c3, weight: 0.2, level: 100.0}
+    hand_working: |
+      weights sum: 0.5 + 0.3 + 0.2 = 1.0                    (INV-1)
+      I(r,t) = 0.5x110 + 0.3x90 + 0.2x100
+             = 55.0    + 27.0   + 20.0
+             = 102.0
+
+      Aggregation is over LEVELS. Aggregating the relatives instead, or dividing
+      one short-term relative by another, does not produce an index (§C.4).
+    expected:
+      route_level: 102.0
+
+  - id: G-07
+    name: National index — weighted mean of route LEVELS
+    spec_ref: "§F.3"
+    invariant: null
+    given:
+      routes:
+        - {id: DEL-BOM, weight: 0.6, level: 102.0}
+        - {id: DEL-BLR, weight: 0.4, level: 108.0}
+    hand_working: |
+      APIx(t) = 0.6x102 + 0.4x108 = 61.2 + 43.2 = 104.4
+    expected:
+      national_level: 104.4
+
+  - id: G-08
+    name: Renormalisation when a route is suppressed
+    spec_ref: "§F.4, §I"
+    invariant: "INV-1"
+    given:
+      routes:
+        - {id: DEL-BOM, weight: 0.5, level: 102.0, live: true}
+        - {id: DEL-BLR, weight: 0.3, level: 108.0, live: true}
+        - {id: BOM-BLR, weight: 0.2, level:  95.0, live: false}   # suppressed
+    hand_working: |
+      Live set L = {DEL-BOM, DEL-BLR}; sum of live weights = 0.5 + 0.3 = 0.8
+
+      w'(DEL-BOM) = 0.5 / 0.8 = 0.625
+      w'(DEL-BLR) = 0.3 / 0.8 = 0.375
+      check: 0.625 + 0.375 = 1.0                                (INV-1)
+
+      APIx(t) = 0.625x102 + 0.375x108 = 63.75 + 40.5 = 104.25
+
+      WITHOUT renormalisation the sum would be 0.5x102 + 0.3x108 = 83.4 — not an
+      index level at all, and ~20% too low. Dropping a route without renormalising
+      silently reweights everything else; this is the subtle failure §F.4 exists to
+      prevent.
+    expected:
+      renormalised_weights: {DEL-BOM: 0.625, DEL-BLR: 0.375}
+      weight_sum: 1.0
+      national_level: 104.25
+      wrong_answer_if_not_renormalised: 83.4
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW CELL ENTRY — spec §J
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - id: G-09
+    name: New cell enters at its parent's level and moves nothing
+    spec_ref: "§J.1, §J.2"
+    invariant: "INV-10"
+    given:
+      before:
+        cells:
+          - {id: A, weight: 0.6, level: 110.0}
+          - {id: B, weight: 0.4, level: 100.0}
+      entering_cell: {id: C, weight: 0.2}
+    hand_working: |
+      Route level BEFORE entry:
+        I(r) = 0.6x110 + 0.4x100 = 66 + 40 = 106.0
+
+      C enters at its PARENT's current level (§J.1), i.e. at 106.0 — NOT at 100.
+
+      Existing weights are rescaled proportionally to make room for w(C) = 0.2:
+        w(A) = 0.6 x (1 - 0.2) = 0.48
+        w(B) = 0.4 x (1 - 0.2) = 0.32
+        check: 0.48 + 0.32 + 0.20 = 1.0                        (INV-1)
+
+      Route level AFTER entry:
+        I(r) = 0.48x110 + 0.32x100 + 0.20x106.0
+             = 52.8     + 32.0     + 21.2
+             = 106.0                                            UNCHANGED (INV-10)
+
+      CONTRAST — the bug this rule prevents. Had C entered at 100:
+        I(r) = 0.48x110 + 0.32x100 + 0.20x100 = 52.8 + 32 + 20 = 104.8
+      a spurious -1.13% fall caused purely by a new fare appearing. A newly
+      appearing fare is not a price change.
+
+      FLOATING POINT: this evaluates to 106.00000000000001, because 0.32 has no
+      exact binary representation. Compare at relative tolerance 1e-12 (§Q.1), not
+      with ==.
+    expected:
+      parent_level: 106.0
+      entering_level: 106.0
+      rescaled_weights: {A: 0.48, B: 0.32, C: 0.2}
+      weight_sum: 1.0
+      route_level_before: 106.0
+      route_level_after: 106.0
+      wrong_answer_if_entered_at_100: 104.8
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ANNUAL LINKING — spec §K
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - id: G-10
+    name: Annual re-referencing by linking factor
+    spec_ref: "§K.2"
+    invariant: null
+    given:
+      mean_level_old_reference_year: 100.0
+      mean_level_new_reference_year: 125.0
+      old_series_value_at_t: 108.0
+    hand_working: |
+      LF = mean(new reference year) / mean(old reference year) = 125 / 100 = 1.25
+      I_linked(t) = I_old(t) x LF = 108.0 x 1.25 = 135.0
+
+      This is a LINK, not a revision (§R.2): applied forward from a stated date,
+      creating a new vintage. The prior vintage stays retrievable — a user who
+      cited 108.0 can still reproduce it.
+    expected:
+      linking_factor: 1.25
+      linked_value: 135.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DETERMINISM — spec §L.2, §P
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - id: G-13
+    name: Deterministic reproduction and order independence
+    spec_ref: "§L.2, §P.1, §P.2"
+    invariant: "INV-5, INV-9"
+    given:
+      version_vector:
+        data_snapshot_id: "sha256:0000000000000000000000000000000000000000000000000000000000000001"
+        methodology_version: "2.0"
+        basket_version: "2026-Q3"
+        weight_version: "dgca-2026-09"
+        parser_version: "2.4"
+        model_version: null        # N/A for APIx-L — INV-12
+        code_version: "7f3a91c"
+      cells_in_order_A: [c1, c2, c3]
+      cells_in_order_B: [c3, c1, c2]
+    hand_working: |
+      Both orderings must produce a bit-identical national level, because the
+      aggregation is a weighted sum over an explicitly sorted key order (§P.2).
+
+      Using G-06's inputs, both orders give 102.0.
+
+      Note this is only guaranteed because §P.2 forbids nondeterministic reduction
+      order: floating-point addition is not associative, so a parallel sum that
+      reduces in a varying order would break bit-identity even with identical
+      inputs.
+
+      INV-9 is asserted BIT FOR BIT (not at 1e-12), because it compares two runs of
+      the same computation, where any difference is a defect rather than
+      representation noise.
+    expected:
+      level_order_A: 102.0
+      level_order_B: 102.0
+      bit_identical: true
+      model_version_for_apix_l: null

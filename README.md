@@ -77,22 +77,28 @@ limitation to apologise for.
 ## Repository layout
 
 ```
-schemas/       canonical contracts — written before any collector
-ingestion/     collectors, compliance gate, snapshot store
-statistics/    deterministic, no ML imports, invariant-tested
-  elementary/    Jevons relatives, matched-item tier ladder
-  aggregation/   Young / Modified Laspeyres, weights
-  tpd/           TPD specification, estimator, splice
-  uncertainty/   cell bootstrap
-  index/         APIx assembly, publication, vintages
-analytics/     anomaly, forecasting, shock, decomposition   (reads the index)
-ai/            explanation, parser diagnosis, schema mapping (reads the index)
-api/           FastAPI, SDMX serialisers
-dashboard/     Next.js
-experiments/   six controlled scenarios, ablations
-docs/          methodology, engineering, the dossier
-tests/         architecture boundary, property and invariant tests
+src/apix/
+  schemas/       canonical contracts — written before any collector
+  ingestion/     collectors, compliance gate, snapshot store
+  statistics/    deterministic, no ML imports, invariant-tested
+    elementary/    Jevons relatives, matched-item tier ladder
+    aggregation/   Young / Modified Laspeyres, weights
+    tpd/           TPD specification, estimator, splice
+    uncertainty/   cell bootstrap
+    index/         APIx assembly, publication, vintages
+  analytics/     anomaly, forecasting, shock, decomposition   (reads the index)
+  ai/            explanation, parser diagnosis, schema mapping (reads the index)
+  api/           FastAPI, SDMX serialisers
+  experiments/   six controlled scenarios, ablations
+dashboard/       Next.js
+docs/            methodology, engineering, the dossier
+tests/           architecture boundary, property and invariant tests
 ```
+
+The dossier's section 13 tree is rooted at `apix/`, so those layers are the
+contents of the `apix` **package**. A `src/` prefix makes that literal and stops
+`statistics/` shadowing Python's standard-library module — see
+[ADR-0061](artifacts/decisions/ADR-0061-statistics-package-layout.md).
 
 The AgentOS framework tree (`runtime/`, `agents/`, `standards/`, `workflows/`,
 `checklists/`, `templates/`, `profiles/`, `validation/`, `tools/scripts/`) is
