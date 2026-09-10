@@ -273,3 +273,64 @@ def test_d3_an_empty_side_is_not_an_error() -> None:
         now, [], cell_key_for(now[0]), Tier.TIER_1, source_precedence=PRECEDENCE
     )
     assert result.pairs == ()
+
+
+# ---------------------------------------------------------------------------
+# T-1 — the telescoping identity, numerically
+# ---------------------------------------------------------------------------
+
+#: Spec Q.1. Invariants are exact in real arithmetic and evaluated in binary
+#: floating point after the log transform, so agreement is asserted within this
+#: tolerance rather than bit-for-bit.
+TOLERANCE = 1.0e-12
+
+
+def test_t1_stable_band_membership_telescopes_within_tolerance() -> None:
+    """Spec B.2.3. The justification for the geometric mean, asserted at last.
+
+    With the same flight set in both periods:
+
+        GM(p_t) / GM(p_t-7)  ==  GM( p_A,t/p_A,t-7 , p_B,t/p_B,t-7 , ... )
+
+    This is what makes the two-stage Tier-2 construction a geometric mean of
+    matched **flight-level** relatives rather than a unit-value ratio. It is the
+    whole reason the geometric mean was chosen over the arithmetic mean or the
+    median, and until now nothing verified it.
+
+    **Exact in real arithmetic, equal within the specified numerical tolerance in
+    IEEE 754.** The two sides group their sums differently, so they land a few
+    ulp apart — measured at ~6.7e-16 here, six orders inside spec Q.1's 1e-12.
+    Bit identity is *not* claimed and must not be asserted.
+    """
+    prior = [Decimal("5000"), Decimal("6000"), Decimal("7000")]
+    current = [Decimal("5100"), Decimal("6120"), Decimal("7350")]
+
+    band_ratio = band_price(current) / band_price(prior)
+
+    log_sum = sum(math.log(float(c) / float(p)) for p, c in zip(prior, current, strict=True))
+    gm_of_relatives = math.exp(log_sum / len(prior))
+
+    assert band_ratio == pytest.approx(gm_of_relatives, abs=TOLERANCE)
+    assert abs(band_ratio - gm_of_relatives) < TOLERANCE
+
+
+def test_t1_the_identity_fails_when_membership_changes() -> None:
+    """The other side of the property: with A B C -> A B D it must not hold.
+
+    Not a formality. If the two sides agreed here as well, the diagnostic that
+    distinguishes a matched-model relative from a unit-value ratio would be
+    measuring nothing.
+    """
+    prior_fares = {"A": Decimal("5000"), "B": Decimal("6000"), "C": Decimal("7000")}
+    current_fares = {"A": Decimal("5100"), "B": Decimal("6120"), "D": Decimal("4000")}
+
+    band_ratio = band_price(list(current_fares.values())) / band_price(list(prior_fares.values()))
+
+    shared = sorted(set(prior_fares) & set(current_fares))
+    log_sum = sum(math.log(float(current_fares[k]) / float(prior_fares[k])) for k in shared)
+    gm_of_matched = math.exp(log_sum / len(shared))
+
+    assert abs(band_ratio - gm_of_matched) > 0.01, (
+        "a membership change must move the band ratio away from the matched-model "
+        "relative; that gap is the composition component band_overlap exists to flag"
+    )

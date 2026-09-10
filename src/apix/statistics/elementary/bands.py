@@ -21,12 +21,28 @@ same flight set in both periods, the band log-relative is
 
     ln p(b,t) - ln p(b,t-7) = (1/n) * sum_j [ ln p(j,t) - ln p(j,t-7) ]
 
-so the cell Jevons **telescopes exactly into a geometric mean of matched
-flight-level relatives**, equally weighted per band, and reduces to the Tier-1
-Jevons when every band holds one flight. No other central-tendency measure has
-that property: the arithmetic mean breaks the identity, and the median is
-discontinuous in band membership and equals the arithmetic mean at n = 2.
+so the cell Jevons **telescopes into a geometric mean of matched flight-level
+relatives**, equally weighted per band, and reduces to the Tier-1 Jevons when
+every band holds one flight.
+
+The identity is **exact in real arithmetic and equal within spec Q.1's 1e-12
+tolerance in IEEE 754** — the two sides group their sums differently and land a
+few ulp apart (~7e-16 measured). Bit identity is *not* claimed and must not be
+asserted; ``tests/test_redteam_regressions.py`` pins the tolerance instead.
+
+No other central-tendency measure has that property: the arithmetic mean
+breaks the identity, and the median is discontinuous in band membership and
+equals the arithmetic mean at n = 2.
 Robustness is already supplied one level up by spec D.7.
+
+**band_overlap measures constituent flight identities, not band recurrence.**
+Whether the Tier-2 *band itself* recurs is already answered by whether the item
+matched at all — an unmatched band produces no diagnostics. ``band_overlap``
+answers the different question of how much of the band's *flight membership*
+carried over, and the two can diverge completely: a band whose every flight is
+renumbered while the count holds gives ``membership_delta = 0`` and
+``overlap = 0.0`` simultaneously. The field name is the one the approved
+specification uses and is not changed here.
 
 **The honest limitation.** When band membership *differs* between periods — which
 is why the pair is at Tier 2 — the two band prices are computed over different
