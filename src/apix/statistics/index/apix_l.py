@@ -131,6 +131,7 @@ def calculate_apix_l(
     collection_date: date,
     *,
     route_tiers: Mapping[str, Tier] | None = None,
+    cell_tiers: Mapping[str, Tier] | None = None,
     expected_cells_by_route: Mapping[str, int] | None = None,
 ) -> ApixLResult:
     """Compute the national APIx-L level — spec L.1.
@@ -146,8 +147,16 @@ def calculate_apix_l(
             including suppressed ones.
         version_vector: Spec O. Must carry ``model_version`` N/A.
         collection_date: The period *t*.
-        route_tiers: Matched-item tier per route (spec B.2), recorded per cell
-            in the version vector and used for the Tier-3 weight share.
+        route_tiers: Tier per route. Under v2.1 the tier is a property of a
+            ``(route, carrier)`` pair for cells and of the route only for parents
+            (spec B.3), so this is used for :attr:`RouteResult.tier` display and
+            as the fallback denominator when ``cell_tiers`` is not supplied.
+        cell_tiers: Tier per cell, keyed by :func:`cell_id`. **Preferred.**
+            Tier shares are weight-weighted over cells when this is given, which
+            is the only correct reading once a route can hold Tier-1 and Tier-2
+            cells at once. Falling back to ``route_tiers`` attributes a whole
+            route's weight to a single tier and overstates whichever tier the
+            route was labelled with.
         expected_cells_by_route: Expected cell count per route, the denominator
             of route coverage (spec I). Defaults to the observed count, which
             makes coverage optimistic — supply it in production.
@@ -209,7 +218,15 @@ def calculate_apix_l(
     carried = sum(1 for s in all_states if s.status is CellStatus.CARRIED)
     imputation_rate = carried / len(all_states) if all_states else 0.0
 
-    tier3_share = _tier3_weight_share(route_weights, tiers)
+    tier_shares = _tier_weight_shares(
+        all_states_for_tiers=cell_states,
+        cell_weights=cell_weights,
+        route_weights=route_weights,
+        cell_tiers=cell_tiers,
+        route_tiers=tiers,
+    )
+    tier3_share = tier_shares.get(Tier.TIER_3, 0.0)
+    status_shares = _status_weight_shares(cell_states, cell_weights, route_weights)
 
     if not live_levels:
         return ApixLResult(
@@ -225,6 +242,10 @@ def calculate_apix_l(
                 tier3_weight_share=tier3_share,
                 imputation_rate=imputation_rate,
                 route_coverage=0.0,
+                held_out_weight_share=status_shares.get(CellStatus.HELD_OUT, 0.0),
+                carried_weight_share=status_shares.get(CellStatus.CARRIED, 0.0),
+                tier1_weight_share=tier_shares.get(Tier.TIER_1, 0.0),
+                tier2_weight_share=tier_shares.get(Tier.TIER_2, 0.0),
             ),
             published=False,
             suppression_reason=(
@@ -266,21 +287,93 @@ def calculate_apix_l(
             imputation_rate=imputation_rate,
             route_coverage=len(live_levels) / len(route_results) if route_results else 0.0,
             caveats=tuple(caveats),
+            held_out_weight_share=status_shares.get(CellStatus.HELD_OUT, 0.0),
+            carried_weight_share=status_shares.get(CellStatus.CARRIED, 0.0),
+            tier1_weight_share=tier_shares.get(Tier.TIER_1, 0.0),
+            tier2_weight_share=tier_shares.get(Tier.TIER_2, 0.0),
         ),
         renormalised_route_weights=renormalised,
         published=True,
     )
 
 
-def _tier3_weight_share(route_weights: Mapping[str, float], tiers: Mapping[str, Tier]) -> float:
-    """Share of total weight on Tier-3 (declared unit value) routes — spec I.
+def _cell_total_weight(
+    state: CellState,
+    cell_weights: Mapping[str, float],
+    route_weights: Mapping[str, float],
+) -> float:
+    """A cell's share of national weight: ``w[r] * v[c|r]``."""
+    return route_weights.get(state.cell.route, 0.0) * cell_weights.get(cell_id(state.cell), 0.0)
 
-    Above 25% the headline carries the unit-value caveat. Tier 3 is never used
-    silently (spec B.2), and this is the metric that makes that true.
+
+def _tier_weight_shares(
+    *,
+    all_states_for_tiers: Sequence[CellState],
+    cell_weights: Mapping[str, float],
+    route_weights: Mapping[str, float],
+    cell_tiers: Mapping[str, Tier] | None,
+    route_tiers: Mapping[str, Tier],
+) -> dict[Tier, float]:
+    """Weight share per tier — spec I.
+
+    Above ``max_tier3_weight`` (25%) the headline carries the unit-value caveat.
+    Tier 3 is never used silently (spec B.2), and this is the metric that makes
+    that true.
+
+    Computed over **cells** whenever ``cell_tiers`` is supplied, because under
+    v2.1 the tier is a property of a ``(route, carrier)`` pair and one route can
+    hold Tier-1 and Tier-2 cells simultaneously (spec B.3). Attributing a whole
+    route's weight to a single tier — the v2.0 reading — lets a route-level label
+    leak onto carrier cells that do not share it, in either direction.
+
+    The route-level fallback is retained for callers that have no cell tiers, and
+    is documented as the coarser answer it is.
     """
-    ordered = sorted(route_weights)
-    total = sum(route_weights[r] for r in ordered)
+    if cell_tiers is not None:
+        ordered = sorted(all_states_for_tiers, key=lambda s: s.cell.sort_key)
+        total = sum(_cell_total_weight(s, cell_weights, route_weights) for s in ordered)
+        if total <= 0:
+            return {}
+        shares: dict[Tier, float] = {}
+        for state in ordered:
+            tier = cell_tiers.get(cell_id(state.cell))
+            if tier is None:
+                continue
+            weight = _cell_total_weight(state, cell_weights, route_weights)
+            shares[tier] = shares.get(tier, 0.0) + weight / total
+        return shares
+
+    ordered_routes = sorted(route_weights)
+    total = sum(route_weights[r] for r in ordered_routes)
     if total <= 0:
-        return 0.0
-    tier3 = sum(route_weights[r] for r in ordered if tiers.get(r) is Tier.TIER_3)
-    return tier3 / total
+        return {}
+    shares = {}
+    for route in ordered_routes:
+        tier = route_tiers.get(route)
+        if tier is None:
+            continue
+        shares[tier] = shares.get(tier, 0.0) + route_weights[route] / total
+    return shares
+
+
+def _status_weight_shares(
+    states: Sequence[CellState],
+    cell_weights: Mapping[str, float],
+    route_weights: Mapping[str, float],
+) -> dict[CellStatus, float]:
+    """Weight share per publication status — spec I, E.7.4.
+
+    ``HELD_OUT`` is reported separately from ``SUPPRESSED`` because they are
+    different quality events: a suppressed cell was live and breached a
+    threshold, a held-out cell was never live. Both have their weight
+    renormalised away, but conflating them would hide which of the two happened.
+    """
+    ordered = sorted(states, key=lambda s: s.cell.sort_key)
+    total = sum(_cell_total_weight(s, cell_weights, route_weights) for s in ordered)
+    if total <= 0:
+        return {}
+    shares: dict[CellStatus, float] = {}
+    for state in ordered:
+        weight = _cell_total_weight(state, cell_weights, route_weights)
+        shares[state.status] = shares.get(state.status, 0.0) + weight / total
+    return shares
