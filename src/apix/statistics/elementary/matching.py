@@ -225,12 +225,24 @@ def _price_and_ids(members: Sequence[Observation], tier: Tier) -> tuple[float, D
                 f"non-positive fare reached matching for observation {obs.observation_id}; "
                 "admissibility (spec A.6) must run first"
             )
-    ids = "|".join(o.observation_id for o in ordered)
-
     if tier is Tier.TIER_1:
-        return math.log(float(ordered[0].payable_fare)), ordered[0].payable_fare, ids
+        # Provenance names the observation that actually supplied the fare, and
+        # only that one. Joining every id here while returning ordered[0]'s fare
+        # made the audit trail claim contributors that had not contributed --
+        # reachable whenever one flight is listed twice by one source in one
+        # period, such as a mid-collection retiming.
+        #
+        # The non-selected observation is not recorded as an ExcludedObservation
+        # because no ExclusionReason covers "not the canonical observation for
+        # its item", and that enum is LOCKED: extending it is a methodology
+        # change. Raised for the methodology owner rather than resolved here.
+        chosen = ordered[0]
+        return math.log(float(chosen.payable_fare)), chosen.payable_fare, chosen.observation_id
 
+    # A Tier-2 band price genuinely is composed of every member, so naming all of
+    # them is truthful here.
     log_price = band_log_price([o.payable_fare for o in ordered])
+    ids = "|".join(o.observation_id for o in ordered)
     return log_price, Decimal(f"{math.exp(log_price):.4f}"), ids
 
 

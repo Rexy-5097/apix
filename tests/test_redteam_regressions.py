@@ -150,3 +150,63 @@ def test_d1_a_weight_of_exactly_zero_is_still_a_legitimate_value() -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# D-2 — Tier-1 provenance must name only the observation that contributed
+# ---------------------------------------------------------------------------
+
+
+def test_d2_tier1_provenance_names_only_the_contributing_observation() -> None:
+    """Spec A.6. The audit trail must not claim contributors that did not contribute.
+
+    **What the defect did.** ``_price_and_ids`` joined *every* observation id for
+    the item while returning only ``ordered[0]``'s fare. Two observations of one
+    flight — a mid-collection retiming, or a source listing the number twice —
+    produced ``price_t = 5100`` alongside ``observation_id_t = "n1|n2"``. The
+    audit trail asserted that a 9999 quote contributed to a price computed
+    without it.
+
+    Option A of the review was taken: record only the contributing observation.
+    Option B — recording the loser as an ``ExcludedObservation`` — would require
+    a new ``ExclusionReason`` member, and that enum is **LOCKED**: adding to it
+    is a methodology change, which this remediation is not permitted to make.
+
+    Price-selection precedence is deliberately unchanged. Only the provenance is
+    corrected.
+    """
+    prior = [ob(MONDAY - timedelta(days=7), "101", "5000", dep=time(6, 0), oid="p1")]
+    now = [
+        ob(MONDAY, "101", "5100", dep=time(6, 0), oid="n1"),
+        ob(MONDAY, "101", "9999", dep=time(6, 30), oid="n2"),
+    ]
+
+    result = build_matched_set(
+        now, prior, cell_key_for(now[0]), Tier.TIER_1, source_precedence=PRECEDENCE
+    )
+    assert len(result.pairs) == 1
+    pair = result.pairs[0]
+
+    assert pair.price_t == Decimal("5100"), "selection precedence unchanged"
+    assert pair.observation_id_t == "n1", "provenance names the observation actually used"
+    assert "n2" not in pair.observation_id_t, "a non-contributing observation must not be claimed"
+
+
+def test_d2_tier2_provenance_still_names_every_band_member() -> None:
+    """The Tier-2 band price genuinely is composed of several observations.
+
+    Joining ids is truthful there and must not be collateral damage of the D-2
+    fix: every flight in the band contributes to the geometric mean.
+    """
+    prior = [
+        ob(MONDAY - timedelta(days=7), "101", "5000", dep=time(6, 0), oid="p1"),
+        ob(MONDAY - timedelta(days=7), "103", "6000", dep=time(7, 0), oid="p2"),
+    ]
+    now = [
+        ob(MONDAY, "101", "5100", dep=time(6, 0), oid="n1"),
+        ob(MONDAY, "103", "6120", dep=time(7, 0), oid="n2"),
+    ]
+
+    result = build_matched_set(
+        now, prior, cell_key_for(now[0]), Tier.TIER_2, source_precedence=PRECEDENCE
+    )
+    assert len(result.pairs) == 1
+    assert result.pairs[0].observation_id_t == "n1|n2"
