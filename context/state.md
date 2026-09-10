@@ -10,10 +10,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Date** | 2026-09-08 |
-| **Phase** | Checkpoint 2 — deterministic statistical core |
-| **Health** | 🟢 GREEN — Checkpoints 0 and 1A merged; Checkpoint 2 PR open |
-| **Next Milestone** | CHECKPOINT 3 — live collection vertical slice |
+| **Date** | 2026-09-10 |
+| **Phase** | Checkpoint 2E — v2.1 freeze and the AMB-7 publication layer |
+| **Health** | 🟡 AMBER — Checkpoints 0, 1A, 2, 2C merged. `methodology_version 2.1` is FROZEN and in force. **AMB-8 and AMB-9 block the production pipeline** and cannot be closed in code |
+| **Methodology** | `2.1` — [`apix_formula_spec_v2_1.md`](../docs/methodology/apix_formula_spec_v2_1.md), frozen 2026-09-10 ([ADR-0063](../artifacts/decisions/ADR-0063-freeze-methodology-v2-1.md)) |
+| **Next Milestone** | Owner rulings on AMB-8 and AMB-9, then the production pipeline |
 | **AgentOS profile** | `flagship` — 9 standards, 11 agents, 8 quality gates |
 | **AgentOS grade** | 93/100 (upstream baseline; see below) |
 
@@ -25,16 +26,33 @@
 |------|--------|-------|-----------|----------|
 | CHECKPOINT 0 bootstrap | `DONE` | Rexy-5097 | — | — |
 | CHECKPOINT 1A methodology freeze | `DONE` | Rexy-5097 | — | — |
-| Deterministic APIx-L core | `IN_REVIEW` | Rexy-5097 | — | High |
-| Review Checkpoint 2 PR | `PENDING` | slazyverse, Basant-creator | — | High |
-| TPD estimator | `NOT_STARTED` | Rexy-5097 | Checkpoint 2 merge | — |
-| Bootstrap / uncertainty | `NOT_STARTED` | Rexy-5097 | Checkpoint 2 merge | — |
+| Deterministic APIx-L core (PR #3) | `DONE` | Rexy-5097 | — | — |
+| AMB-1 resolution, methodology v2.1 (PR #4) | `DONE` | Rexy-5097 | — | — |
+| v2.1 implementation (PR #5) | `DONE` | Rexy-5097 | — | — |
+| CHECKPOINT 2E — v2.1 freeze + AMB-7 layer | `IN_REVIEW` | Rexy-5097 | — | High |
+| **Rule on AMB-8 — `expected_cells`** | `OPEN` | Rexy-5097 (methodology) | — | **BLOCKER** |
+| **Rule on AMB-9 — carrier allocation of `v[c\|r]`** | `OPEN` | Rexy-5097 (methodology) | — | **BLOCKER** |
+| Production Observation→ApixLResult pipeline | `NOT_STARTED` | Rexy-5097 | AMB-8, AMB-9 | High |
+| TPD estimator | `NOT_STARTED` | Rexy-5097 | — (independent workstream) | — |
+| Bootstrap / uncertainty | `NOT_STARTED` | Rexy-5097 | pipeline | — |
 
 ---
 
 ## Blockers
 
-None.
+**Two, and neither is an engineering blocker.** Both are methodology questions
+the frozen specification does not answer, both change published values, and §S
+forbids resolving either by choosing a plausible value.
+
+| ID | Question | Why it blocks |
+|---|---|---|
+| **AMB-8** | What counts as an `expected_cell` in `min_route_coverage = 60%`? | Gates every route on every date. Undefined, so route suppression — and therefore the national level — is undetermined |
+| **AMB-9** | How is `v[c\|r]` allocated across carriers, given §G.3 has no carrier term? | No weight vector can be constructed; `renormalise_over_live_set` raises on any live cell without a weight |
+
+Both are held at the code boundary rather than defaulted: `within_route_weights`
+raises, and any output relying on the observed-count coverage denominator carries
+a caveat naming AMB-8. See
+[`OPEN-AMBIGUITIES-checkpoint-2.md`](../docs/methodology/OPEN-AMBIGUITIES-checkpoint-2.md).
 
 All three GitHub identities are authenticated and API-verified:
 
