@@ -1,0 +1,637 @@
+# APIx source registry
+#
+# The artifact context/tech_stack.md names `registry.yaml` and
+# src/apix/ingestion/README.md describes as "the source registry, recording what
+# is committed for the prototype and what is DEFERRED RATHER THAN SILENTLY
+# DROPPED". It lives at /source_registry/ because .github/CODEOWNERS reserves
+# that path to @slazyverse, the ingestion, compliance and sources owner.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHAT THIS FILE IS, AND WHAT IT IS NOT
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# It is a record of EVIDENCE, with the date the evidence was seen.
+#
+# It is NOT legal advice and NOT an authorisation to collect. No entry below
+# authorises anything. `robots.txt` is a crawling directive, not a licence:
+# a path that robots.txt does not disallow may still be governed by terms that
+# prohibit automated collection. The converse also holds — a disallowed path is
+# a stop signal under this project's own control contract regardless of what any
+# terms say.
+#
+# STATUS VOCABULARY — used for `tos_status` and `automated_collection_status`.
+# A value other than NOT_VERIFIED requires quoted text in `evidence`.
+#
+#   CLEARLY_PERMITTED        the source's own published text permits it
+#   PERMITTED_WITH_CONDITIONS  permitted subject to stated conditions
+#   UNCLEAR                  text retrieved, does not settle the question
+#   NOT_PERMITTED            the source's own published text prohibits it
+#   NOT_VERIFIED             not retrieved in this audit. THE DEFAULT.
+#
+# NOT_VERIFIED is not a soft yes. Nothing may be collected from a source whose
+# terms have not been read.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# AUDIT PROVENANCE
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# audit_date: 2026-09-10, Checkpoint 2F.
+# Method: retrieval of published robots.txt only. No fare page was requested, no
+# search was executed against any source, and no access control was tested.
+#
+# ENVIRONMENT CAVEAT, material to how these results should be read: the audit
+# host sits behind a TLS-intercepting proxy (git push to github.com failed with
+# SEC_E_UNTRUSTED_ROOT; goindigo.in returned "self signed certificate in
+# certificate chain"). Retrieved content was therefore served through an
+# intermediary. The robots.txt bodies recorded below are internally consistent
+# and site-specific, but every one of them SHOULD BE RE-RETRIEVED from an
+# un-intercepted network before it is relied on.
+#
+# Five sources could not be retrieved at all (timeout or TLS failure) and are
+# recorded as NOT_VERIFIED with the reason. A timeout is an audit outcome. It
+# was not retried with different transport, and no control was circumvented.
+
+schema_version: "1.0.0"
+audit_date: "2026-09-10"
+checkpoint: "2F"
+auditor: "@Rexy-5097"
+domain_owner: "@slazyverse"
+status: "PRE-ACQUISITION AUDIT — no source is cleared for collection"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INDEPENDENT SOURCE GROUPS — spec B.6
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# "Effective sample size is computed on independent source groups. Two
+#  aggregators reselling one inventory feed are ONE observation, not two."
+#
+# Group membership is a fact about corporate ownership and inventory supply. It
+# is NOT derivable from quotes, and two sites showing different prices in
+# different interfaces is not evidence of independence. Every group below whose
+# `independence` is UNKNOWN must be treated as potentially correlated until
+# evidence exists, and must NOT be collapsed silently in either direction.
+#
+# This blocks OQ-A2 (cross-source spread "within and across independent source
+# groups"): the spread cannot be interpreted without knowing the effective n.
+
+source_groups:
+  - group_id: carrier_direct_6e
+    members: [indigo]
+    independence: INHERENT
+    rationale: >-
+      A carrier's own portal is the origin of its own inventory. Independence
+      from other carriers is structural, not an assumption.
+
+  - group_id: carrier_direct_ai
+    members: [air_india, air_india_express]
+    independence: UNKNOWN
+    rationale: >-
+      Both are Air India group carriers and may share a distribution or
+      reservation platform. Whether their portals constitute one inventory
+      source or two is UNVERIFIED. Recorded as one provisional group because
+      spec B.6 errs toward collapsing, and over-counting effective n is the
+      error that rule exists to prevent.
+    evidence: NOT_VERIFIED
+
+  - group_id: carrier_direct_qp
+    members: [akasa_air]
+    independence: INHERENT
+
+  - group_id: carrier_direct_sg
+    members: [spicejet]
+    independence: INHERENT
+
+  - group_id: mmt_group
+    members: [makemytrip, goibibo]
+    independence: NOT_INDEPENDENT
+    rationale: >-
+      Treated as ONE source group. The dossier states it directly (p.12):
+      "Same corporate group and shared inventory. Treating them as independent
+      sources would understate correlation and inflate effective N."
+    evidence: "docs/dossier/APIx_Engineering_Dossier_v2.1.pdf p.12"
+    external_confirmation: PENDING
+    notes: >-
+      Assigned on the dossier's authority, which is the project's source of
+      truth. Independent confirmation from published corporate filings has NOT
+      been performed in this audit and should be, since the whole point of the
+      rule is that group membership is external evidence.
+
+  - group_id: yatra
+    members: [yatra]
+    independence: UNKNOWN
+    evidence: NOT_VERIFIED
+  - group_id: easemytrip
+    members: [easemytrip]
+    independence: UNKNOWN
+    evidence: NOT_VERIFIED
+  - group_id: cleartrip
+    members: [cleartrip]
+    independence: UNKNOWN
+    evidence: NOT_VERIFIED
+  - group_id: ixigo
+    members: [ixigo]
+    independence: UNKNOWN
+    evidence: NOT_VERIFIED
+    notes: >-
+      Aggregators commonly resell a shared GDS or consolidator feed. Each is
+      given its own provisional group ONLY because there is no evidence to
+      merge them, not because independence has been established. Do not report
+      an effective n over these until this is settled.
+
+  - group_id: licensed_feed
+    members: [amadeus_self_service, travelpayouts]
+    independence: UNKNOWN
+    evidence: NOT_VERIFIED
+    notes: >-
+      Both may ultimately surface GDS-sourced content that also reaches the
+      aggregators. If so they are not independent OF THE AGGREGATORS either,
+      which would collapse a large part of the frame into one group.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHANNEL C — AIRLINE PORTALS (the primary observation channel, dossier p.11)
+# ─────────────────────────────────────────────────────────────────────────────
+
+sources:
+  - source_id: indigo
+    display_name: IndiGo
+    carrier_code: 6E
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: goindigo.in
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_6e
+    robots_status: NOT_VERIFIED
+    robots_evidence: >-
+      https://www.goindigo.in/robots.txt — request timed out (60s).
+      https://goindigo.in/robots.txt — TLS failure, "self signed certificate in
+      certificate chain", attributable to the audit host's intercepting proxy
+      rather than to the source. Not retried by other means.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+    notes: >-
+      Largest domestic carrier by fleet and frequency, so its absence would
+      distort any exploratory frame more than any other single source. It is
+      also the one this audit failed to reach. Re-audit first.
+
+  - source_id: air_india
+    display_name: Air India
+    carrier_code: AI
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: airindia.com
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_ai
+    robots_status: NOT_VERIFIED
+    robots_evidence: "https://www.airindia.com/robots.txt — request timed out (60s), twice."
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+  - source_id: air_india_express
+    display_name: Air India Express
+    carrier_code: IX
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: airindiaexpress.com
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_ai
+    robots_status: DISALLOWS_REQUIRED_PATH
+    robots_evidence: |
+      https://www.airindiaexpress.com/robots.txt retrieved 2026-09-10, verbatim:
+        User-agent: *
+        Disallow: /rsm-dashboard
+        Disallow: /retro-claim
+        Disallow: /loyalty-addon-packs
+        Disallow: /tcp-terms
+        Disallow: /tcp-terms-mb
+        Disallow: /loyalty-benefits-mb
+        Disallow: /loyalty-program-mb
+        Disallow: /growtrees
+        Disallow: /growtrees-certificate
+        Disallow: /flight-availability
+        Disallow: /dam
+        Disallow: /content/dam
+        Sitemap: https://www.airindiaexpress.com/sitemap.xml
+    robots_finding: >-
+      "Disallow: /flight-availability" covers the path that returns fare and
+      availability information — the observation APIx needs. Under this
+      project's own control contract robots.txt is honoured, so this source is
+      NOT COLLECTABLE for fares by that path.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_PERMITTED
+    automated_collection_basis: robots.txt disallows the fare-availability path
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+  - source_id: akasa_air
+    display_name: Akasa Air
+    carrier_code: QP
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: akasaair.com
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_qp
+    robots_status: NO_RELEVANT_DISALLOW
+    robots_evidence: |
+      https://www.akasaair.com/robots.txt retrieved 2026-09-10, verbatim:
+        User-agent: Googlebot
+          Allow: /
+        User-agent: *
+        Allow: /
+    robots_finding: >-
+      No Disallow of any kind, and no Crawl-delay. robots.txt raises no
+      objection. It also grants nothing: it is silent on terms.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_STATED_IN_ROBOTS
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+  - source_id: spicejet
+    display_name: SpiceJet
+    carrier_code: SG
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: spicejet.com
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_sg
+    robots_status: NO_RELEVANT_DISALLOW
+    robots_evidence: |
+      https://www.spicejet.com/robots.txt retrieved 2026-09-10, verbatim
+      (tail; the file opens with a list of named agents each given an empty
+      Disallow, i.e. full access):
+        User-agent: *
+        Disallow:
+        Disallow: /cgi-bin/
+        Disallow: https://www.spicejet.com/api/v1
+        Disallow: https://www.spicejet.com/public/
+        Disallow: https://www.spicejet.com/externalBooking
+        Sitemap: https://www.spicejet.com/sitemap.xml
+    robots_finding: >-
+      The fare-search path is not disallowed. Three Disallow lines are written
+      as absolute URLs, which is non-standard — most parsers ignore them — but
+      the INTENT is legible and should be honoured: /api/v1 is off limits. That
+      matters, because an API path is exactly what a collector would otherwise
+      reach for. Read as: the rendered search page is not disallowed, the
+      underlying API is.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_STATED_IN_ROBOTS
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHANNEL D — AGGREGATOR PORTALS
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - source_id: makemytrip
+    display_name: MakeMyTrip
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: makemytrip.com
+    collection_method: NOT_DESIGNED
+    source_group: mmt_group
+    robots_status: NOT_VERIFIED
+    robots_evidence: "https://www.makemytrip.com/robots.txt — request timed out (60s), twice."
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+  - source_id: goibibo
+    display_name: Goibibo
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: goibibo.com
+    collection_method: NOT_DESIGNED
+    source_group: mmt_group
+    robots_status: NOT_VERIFIED
+    robots_evidence: "https://www.goibibo.com/robots.txt — request timed out (60s), twice."
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+    notes: >-
+      Shares group mmt_group with makemytrip. Collecting both yields ONE
+      observation for effective-n purposes (spec B.6), not two.
+
+  - source_id: yatra
+    display_name: Yatra
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: yatra.com
+    collection_method: NOT_DESIGNED
+    source_group: yatra
+    robots_status: NOT_VERIFIED
+    robots_evidence: "https://www.yatra.com/robots.txt — request timed out (60s), twice."
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+  - source_id: easemytrip
+    display_name: EaseMyTrip
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: easemytrip.com
+    collection_method: NOT_DESIGNED
+    source_group: easemytrip
+    robots_status: DISALLOWS_REQUIRED_PATH
+    robots_evidence: |
+      https://www.easemytrip.com/robots.txt retrieved 2026-09-10. Relevant lines
+      verbatim, from a single "User-Agent: *" block:
+        Disallow: /cheap_flights/
+        Disallow: /cheap-flights/
+        Disallow: /flight-search/listing*
+        Disallow: /international_airlines/
+        Disallow: /static/
+    robots_finding: >-
+      "Disallow: /flight-search/listing*" covers the flight-search results
+      listing — the page that carries the fares. NOT COLLECTABLE for fares by
+      that path under this project's control contract.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_STATED_IN_ROBOTS
+    automated_collection_status: NOT_PERMITTED
+    automated_collection_basis: robots.txt disallows the flight-search listing path
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+  - source_id: cleartrip
+    display_name: Cleartrip
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: cleartrip.com
+    collection_method: NOT_DESIGNED
+    source_group: cleartrip
+    robots_status: DISALLOWS_REQUIRED_PATH
+    robots_evidence: |
+      https://www.cleartrip.com/robots.txt retrieved 2026-09-10. Relevant lines
+      verbatim, from the "User-agent: *" block which opens with "Allow: /":
+        Disallow: /flights/search*
+        Disallow: /m/flights/search*
+        Disallow: /flights/international/search
+        Disallow: /api/
+        Disallow: /flights/itinerary/*
+        Disallow: /flights/results/itinerary/loading*
+    robots_finding: >-
+      A blanket "Allow: /" followed by an explicit "Disallow: /flights/search*"
+      on both desktop and mobile paths, plus "/api/". The general permission
+      does not survive the specific prohibition. NOT COLLECTABLE for fares.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_STATED_IN_ROBOTS
+    automated_collection_status: NOT_PERMITTED
+    automated_collection_basis: robots.txt disallows the flight-search path
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+  - source_id: ixigo
+    display_name: ixigo
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: ixigo.com
+    collection_method: NOT_DESIGNED
+    source_group: ixigo
+    robots_status: DISALLOWS_REQUIRED_PATH
+    robots_evidence: |
+      https://www.ixigo.com/robots.txt retrieved 2026-09-10. Relevant lines
+      verbatim, from the "User-agent: *" block:
+        Disallow: /search/result/
+        Disallow: /flights/search
+        Disallow: /flights/review
+        Disallow: /api/
+        Disallow: /by-air-flight/
+      The file also sets, for other agents:
+        User-agent: MSNBot
+        crawl-delay: 10
+    robots_finding: >-
+      The flight-search and results paths are disallowed for all agents. NOT
+      COLLECTABLE for fares. The only Crawl-delay in the file is scoped to
+      MSNBot and states nothing about a general cadence.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_STATED_FOR_GENERAL_AGENTS
+    rate_limit_if_stated: "crawl-delay: 10 — MSNBot only, not general"
+    automated_collection_status: NOT_PERMITTED
+    automated_collection_basis: robots.txt disallows the flight-search path
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHANNEL A — LICENSED FEEDS (supplementary and backfill; NEVER a silent
+# substitute for the observation being claimed — spec H.3, OQ-8)
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - source_id: amadeus_self_service
+    display_name: Amadeus Self-Service APIs
+    channel: LICENSED_FEED
+    source_type: AUTHORIZED_FEED
+    canonical_domain: developers.amadeus.com
+    collection_method: NOT_DESIGNED
+    source_group: licensed_feed
+    robots_status: NOT_APPLICABLE
+    robots_note: >-
+      An authorised API is governed by its licence terms, not by robots.txt.
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: CLAIMED_BUT_UNVERIFIED
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+    notes: >-
+      The dossier (p.11) describes Channel A as "Structured fares with base /
+      tax / fee ALREADY DECOMPOSED". If that holds it is the only route to the
+      spec A.4 decomposition, which no portal is known to render. It is a
+      dossier claim and was NOT confirmed against current API documentation in
+      this audit. This is exactly OQ-8: "Licensed-feed coverage of Indian
+      domestic sectors and field availability."
+      Spec H.3 constrains its use: AUTHORIZED_FEED is never silently
+      substituted for a LIVE_SCRAPE observation being claimed.
+
+  - source_id: travelpayouts
+    display_name: Travelpayouts
+    channel: LICENSED_FEED
+    source_type: AUTHORIZED_FEED
+    canonical_domain: travelpayouts.com
+    collection_method: NOT_DESIGNED
+    source_group: licensed_feed
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: NOT_VERIFIED
+    rate_limit_if_stated: NOT_VERIFIED
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-10"
+    notes: >-
+      An affiliate network. Whether its fare data is a licensed redistribution
+      of a GDS feed also reaching the aggregators is UNKNOWN and bears directly
+      on source-group independence.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHANNEL B — DECLARED TARIFF SHEETS (reference envelope, not a transacted price)
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - source_id: airline_tariff_sheets
+    display_name: Airline declared tariff sheets (DGCA direction of 13 May 2025)
+    channel: DECLARED_TARIFF
+    source_type: PUBLIC_DATASET
+    canonical_domain: MULTIPLE_CARRIER_SITES
+    collection_method: NOT_DESIGNED
+    source_group: declared_tariff
+    robots_status: NOT_VERIFIED
+    tos_status: NOT_VERIFIED
+    permitted_cadence_if_stated: MONTHLY_BY_CONSTRUCTION
+    rate_limit_if_stated: NOT_APPLICABLE
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: PARTIAL_BY_DESIGN
+    known_field_gaps: >-
+      Declares fare CATEGORIES, not transacted fares. Carries no flight-level
+      identity, no advance-purchase dimension and no availability state, so it
+      cannot supply an admissible spec A.2 observation.
+    evidence_date: "2026-09-10"
+    notes: >-
+      Per the dossier (p.5): under a DGCA direction of 13 May 2025 scheduled
+      domestic airlines publish tariff sheets conspicuously and furnish
+      route-wise tariff categories to the regulator monthly. The dossier is
+      explicit about the limit: "a declared fare category is not a transacted
+      consumer price". Useful as a reference ENVELOPE against which observed
+      fares can be sanity-checked. Never as an index observation.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REFERENCE SOURCES — not fare observations. These carry the weights and the
+# expected-cell frame, and they are what AMB-8, AMB-9, OQ-4 and OQ-8 turn on.
+# ─────────────────────────────────────────────────────────────────────────────
+
+reference_sources:
+  - reference_id: dgca_citypair_domestic_traffic
+    purpose: "Route weights w[r] — spec G.2, OQ-4"
+    publisher: "Directorate General of Civil Aviation (DGCA), Government of India"
+    availability: PUBLISHED
+    granularity: "city pair x month, passengers / freight / mail"
+    carrier_dimension: ABSENT
+    frequency: MONTHLY
+    historical_depth: "mid-2015 onwards (per an independent mirror)"
+    machine_readability: "XLSX at source; CSV via third-party mirrors"
+    access_constraints: NOT_VERIFIED
+    evidence: >-
+      DGCA digigov portal, "city pair wise monthly domestic passenger traffic
+      statistics". Structure corroborated by the independent mirror
+      github.com/Vonter/india-aviation-traffic, whose README describes the
+      domestic tables as "Monthly city-pair wise passenger, freight and mail
+      traffic" and, separately, "Monthly carrier-pair wise ... traffic", and
+      which states the source format is XLSX fetched from dgca.gov.in.
+    evidence_date: "2026-09-10"
+    resolves: "OQ-4 — appears SATISFIABLE for route weights"
+    does_not_resolve: >-
+      AMB-9. The city-pair table has NO carrier column. City-pair and carrier
+      are published as two separate, uncrossed tables, so a carrier's share OF A
+      GIVEN ROUTE cannot be read from them.
+    verification_still_required: >-
+      The DGCA page itself was reached but rendered a portal shell; the table
+      structure above rests on the mirror's README and on search metadata, not
+      on the primary file. DOWNLOAD THE PRIMARY XLSX AND CONFIRM THE COLUMNS
+      before this is treated as settled.
+
+  - reference_id: dgca_carrier_domestic_traffic
+    purpose: "Context only — national carrier shares"
+    publisher: DGCA
+    availability: PUBLISHED
+    granularity: "carrier x month, national totals"
+    route_dimension: ABSENT
+    frequency: MONTHLY
+    historical_depth: "mid-2015 onwards"
+    machine_readability: XLSX
+    evidence_date: "2026-09-10"
+    does_not_resolve: >-
+      AMB-9. A national carrier share is not a within-route share, and applying
+      one as the other would assume every carrier has identical route mix —
+      false by inspection for a network carrier versus a regional operator.
+
+  - reference_id: dgca_approved_flight_schedule
+    purpose: "Expected cells (AMB-8); carrier capacity share (AMB-9 fallback)"
+    publisher: "DGCA / Open Government Data (OGD) Platform India"
+    availability: APPEARS_PUBLISHED
+    claimed_granularity: >-
+      flight number, airline operator, aircraft type, operating frequency
+      (days of operation), origin and destination cities, scheduled arrival and
+      departure times, effective date range
+    frequency: "two seasons per year — Summer and Winter schedules"
+    historical_depth: NOT_VERIFIED
+    machine_readability: NOT_VERIFIED
+    access_constraints: >-
+      data.gov.in/resource/flight-schedule returned HTTP 403 to this audit.
+      Recorded as an access outcome. NOT circumvented, NOT retried by other
+      transport.
+    evidence: >-
+      DGCA publishes approved seasonal schedules; the Summer 2026 schedule
+      (29 Mar - 24 Oct 2026) covers nine scheduled domestic operators — Air
+      India, Air India Express, IndiGo, Akasa Air, SpiceJet, Alliance Air,
+      FLY91, Star Air, IndiaOne Air — at 23,049 weekly flights. A schedule
+      dataset with the columns above is indexed on data.gov.in and mirrored by
+      commercial aggregators; a legacy DGCA path (dgca.nic.in/dom_flt_schedule)
+      also appears in the national services portal.
+    evidence_date: "2026-09-10"
+    would_resolve: >-
+      AMB-8's denominator, IF the days-of-operation field is per-flight and
+      machine-readable. That is the single most consequential unverified fact
+      in this audit.
+    verification_still_required: >-
+      Retrieve the actual file. Confirm: (a) per-flight days-of-operation, not
+      an aggregate weekly count; (b) format and licence; (c) update cadence and
+      whether mid-season revisions are published — the Winter 2025-26 schedule
+      was curtailed mid-season, so a schedule fetched once is a snapshot, not a
+      standing truth.
+
+  - reference_id: booking_lead_time_distribution
+    purpose: "APW weights alpha — spec G.4, OQ-7"
+    availability: NOT_FOUND
+    evidence_date: "2026-09-10"
+    notes: >-
+      No published Indian domestic booking lead-time distribution was sought or
+      found in this audit. OQ-7 remains open and spec G.4's equal weights stand
+      as the declared v1 choice with a sensitivity band. Nothing here changes
+      that, and no curve may be invented.
