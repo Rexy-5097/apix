@@ -101,9 +101,22 @@ in two bands passes at Tier 1 and **fails** at Tier 2.
 
 The band price is the geometric mean of the band's admissible fares — the only
 statistic under which the cell Jevons telescopes back into a flight-level Jevons
-when membership is stable. When membership changes the ratio is a unit-value
-ratio, and `band_overlap`, `band_membership_delta` and within-band dispersion say
-so rather than absorbing it.
+when membership is stable. That identity is **exact in real arithmetic and equal
+within spec Q.1's 1e-12 tolerance numerically**; bit identity is not claimed.
+
+When membership changes the ratio is a unit-value ratio, and `band_overlap`,
+`band_membership_delta` and within-band dispersion say so rather than absorbing
+it.
+
+**`band_overlap` measures constituent flight identities, not band recurrence.**
+Whether the band item recurred is already settled by whether it matched;
+`band_overlap` answers how much of its flight membership carried over. A band
+whose flights are all renumbered while the count holds reports
+`membership_delta = 0` and `overlap = 0.0` together — the two metrics are
+orthogonal, and neither is interpretable alone.
+
+No rule currently gates on `band_overlap`: §B.2.3 requires it published, not
+enforced. Whether it should also gate is **OPEN** (extends OQ-A7).
 
 ## Source handling
 

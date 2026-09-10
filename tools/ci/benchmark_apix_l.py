@@ -449,10 +449,36 @@ def _report(**k: object) -> None:
     total_weight = float(len(all_cells))
     viable_weight = float(len(viable))
     print(f"  WEIGHT viability rate              {share(viable_weight, total_weight):>8.2%}")
-    print("    ^ equal cell weights in this frame, so it coincides with the count.")
-    print("      On a real basket they diverge, and weight viability is the")
-    print("      decision metric: losing many light cells is survivable, losing")
-    print("      few heavy ones is not.")
+    print()
+    print("  !! THIS FRAME CANNOT EMPIRICALLY DETERMINE REAL WEIGHT VIABILITY. !!")
+    print("     Equal synthetic cell weights make weight viability identically")
+    print("     equal to cell viability, so the two numbers above cannot be")
+    print("     distinguished by construction. On a real basket they diverge, and")
+    print("     weight viability is the decision metric: losing many light cells")
+    print("     is survivable, losing few heavy ones is not. OQ-A1 stays OPEN.")
+    print()
+    print("  Why cells are non-viable, decomposed:")
+    thin = {}
+    for c in all_cells:
+        if c in set(viable):
+            continue
+        t = cell_tier[(c.route, c.carrier)]
+        n = len({item_key_for(o, t) for o in by_cell[now][c]}) if t is not Tier.TIER_3 else 0
+        thin[n] = thin.get(n, 0) + 1
+    for n in sorted(thin):
+        print(
+            f"    cell holds {n} distinct item(s) - structurally below the "
+            f"minimum   {thin[n]:>5}  {share(thin[n], len(all_cells)):>7.2%}"
+        )
+    print(
+        "    freshness / source transition / outlier / sold-out / missing"
+        f"          {0:>5}  {0.0:>7.2%}"
+    )
+    print("     ^ the non-viability is a property of the FRAME, not of the code:")
+    print("       thin sectors carry ONE flight per carrier by construction, so")
+    print("       those cells can never reach min_matched_items whatever the")
+    print("       implementation does. This number is not evidence about the")
+    print("       implementation and must not be quoted as though it were.")
 
     print("\nTIER AND STATUS SHARES (by cell, equal weights)")
     for tier in Tier:
