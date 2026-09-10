@@ -3,6 +3,16 @@
 > **Status:** FROZEN for methodology_version `2.0` · **Owner:** @Rexy-5097
 > **Date frozen:** 2026-09-08 · **Checkpoint:** 1A
 > **Authority:** derived from `docs/dossier/APIx_Engineering_Dossier_v2.1.pdf`
+>
+> **AMENDED — read this first.** `methodology_version` **2.1** is in force. Its
+> delta is [`apix_formula_spec_v2_1.md`](apix_formula_spec_v2_1.md), FROZEN
+> 2026-09-10, which is **authoritative for every rule it names**. This document
+> remains authoritative for every rule it does not, and its text below is
+> unchanged from the 2026-09-08 freeze — the amendment is a separate file
+> precisely so that this one never has to be edited to stay true.
+>
+> Open ambiguities against both documents:
+> [OPEN-AMBIGUITIES-checkpoint-2.md](OPEN-AMBIGUITIES-checkpoint-2.md).
 
 This is the authoritative mathematical contract for APIx v1. **No developer
 should need to interpret dossier prose to implement the index.** Every symbol

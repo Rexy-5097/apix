@@ -24,7 +24,7 @@ This file is a **map, not a specification**. The contract is:
 | Document | Role |
 |---|---|
 | [`apix_formula_spec_v1.md`](../../../docs/methodology/apix_formula_spec_v1.md) | `methodology_version 2.0`. **FROZEN and immutable historical record.** Superseded in the sections named below |
-| [`apix_formula_spec_v2_1_draft.md`](../../../docs/methodology/apix_formula_spec_v2_1_draft.md) | The v2.1 amendment. **Authoritative for every rule it changes** |
+| [`apix_formula_spec_v2_1.md`](../../../docs/methodology/apix_formula_spec_v2_1.md) | The v2.1 amendment, **FROZEN and in force**. Authoritative for every rule it changes |
 | [`AMB-1-resolution.md`](../../../docs/methodology/AMB-1-resolution.md) | Why the amendment exists, with the proof |
 | [`ADR-0062`](../../../artifacts/decisions/ADR-0062-item-cell-separation.md) | The decision record |
 
