@@ -57,6 +57,7 @@ class MatchedPair:
     log_relative: float
     observation_id_t: str
     observation_id_t_minus_7: str
+    source_id: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,7 +89,7 @@ class JevonsResult:
     published statement of price stability.
     """
 
-    cell: CellKey
+    cell: CellKey | ParentKey
     collection_date: date
     relative: float | None
     matched_count: int
@@ -171,6 +172,13 @@ class QualityMetrics:
     imputation_rate: float
     route_coverage: float
     caveats: tuple[str, ...] = ()
+    # v2.1 additions. Held-out weight is reported separately from suppressed
+    # weight because they are different quality events: a suppressed cell was
+    # live and breached a threshold, a held-out cell was never live (spec E.7.4).
+    held_out_weight_share: float = 0.0
+    carried_weight_share: float = 0.0
+    tier1_weight_share: float = 0.0
+    tier2_weight_share: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,3 +198,102 @@ class ApixLResult:
     renormalised_route_weights: dict[str, float] = field(default_factory=dict)
     published: bool = True
     suppression_reason: str = ""
+
+
+# ---------------------------------------------------------------------------
+# methodology v2.1 — matching, bands, sources and the parent object
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class BandDiagnostics:
+    """Composition exposure of one Tier-2 departure band — spec B.2.3.
+
+    Published as distributions, never as means alone. Neither number is
+    interpretable without the other: a large membership change is harmless when
+    within-band dispersion is zero, and a dispersed band is stable when its
+    membership does not move.
+    """
+
+    band: int
+    n_t: int
+    n_t_minus_7: int
+    membership_delta: int
+    overlap: float
+    dispersion_t: float
+    dispersion_t_minus_7: float
+
+    @property
+    def telescopes(self) -> bool:
+        """True exactly when the band ratio is a pure matched-model relative.
+
+        ``overlap == 1`` means the same flight set occupies the band in both
+        periods, which is the condition under which spec D.2 telescopes into a
+        geometric mean of matched flight-level relatives.
+        """
+        return self.overlap == 1.0
+
+
+@dataclass(frozen=True, slots=True)
+class SourceTransition:
+    """An item whose selected source changed between links — spec D.8.3.
+
+    The pair is excluded from ``M(c,t)`` for exactly one link and resumes
+    automatically once the new source has two consecutive selected observations.
+    Everything needed to audit the splice is retained: no bridge adjustment is
+    computed, and no blending occurs.
+    """
+
+    item: ItemKey
+    previous_source: str
+    current_source: str
+    price_t: Decimal | None = None
+    price_t_previous_source: Decimal | None = None
+    implied_log_gap: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class MatchedSet:
+    """``M(c,t)`` and everything the matching step observed while forming it.
+
+    Deliberately not a bare tuple of pairs. Spec D.8.3 requires transitions to be
+    recorded rather than silently applied, and spec B.2.3 requires band
+    composition to be published rather than absorbed.
+    """
+
+    cell: CellKey | ParentKey
+    tier: Tier
+    collection_date: date
+    pairs: tuple[MatchedPair, ...] = ()
+    selections: tuple[tuple[ItemKey, str], ...] = ()
+    transitions: tuple[SourceTransition, ...] = ()
+    bands: tuple[BandDiagnostics, ...] = ()
+    unmatched_no_common_source: tuple[ItemKey, ...] = ()
+
+    def selection_map(self) -> dict[ItemKey, str]:
+        """Selections as a mapping, for feeding the next link's transition check."""
+        return dict(self.selections)
+
+
+@dataclass(frozen=True, slots=True)
+class ParentRelativeResult:
+    """``J(P,t)`` with the diagnostics that make its carrier mix visible — spec E.6.
+
+    The parent's relative weights each carrier in proportion to its **count of
+    matched items**, and that count drifts week to week. This is the channel
+    through which carrier-mix contamination re-enters a design that fixes carrier
+    inside computing cells, so the exposure is measured rather than asserted
+    away. ``carrier_concentration`` is the share of matched items contributed by
+    the single largest carrier; at 1.0 the parent is imputing one carrier's
+    movement to every other carrier's cell.
+
+    Whether a minimum carrier count or a concentration ceiling should become a
+    rule is OQ-A8. No threshold is invented here.
+    """
+
+    parent: ParentKey
+    tier: Tier
+    jevons: JevonsResult
+    matched_set: MatchedSet
+    carrier_count: int
+    carrier_concentration: float

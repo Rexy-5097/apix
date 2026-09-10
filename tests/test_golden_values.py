@@ -59,16 +59,24 @@ def case(case_id: str) -> dict[str, Any]:
     return CASES[case_id]
 
 
-def make_cell(flight: str = "6E101", tier: Tier = Tier.TIER_1) -> CellKey:
+def make_cell(carrier: str = "6E", tier: Tier = Tier.TIER_1) -> CellKey:
+    """A v2.1 cell key — spec B.2.1.
+
+    Migrated for methodology v2.1: the cell key is tier-invariant and holds no
+    flight identity. Call sites that previously separated cells by flight number
+    now separate them by carrier, which is the field that genuinely partitions
+    cells. **No expected numeric value in this file changes** — every golden
+    value here operates at or above the cell *level*, which the item/cell
+    separation does not touch.
+    """
+    del tier
     return CellKey(
         route="DEL-BOM",
-        tier=tier,
-        carrier="6E",
+        carrier=carrier,
+        day_of_week=2,
         apw_bucket=APWBucket.T_PLUS_7,
         fare_class=FareClass.STANDARD,
         channel=Channel.AIRLINE_DIRECT,
-        day_of_week=2,
-        flight_number=flight,
     )
 
 
@@ -84,7 +92,7 @@ def pairs_from(items: list[dict[str, Any]]) -> tuple[MatchedPair, ...]:
         p_prev = Decimal(str(item["p_t_minus_7"]))
         out.append(
             MatchedPair(
-                item=ItemKey(departure_time_local=f"{idx:02d}:00:00"),
+                item=ItemKey(tier=Tier.TIER_1, carrier="6E", flight_number=f"{idx:02d}"),
                 price_t=p_t,
                 price_t_minus_7=p_prev,
                 log_relative=math.log(float(p_t)) - math.log(float(p_prev)),
@@ -171,7 +179,7 @@ def test_production_outlier_rule_matches_golden(case_id: str) -> None:
     values = spec["given"]["log_relatives"]
     pairs = tuple(
         MatchedPair(
-            item=ItemKey(departure_time_local=f"{i:02d}:00:00"),
+            item=ItemKey(tier=Tier.TIER_1, carrier="6E", flight_number=f"{i:02d}"),
             price_t=Decimal("100.00"),
             price_t_minus_7=Decimal("100.00"),
             log_relative=v,
@@ -184,7 +192,7 @@ def test_production_outlier_rule_matches_golden(case_id: str) -> None:
     report = flag_outliers(pairs)
 
     assert math.isclose(report.mad, spec["expected"]["mad"], abs_tol=1e-12)
-    flagged_idx = sorted(int(k.departure_time_local[:2]) for k in report.flagged)
+    flagged_idx = sorted(int(k.flight_number or "-1") for k in report.flagged)
     assert flagged_idx == spec["expected"]["flagged_indices"]
     assert len(report.kept) == spec["expected"]["kept_count"]
 
@@ -216,7 +224,7 @@ def test_production_weekly_chaining_matches_golden() -> None:
         when = date(2026, 8, 18) + timedelta(days=7 * step)
         pairs = tuple(
             MatchedPair(
-                item=ItemKey(departure_time_local=f"{i:02d}:00:00"),
+                item=ItemKey(tier=Tier.TIER_1, carrier="6E", flight_number=f"{i:02d}"),
                 price_t=Decimal("100.00"),
                 price_t_minus_7=Decimal("100.00"),
                 log_relative=math.log(relative),
@@ -348,7 +356,7 @@ def test_production_new_cell_entry_does_not_move_the_aggregate() -> None:
     spec = case("G-09")
     before_cells = spec["given"]["before"]["cells"]
 
-    cells = {c["id"]: make_cell(flight=f"6E{c['id']}") for c in before_cells}
+    cells = {c["id"]: make_cell(carrier=f"6E{c['id']}") for c in before_cells}
     levels = {cell_id(cells[c["id"]]): c["level"] for c in before_cells}
     weights = {cell_id(cells[c["id"]]): c["weight"] for c in before_cells}
 
@@ -356,7 +364,7 @@ def test_production_new_cell_entry_does_not_move_the_aggregate() -> None:
     assert math.isclose(before_level, spec["expected"]["route_level_before"], rel_tol=REL_TOL)
 
     # The entrant takes the PARENT's level via the production chaining rule.
-    entering = make_cell(flight="6EC")
+    entering = make_cell(carrier="6EC")
     jevons = compute_jevons(entering, T, ())
     entered = advance_cell(
         ChainInputs(
@@ -419,7 +427,7 @@ def test_production_apix_l_is_order_independent_and_bit_identical() -> None:
     spec = case("G-13")
     members = case("G-06")["given"]["cells"]
 
-    cells = [make_cell(flight=f"6E{m['id']}") for m in members]
+    cells = [make_cell(carrier=f"6E{m['id']}") for m in members]
     states = [
         CellState(
             cell=c,

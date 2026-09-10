@@ -29,6 +29,7 @@ from decimal import Decimal
 import pytest
 
 from apix.schemas.enums import (
+    APWBucket,
     Availability,
     CellStatus,
     ChangePolicy,
@@ -40,6 +41,7 @@ from apix.schemas.enums import (
 )
 from apix.schemas.keys import CellKey, ItemKey, ParentKey
 from apix.schemas.observation import Entitlements, Observation
+from apix.schemas.results import CellState
 from apix.statistics.elementary.bands import band_price, hour_band
 from apix.statistics.elementary.jevons import MIN_MATCHED_ITEMS_PER_CELL, compute_jevons
 from apix.statistics.elementary.matching import (
@@ -126,6 +128,24 @@ def observe(
     )
 
 
+def item_of(obs: Observation, tier: Tier) -> ItemKey:
+    """``item_key_for`` narrowed to Tier 1/2, where an item always exists.
+
+    Tier 3 legitimately returns None (it has no within-cell item identity), so
+    the production signature is ``ItemKey | None``. These fixtures assert the
+    tier they are exercising rather than silencing the union.
+    """
+    key = item_key_for(obs, tier)
+    assert key is not None, f"{tier} must have an item identity"
+    return key
+
+
+def bucket_of(obs: Observation) -> APWBucket:
+    """The APW bucket, narrowed. Every fixture observation is admissible."""
+    assert obs.apw_bucket is not None
+    return obs.apw_bucket
+
+
 def week(travel_date: date) -> date:
     """The travel date one week earlier — the same weekday by construction."""
     return travel_date - timedelta(days=7)
@@ -190,12 +210,12 @@ def test_e2e_01_three_tier1_items_in_one_cell() -> None:
         route="DEL-BOM",
         carrier="6E",
         day_of_week=now_travel.isoweekday(),
-        apw_bucket=now[0].apw_bucket,
+        apw_bucket=bucket_of(now[0]),
         fare_class=FareClass.STANDARD,
         channel=Channel.AIRLINE_DIRECT,
     )
 
-    items = {item_key_for(o, Tier.TIER_1) for o in now}
+    items = {item_of(o, Tier.TIER_1) for o in now}
     assert len(items) == 3, "three distinct flight numbers are three items"
 
     result = matched(now, prior, cell=cell)
@@ -204,8 +224,10 @@ def test_e2e_01_three_tier1_items_in_one_cell() -> None:
     jevons = compute_jevons(cell, collection_of(now_travel), result.pairs)
     assert jevons.is_defined, jevons.undefined_reason
     assert jevons.relative is not None
-    # 1.02, 1.00, 1.02 -> exp(mean(ln)) = exp(0.0396052.../3)
-    assert jevons.relative == pytest.approx(1.0132894, abs=1e-7)
+    # Ratios 1.02, 1.00, 1.02. Verified independently at 40-digit precision by
+    # two routes that share no code with the implementation: exp(mean(ln r)) and
+    # the direct cube root of the product. Both give 1.01328927940214352787...
+    assert jevons.relative == pytest.approx(1.0132892794021435, abs=1e-15)
 
 
 # ---------------------------------------------------------------------------
@@ -302,7 +324,7 @@ def test_e2e_04_carriers_are_not_pooled_in_cells() -> None:
     assert cell_key_for(air_india).carrier == "AI"
 
     # Same flight number, different carrier: distinct items too.
-    assert item_key_for(indigo, Tier.TIER_1) != item_key_for(air_india, Tier.TIER_1)
+    assert item_of(indigo, Tier.TIER_1) != item_of(air_india, Tier.TIER_1)
 
     # ...but one parent, which is what makes the carry rule able to help.
     assert parent_key_for(indigo) == parent_key_for(air_india)
@@ -373,7 +395,7 @@ def test_e2e_06_tier2_band_item_and_constructed_price() -> None:
         for f, d, _, p1 in layout
     ]
 
-    items = {item_key_for(o, Tier.TIER_2) for o in now}
+    items = {item_of(o, Tier.TIER_2) for o in now}
     assert len(items) == 3, "four flights occupy three bands -> three items"
     assert all(i.departure_hour_band is not None and i.flight_number is None for i in items)
     assert hour_band(time(6, 0)) == hour_band(time(7, 30)) == 2
@@ -437,8 +459,12 @@ def test_e2e_06c_band_membership_change_is_exposed_not_hidden() -> None:
     and the diagnostics say so.
     """
     prior = [
-        observe(travel_date=week(MONDAY_TRAVEL), flight_number="101", departure=time(6, 0), fare="5000"),
-        observe(travel_date=week(MONDAY_TRAVEL), flight_number="103", departure=time(7, 0), fare="6000"),
+        observe(
+            travel_date=week(MONDAY_TRAVEL), flight_number="101", departure=time(6, 0), fare="5000"
+        ),
+        observe(
+            travel_date=week(MONDAY_TRAVEL), flight_number="103", departure=time(7, 0), fare="6000"
+        ),
     ]
     now = [
         observe(travel_date=MONDAY_TRAVEL, flight_number="101", departure=time(6, 0), fare="5000"),
@@ -501,7 +527,9 @@ def test_e2e_09_new_flight_is_a_new_item_not_a_new_cell() -> None:
     """
     flights = ["101", "205", "317"]
     prior = [
-        observe(travel_date=week(MONDAY_TRAVEL), flight_number=f, departure=time(6 + i, 0), fare="5000")
+        observe(
+            travel_date=week(MONDAY_TRAVEL), flight_number=f, departure=time(6 + i, 0), fare="5000"
+        )
         for i, f in enumerate(flights)
     ]
     now = [
@@ -585,9 +613,7 @@ def test_e2e_10_new_cell_enters_at_parent_level_never_100() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _state(cell: CellKey, level: float | None, status: CellStatus) -> object:
-    from apix.schemas.results import CellState
-
+def _state(cell: CellKey, level: float | None, status: CellStatus) -> CellState:
     return CellState(
         cell=cell,
         collection_date=collection_of(MONDAY_TRAVEL),
@@ -651,14 +677,22 @@ def test_e2e_11c_parent_relative_pools_carriers_from_raw_observations() -> None:
     child still contributes its items.
     """
     prior_travel, now_travel = week(MONDAY_TRAVEL), MONDAY_TRAVEL
-    spec = [("6E", "101", "5000", "5100"), ("AI", "201", "6000", "6120"), ("SG", "301", "7000", "7000")]
+    spec = [
+        ("6E", "101", "5000", "5100"),
+        ("AI", "201", "6000", "6120"),
+        ("SG", "301", "7000", "7000"),
+    ]
 
     prior = [
-        observe(travel_date=prior_travel, carrier=c, flight_number=f, fare=p0, departure=time(6 + i, 0))
+        observe(
+            travel_date=prior_travel, carrier=c, flight_number=f, fare=p0, departure=time(6 + i, 0)
+        )
         for i, (c, f, p0, _) in enumerate(spec)
     ]
     now = [
-        observe(travel_date=now_travel, carrier=c, flight_number=f, fare=p1, departure=time(6 + i, 0))
+        observe(
+            travel_date=now_travel, carrier=c, flight_number=f, fare=p1, departure=time(6 + i, 0)
+        )
         for i, (c, f, _, p1) in enumerate(spec)
     ]
 
@@ -666,7 +700,7 @@ def test_e2e_11c_parent_relative_pools_carriers_from_raw_observations() -> None:
     assert parent == ParentKey(
         route="DEL-BOM",
         day_of_week=now_travel.isoweekday(),
-        apw_bucket=now[0].apw_bucket,
+        apw_bucket=bucket_of(now[0]),
         fare_class=FareClass.STANDARD,
         channel=Channel.AIRLINE_DIRECT,
     )
@@ -691,17 +725,19 @@ def test_e2e_12_source_transition_excludes_exactly_one_link() -> None:
     blending, no last-write-wins.
     """
     prior_travel, now_travel = week(MONDAY_TRAVEL), MONDAY_TRAVEL
-    agg = {"channel": Channel.AGGREGATOR}
-
     # Previous link selected "mmt" for this item.
     prior = [
-        observe(travel_date=prior_travel, fare="6050", source_id="mmt", **agg),
-        observe(travel_date=prior_travel, fare="6030", source_id="ixigo", **agg),
+        observe(travel_date=prior_travel, fare="6050", source_id="mmt", channel=Channel.AGGREGATOR),
+        observe(
+            travel_date=prior_travel, fare="6030", source_id="ixigo", channel=Channel.AGGREGATOR
+        ),
     ]
     # mmt has disappeared at t; only ixigo remains.
-    now = [observe(travel_date=now_travel, fare="6100", source_id="ixigo", **agg)]
+    now = [
+        observe(travel_date=now_travel, fare="6100", source_id="ixigo", channel=Channel.AGGREGATOR)
+    ]
 
-    item = item_key_for(now[0], Tier.TIER_1)
+    item = item_of(now[0], Tier.TIER_1)
     result = matched(now, prior, previous_selection={item: "mmt"})
 
     assert result.pairs == (), "the transitioning pair is excluded from M"
@@ -725,14 +761,27 @@ def test_e2e_12b_source_selection_is_price_blind_and_paired() -> None:
     A cross-source ratio is impossible by construction: the rule takes the
     highest-ranked source present in **both** periods.
     """
-    agg = {"channel": Channel.AGGREGATOR}
     prior = [
-        observe(travel_date=week(MONDAY_TRAVEL), fare="9999", source_id="mmt", **agg),
-        observe(travel_date=week(MONDAY_TRAVEL), fare="1000", source_id="ixigo", **agg),
+        observe(
+            travel_date=week(MONDAY_TRAVEL),
+            fare="9999",
+            source_id="mmt",
+            channel=Channel.AGGREGATOR,
+        ),
+        observe(
+            travel_date=week(MONDAY_TRAVEL),
+            fare="1000",
+            source_id="ixigo",
+            channel=Channel.AGGREGATOR,
+        ),
     ]
     now = [
-        observe(travel_date=MONDAY_TRAVEL, fare="9999", source_id="mmt", **agg),
-        observe(travel_date=MONDAY_TRAVEL, fare="1000", source_id="ixigo", **agg),
+        observe(
+            travel_date=MONDAY_TRAVEL, fare="9999", source_id="mmt", channel=Channel.AGGREGATOR
+        ),
+        observe(
+            travel_date=MONDAY_TRAVEL, fare="1000", source_id="ixigo", channel=Channel.AGGREGATOR
+        ),
     ]
 
     result = matched(now, prior)
@@ -766,10 +815,22 @@ def test_e2e_13_tier_is_selected_per_route_and_carrier() -> None:
     ]
     # Air India renumbers most of its flights between the two weeks.
     churn = [
-        observe(travel_date=dates[0], carrier="AI", flight_number=f, departure=time(6 + i, 0), source_id="ai-direct")
+        observe(
+            travel_date=dates[0],
+            carrier="AI",
+            flight_number=f,
+            departure=time(6 + i, 0),
+            source_id="ai-direct",
+        )
         for i, f in enumerate(["201", "202", "203", "204"])
     ] + [
-        observe(travel_date=dates[1], carrier="AI", flight_number=f, departure=time(6 + i, 0), source_id="ai-direct")
+        observe(
+            travel_date=dates[1],
+            carrier="AI",
+            flight_number=f,
+            departure=time(6 + i, 0),
+            source_id="ai-direct",
+        )
         for i, f in enumerate(["201", "292", "293", "294"])
     ]
     frame = stable + churn

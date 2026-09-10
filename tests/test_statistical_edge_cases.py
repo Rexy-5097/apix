@@ -60,6 +60,7 @@ from apix.statistics.elementary.outliers import (
     MIN_ITEMS_FOR_OUTLIER_RULE,
     flag_outliers,
 )
+from apix.statistics.elementary.sources import SourcePrecedence
 from apix.statistics.index.apix_l import ApixLError, calculate_apix_l, cell_id
 from apix.statistics.index.chaining import (
     MAX_CELL_IMPUTATION,
@@ -69,33 +70,47 @@ from apix.statistics.index.chaining import (
 )
 
 T = date(2026, 9, 8)  # a Tuesday
+
+#: Spec D.8 requires a declared source rule on every matching call. These
+#: fixtures use a single source, so selection is unambiguous — but it is
+#: applied rather than bypassed, because an undeclared rule is exactly what
+#: v2.1 exists to remove.
+PRECEDENCE = SourcePrecedence(version="test-src-v1", order={})
 REL_TOL = 1.0e-12
 
 
 # ─── Builders ────────────────────────────────────────────────────────────────
 
 
-def cell(flight: str = "6E101", route: str = "DEL-BOM", tier: Tier = Tier.TIER_1) -> CellKey:
-    kwargs = {
-        "route": route,
-        "tier": tier,
-        "carrier": "6E",
-        "apw_bucket": APWBucket.T_PLUS_7,
-        "fare_class": FareClass.STANDARD,
-        "channel": Channel.AIRLINE_DIRECT,
-        "day_of_week": 2,
-    }
-    if tier is Tier.TIER_1:
-        return CellKey(**kwargs, flight_number=flight)
-    if tier is Tier.TIER_2:
-        return CellKey(**kwargs, departure_hour_band=2)
-    return CellKey(**kwargs)
+def cell(carrier: str = "6E", route: str = "DEL-BOM", tier: Tier = Tier.TIER_1) -> CellKey:
+    """A v2.1 cell key — spec B.2.1.
+
+    Migrated for methodology v2.1. The cell key is now **tier-invariant** and
+    carries no flight identity: flight number and departure band identify
+    *items*, not cells. Call sites previously discriminated cells by passing a
+    flight number, so the first argument now names the field that actually
+    discriminates cells — the **carrier**. Each call site keeps the distinctness
+    it had: what were two cells are still two cells.
+
+    ``tier`` is accepted and ignored, so call sites that name one still read
+    correctly. Tier is a property of a ``(route, carrier)`` pair recorded
+    alongside the cell, never part of its identity.
+    """
+    del tier
+    return CellKey(
+        route=route,
+        carrier=carrier,
+        day_of_week=2,
+        apw_bucket=APWBucket.T_PLUS_7,
+        fare_class=FareClass.STANDARD,
+        channel=Channel.AIRLINE_DIRECT,
+    )
 
 
 def pair(idx: int, p_prev: str, p_now: str) -> MatchedPair:
     prev, now = Decimal(p_prev), Decimal(p_now)
     return MatchedPair(
-        item=ItemKey(departure_time_local=f"{idx:02d}:00:00"),
+        item=ItemKey(tier=Tier.TIER_1, carrier="6E", flight_number=f"{idx:02d}"),
         price_t=now,
         price_t_minus_7=prev,
         log_relative=math.log(float(now)) - math.log(float(prev)),
@@ -184,7 +199,9 @@ def test_non_positive_fare_reaching_matching_raises_rather_than_producing_nan() 
     bad = obs("bad", fare="-5.00")
     good = obs("bad", fare="5000.00", collection=T - timedelta(days=7))
     with pytest.raises(ValueError, match="non-positive fare"):
-        build_matched_set([bad], [good], cell_key_for(good, Tier.TIER_1), Tier.TIER_1)
+        build_matched_set(
+            [bad], [good], cell_key_for(good), Tier.TIER_1, source_precedence=PRECEDENCE
+        )
 
 
 # ─── Empty and minimal sets ──────────────────────────────────────────────────
@@ -379,22 +396,32 @@ def test_cross_weekday_observations_do_not_match() -> None:
     assert tuesday_dep.apw_bucket is wednesday_dep.apw_bucket
     assert tuesday_dep.day_of_week != wednesday_dep.day_of_week
 
-    key_now = cell_key_for(tuesday_dep, Tier.TIER_1)
-    key_then = cell_key_for(wednesday_dep, Tier.TIER_1)
+    key_now = cell_key_for(tuesday_dep)
+    key_then = cell_key_for(wednesday_dep)
     assert key_now != key_then, "different departure weekdays must be different cells"
 
-    assert build_matched_set([tuesday_dep], [wednesday_dep], key_now, Tier.TIER_1) == ()
+    assert (
+        build_matched_set(
+            [tuesday_dep], [wednesday_dep], key_now, Tier.TIER_1, source_precedence=PRECEDENCE
+        ).pairs
+        == ()
+    )
 
 
 def test_unmatched_items_enter_neither_side() -> None:
     """Spec D.1. An item present at t but not t-7 contributes nothing — not to
     the numerator, and not as a new item at 100."""
-    now = [obs("a", dep=time(8, 30)), obs("b", dep=time(14, 0))]
-    then = [obs("c", dep=time(8, 30), collection=T - timedelta(days=7))]
-    key = cell_key_for(now[0], Tier.TIER_1)
-    matched = build_matched_set(now, then, key, Tier.TIER_1)
-    assert len(matched) == 1
-    assert matched[0].item.departure_time_local == "08:30:00"
+    # Migrated for v2.1. Under v2.0 the item was keyed by departure time, so two
+    # observations differing only in ``dep`` were two items. Under v2.1 the item
+    # is ``carrier x flight_number``, so the distinctness this test depends on
+    # must come from the flight number — otherwise all three observations would
+    # collapse into one item and the test would assert nothing.
+    now = [obs("a", flight="101", dep=time(8, 30)), obs("b", flight="205", dep=time(14, 0))]
+    then = [obs("c", flight="101", dep=time(8, 30), collection=T - timedelta(days=7))]
+    key = cell_key_for(now[0])
+    matched = build_matched_set(now, then, key, Tier.TIER_1, source_precedence=PRECEDENCE).pairs
+    assert len(matched) == 1, "flight 205 is present only at t and matches nothing"
+    assert matched[0].item.flight_number == "101"
 
 
 def test_tier_3_forms_no_matched_set() -> None:
@@ -402,8 +429,8 @@ def test_tier_3_forms_no_matched_set() -> None:
     item identity to match on."""
     now = [obs("a")]
     then = [obs("b", collection=T - timedelta(days=7))]
-    key = cell_key_for(now[0], Tier.TIER_3)
-    assert build_matched_set(now, then, key, Tier.TIER_3) == ()
+    key = cell_key_for(now[0])
+    assert build_matched_set(now, then, key, Tier.TIER_3, source_precedence=PRECEDENCE).pairs == ()
 
 
 @pytest.mark.parametrize(

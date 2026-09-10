@@ -17,7 +17,7 @@ from collections.abc import Sequence
 from datetime import date
 
 from apix.schemas.enums import ExclusionReason, UndefinedRelativeReason
-from apix.schemas.keys import CellKey
+from apix.schemas.keys import CellKey, ParentKey
 from apix.schemas.results import (
     ExcludedObservation,
     JevonsResult,
@@ -59,7 +59,7 @@ def jevons_relative(log_relatives: Sequence[float]) -> float:
 
 
 def compute_jevons(
-    cell: CellKey,
+    cell: CellKey | ParentKey,
     collection_date: date,
     candidate_pairs: Sequence[MatchedPair],
     *,
