@@ -23,6 +23,20 @@ class VersionVector:
     code_version)`` produces a bit-identical APIx-L result. Those five fields are
     the reproducibility tuple; ``parser_version`` identifies the extraction that
     produced the observations, and ``tier`` is recorded per cell.
+
+    ``source_precedence`` was added by methodology v2.1 §O: it identifies the
+    ordered source list in force (§D.8), whose
+    :attr:`~apix.statistics.elementary.sources.SourcePrecedence.version` selects
+    which quote each matched pair is priced from. It is optional on this
+    dataclass so that unit fixtures need not carry it, and **required by the
+    publication entry point** :func:`~apix.statistics.index.publication.publish`,
+    because §O.1 carries it on every published output.
+
+    It is deliberately **not** part of :meth:`reproducibility_tuple`: spec P is
+    UNCHANGED in v2.1 and names five fields. That leaves a gap — two runs whose
+    precedence lists differ can price the same snapshot differently while
+    claiming the same reproducibility tuple — which is registered as **AMB-10**
+    rather than closed here by widening a LOCKED rule.
     """
 
     data_snapshot_id: str
@@ -33,6 +47,7 @@ class VersionVector:
     code_version: str
     model_version: str | None = None
     tier: Tier | None = None
+    source_precedence: str | None = None
 
     def __post_init__(self) -> None:
         required = {
