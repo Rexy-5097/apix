@@ -44,7 +44,7 @@ from apix.schemas.enums import Tier
 from apix.schemas.keys import CellKey, ItemKey, ParentKey
 from apix.schemas.observation import Observation
 from apix.schemas.results import CellState, ParentRelativeResult
-from apix.statistics.aggregation.weights import renormalise_over_live_set
+from apix.statistics.aggregation.weights import WeightError, renormalise_over_live_set
 from apix.statistics.elementary.jevons import compute_jevons
 from apix.statistics.elementary.matching import build_matched_set, parent_key_for
 from apix.statistics.elementary.sources import SourcePrecedence
@@ -155,6 +155,11 @@ def parent_level(
     within-parent weights renormalised over that set exactly as spec F.4
     prescribes.
 
+    Raises:
+        WeightError: if a live child has no entry in ``cell_weights``. A weight of
+            exactly ``0.0`` is a legitimate value and is accepted; *absence* is
+            not (spec G.5).
+
     Returns:
         The level, or **None** when the independent-live set is empty. None is a
         real answer: it means new-cell entry is impossible this period, so a
@@ -171,11 +176,26 @@ def parent_level(
     if not live:
         return None
 
+    # A live child with no weight entry is a defect, not a weight of zero
+    # (spec G.5). Defaulting it to 0.0 silently dropped the child out of the
+    # mean and, worse, substituted a value before spec F.4's own
+    # "live members have no weight assigned" guard could ever see a missing key.
+    # Measured cost of the old behaviour: 200.0 became 150.0.
+    #
+    # Note the distinction this preserves: *absent from the map* is an error;
+    # *present with value 0.0* is a legitimate weight and still allowed through.
+    missing = sorted(_cid(state.cell) for state in live if state.cell not in cell_weights)
+    if missing:
+        raise WeightError(
+            f"live children have no weight assigned: {missing}; a missing weight "
+            "is a defect, not a value of zero (spec G.5, F.4)"
+        )
+
     # Renormalisation is keyed by the cell's deterministic id string, because
     # spec F.4's helper works over a total order and a CellKey carries enums that
     # do not define one. The ids come from sort_key, so id order and key order
     # agree (spec P.2).
-    raw = {_cid(state.cell): cell_weights.get(state.cell, 0.0) for state in live}
+    raw = {_cid(state.cell): cell_weights[state.cell] for state in live}
     if sum(raw.values()) <= 0.0:
         # Equal weighting is the only non-arbitrary fallback when the parent's
         # children carry no configured weight, and it is applied explicitly
