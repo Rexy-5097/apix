@@ -184,6 +184,28 @@ def match_coverage(matched_items: int, expected_recurring_items: int) -> float:
     return matched_items / expected_recurring_items
 
 
+def _require_single_collection_date(observations: Sequence[Observation], side: str) -> None:
+    """Each side of a matched set must come from exactly one collection date.
+
+    Spec C.2: a Monday and a Tuesday observation are never differenced against
+    each other. :func:`~apix.statistics.index.apix_l.calculate_apix_l` already
+    rejects mixed dates, but this is the layer that would actually form the wrong
+    pair, so the guard belongs here too. Taking ``min()`` and continuing — the
+    previous behaviour — silently produced pairs spanning two periods.
+
+    An empty side is not an error: zero distinct dates is not more than one, and
+    a cell with no prior-period observations is an ordinary unmatched condition.
+    """
+    dates = sorted({obs.collection_date for obs in observations})
+    if len(dates) > 1:
+        raise ValueError(
+            f"the {side} side carries more than one collection date {dates}; "
+            "differencing across periods would compare a Monday against a "
+            "Tuesday (spec C.2). Group observations by collection date before "
+            "forming a matched set."
+        )
+
+
 def _stratum_key(obs: Observation, stratum: CellKey | ParentKey) -> CellKey | ParentKey:
     return parent_key_for(obs) if isinstance(stratum, ParentKey) else cell_key_for(obs)
 
@@ -228,7 +250,7 @@ def _price_and_ids(members: Sequence[Observation], tier: Tier) -> tuple[float, D
     if tier is Tier.TIER_1:
         # Provenance names the observation that actually supplied the fare, and
         # only that one. Joining every id here while returning ordered[0]'s fare
-        # made the audit trail claim contributors that had not contributed --
+        # made the audit trail claim contributors that had not contributed —
         # reachable whenever one flight is listed twice by one source in one
         # period, such as a mid-collection retiming.
         #
@@ -281,8 +303,13 @@ def build_matched_set(
     item at 100. That is what makes a newly appearing flight a new *item* rather
     than a price change (spec D.1, J.0).
     """
+    observations_t = list(observations_t)
+    observations_t_minus_7 = list(observations_t_minus_7)
+    _require_single_collection_date(observations_t, "t")
+    _require_single_collection_date(observations_t_minus_7, "t-7")
+
     collection_dates = {o.collection_date for o in observations_t}
-    collection_date = min(collection_dates) if collection_dates else date.min
+    collection_date = next(iter(collection_dates)) if collection_dates else date.min
 
     if tier is Tier.TIER_3:
         return MatchedSet(cell=stratum, tier=tier, collection_date=collection_date)
@@ -356,10 +383,23 @@ def _band_diagnostics(
 ) -> BandDiagnostics:
     """Composition exposure of one Tier-2 band — spec B.2.3.
 
-    ``overlap == 1`` is exactly the condition under which the band ratio is a
-    pure matched-model relative. Below it, the ratio carries a composition
-    component whose size is bounded by within-band dispersion — which is why
-    both are reported and neither is interpretable alone.
+    Two different questions, and they must not be confused:
+
+    * **Band identity recurrence** — did this ``(carrier, hour band)`` item
+      appear in both periods? Answered by whether the item matched at all; an
+      unmatched band reaches this function not at all.
+    * **Constituent flight membership overlap** — how much of the band's flight
+      *membership* carried over? That is what ``overlap`` measures, and what
+      ``membership_delta`` counts.
+
+    They diverge completely when a band's flights are renumbered while its count
+    holds: ``membership_delta = 0`` and ``overlap = 0.0`` at the same time. Both
+    are reported because neither is interpretable alone — a large membership
+    change is harmless when within-band dispersion is zero.
+
+    ``overlap == 1`` is the condition under which the band ratio is a pure
+    matched-model relative (exact in real arithmetic, equal within spec Q.1's
+    tolerance numerically). Below it the ratio carries a composition component.
     """
     flights_t = {o.flight_number for o in members_t}
     flights_prior = {o.flight_number for o in members_prior}

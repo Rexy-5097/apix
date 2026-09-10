@@ -210,3 +210,66 @@ def test_d2_tier2_provenance_still_names_every_band_member() -> None:
     )
     assert len(result.pairs) == 1
     assert result.pairs[0].observation_id_t == "n1|n2"
+
+
+# ---------------------------------------------------------------------------
+# D-3 — mixed collection dates must be rejected, on either side
+# ---------------------------------------------------------------------------
+
+
+def test_d3_mixed_current_period_collection_dates_are_rejected() -> None:
+    """Spec C.2. A Monday and a Tuesday observation are never differenced.
+
+    **What the defect did.** ``build_matched_set`` took ``min()`` of the distinct
+    collection dates and carried on, forming pairs across periods.
+    ``calculate_apix_l`` raises on mixed dates, but the layer that actually forms
+    the wrong pairing did not — a defence-in-depth gap at exactly the point where
+    the damage is done.
+    """
+    mixed = [
+        ob(MONDAY, "101", "5100", oid="x1"),
+        ob(
+            MONDAY + timedelta(days=1),
+            "205",
+            "5200",
+            oid="x2",
+            collection=MONDAY - timedelta(days=6),
+        ),
+    ]
+    prior = [ob(MONDAY - timedelta(days=7), "101", "5000", oid="y1")]
+
+    with pytest.raises(ValueError, match="collection date"):
+        build_matched_set(
+            mixed, prior, cell_key_for(mixed[0]), Tier.TIER_1, source_precedence=PRECEDENCE
+        )
+
+
+def test_d3_mixed_prior_period_collection_dates_are_rejected() -> None:
+    """The same guard must cover the t-7 side; a wrong prior is just as wrong."""
+    now = [ob(MONDAY, "101", "5100", oid="x1")]
+    mixed_prior = [
+        ob(MONDAY - timedelta(days=7), "101", "5000", oid="y1"),
+        ob(
+            MONDAY - timedelta(days=6),
+            "205",
+            "5000",
+            oid="y2",
+            collection=MONDAY - timedelta(days=13),
+        ),
+    ]
+
+    with pytest.raises(ValueError, match="collection date"):
+        build_matched_set(
+            now, mixed_prior, cell_key_for(now[0]), Tier.TIER_1, source_precedence=PRECEDENCE
+        )
+
+
+def test_d3_an_empty_side_is_not_an_error() -> None:
+    """Zero distinct dates is not more than one. A cell with no prior-period
+    observations is an ordinary condition (the item is simply unmatched), not a
+    pipeline fault."""
+    now = [ob(MONDAY, "101", "5100")]
+    result = build_matched_set(
+        now, [], cell_key_for(now[0]), Tier.TIER_1, source_precedence=PRECEDENCE
+    )
+    assert result.pairs == ()
