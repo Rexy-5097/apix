@@ -837,12 +837,40 @@ def test_route_below_coverage_minimum_is_suppressed() -> None:
     assert "coverage" in result.routes[0].suppression_reason
 
 
-def test_mixing_collection_dates_is_rejected() -> None:
-    """Spec C.2 — mixing periods would difference a Monday against a Tuesday."""
+def test_an_earlier_link_date_is_accepted_at_publication() -> None:
+    """Spec C.2, F.2 — AMB-7. A cell contributes its most recent level.
+
+    Rewritten at Checkpoint 2E. This case previously asserted that a state dated
+    before the publication date was rejected. That assertion was wrong against
+    the frozen methodology: each cell advances on its own seven-day chain
+    (spec E.2), so on any publication date most cells last linked days ago, and
+    spec C.2 requires each of the seven interleaved chains to contribute **its
+    most recent level**. Spec F.2 sums over the live set at *t*, not over cells
+    that linked at *t*.
+
+    The differencing spec C.2 forbids happens in ``build_matched_set``, which
+    keeps its own single-date guard — see
+    ``test_redteam_regressions.py`` D-3, still passing unchanged.
+    """
     a = cell("6E1")
-    with pytest.raises(ApixLError, match="collection dates"):
+    result = calculate_apix_l(
+        [published(a, 100.0, T - timedelta(days=1))],
+        {cell_id(a): 1.0},
+        {"DEL-BOM": 1.0},
+        vv(),
+        T,
+    )
+    assert result.published
+    assert result.level == pytest.approx(100.0)
+    assert result.quality.freshness.median == 1
+
+
+def test_a_future_link_date_is_rejected() -> None:
+    """Spec R.3 — a later period must never enter an earlier vintage."""
+    a = cell("6E1")
+    with pytest.raises(ApixLError, match="after the period"):
         calculate_apix_l(
-            [published(a, 100.0, T - timedelta(days=1))],
+            [published(a, 100.0, T + timedelta(days=1))],
             {cell_id(a): 1.0},
             {"DEL-BOM": 1.0},
             vv(),
