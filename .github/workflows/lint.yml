@@ -39,7 +39,8 @@ jobs:
         # Same boundary as tools/ci/check_markdown_links.py.
         run: |
           yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" \
-            PROJECT_CONFIG.yaml apix_bootstrap.yaml .github/workflows/
+            PROJECT_CONFIG.yaml apix_bootstrap.yaml .github/workflows/ \
+            source_registry/
 
   link-check:
     name: Internal link check
