@@ -1,0 +1,7 @@
+travel_date,source_id,time_ist,origin,destination,carrier,flight_number,departure_time,stops,duration_minutes,fare_family_raw,availability,payable_fare,base_fare,taxes,fees,user_development_fee,checked_baggage_kg,change_permitted,cancellation_permitted,source_group,notes
+2026-09-18,indigo-direct,21:05,DEL,BOM,6E,2045,06:20,0,135,SAVER,AVAILABLE,5432.00,4100.00,1002.00,,330.00,15,FEE,FEE,,
+2026-09-18,indigo-direct,21:06,DEL,BOM,6E,5011,07:45,0,140,SAVER,AVAILABLE,6110.00,,,,,15,FEE,FEE,,total only; no breakdown shown
+2026-09-18,indigo-direct,21:07,DEL,BOM,6E,6153,09:10,0,130,SAVER,SOLD_OUT,,,,,,15,FEE,FEE,,listed in results; no purchasable fare
+2026-09-26,indigo-direct,21:14,DEL,BOM,6E,2045,06:20,0,135,SAVER,AVAILABLE,4890.00,3650.00,910.00,,330.00,15,FEE,FEE,,
+2026-10-02,indigo-direct,21:21,DEL,BOM,6E,2045,06:20,0,135,SAVER,AVAILABLE,4610.00,3400.00,880.00,,330.00,15,FEE,FEE,,T+21 -- matches no A.3 bucket; collected for OQ-A6
+2026-10-11,indigo-direct,21:29,DEL,BOM,6E,2045,06:20,0,135,SAVER,AVAILABLE,4275.00,3100.00,845.00,,330.00,15,FEE,FEE,,
