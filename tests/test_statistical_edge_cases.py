@@ -38,6 +38,11 @@ from apix.statistics.aggregation.weights import (
     sums_to_one,
     validate,
 )
+from apix.statistics.aggregation.within_route import (
+    CarrierAllocation,
+    CarrierAllocationBasis,
+    within_route_weights,
+)
 from apix.statistics.aggregation.young_laspeyres import (
     AggregationError,
     aggregate_levels,
@@ -986,3 +991,120 @@ def test_property_aggregate_lies_between_min_and_max_level(
     weights = normalise(dict(zip(keys, raw[:n], strict=True)))
     result = aggregate_levels(level_map, weights)
     assert min(level_map.values()) - 1e-9 <= result <= max(level_map.values()) + 1e-9
+
+
+# ─── AMB-9 — the carrier-allocation seam ─────────────────────────────────────
+
+
+def _cells_two_carriers() -> list[CellKey]:
+    return [cell("6E"), cell("AI")]
+
+
+def test_multi_carrier_route_refuses_to_weight_without_a_ratified_allocation() -> None:
+    """AMB-9. Spec G.3 has no carrier term, so the allocation is undetermined.
+
+    The failure mode this prevents is silent: a uniform default would weight a
+    carrier holding ~60% of a route's passengers identically to one holding 3%,
+    and nothing downstream would notice.
+    """
+    with pytest.raises(WeightError, match="no ratified carrier_allocation"):
+        within_route_weights(
+            _cells_two_carriers(),
+            fare_class_shares={FareClass.STANDARD: 1.0},
+            channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+        )
+
+
+def test_single_carrier_route_needs_no_allocation() -> None:
+    """With one carrier there is no allocation to make — which is why the
+    Checkpoint 2G empirical frame can run before AMB-9 is ruled on."""
+    weights = within_route_weights(
+        [cell("6E")],
+        fare_class_shares={FareClass.STANDARD: 1.0},
+        channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+    )
+    assert sums_to_one(weights)
+
+
+def test_allocation_must_be_ratified() -> None:
+    """An allocation with no named owner is an invention, not a rule."""
+    with pytest.raises(WeightError, match="not ratified"):
+        CarrierAllocation(
+            version="v1",
+            basis=CarrierAllocationBasis.MEASURED_TRAFFIC,
+            shares={"6E": 0.6, "AI": 0.4},
+            ratified_by="",
+            ratified_date=date(2026, 9, 11),
+        )
+
+
+def test_uniform_declaration_requires_its_sensitivity_band() -> None:
+    """Spec G.4's precedent is equal weights *accompanied by* a sensitivity
+    analysis. Without the band it is the guess the pattern exists to replace."""
+    with pytest.raises(WeightError, match="sensitivity_band_ref"):
+        CarrierAllocation(
+            version="uniform-v1",
+            basis=CarrierAllocationBasis.DECLARED_UNIFORM,
+            shares={"6E": 1.0, "AI": 1.0},
+            ratified_by="@Rexy-5097",
+            ratified_date=date(2026, 9, 11),
+        )
+
+
+def test_uniform_declaration_with_a_band_is_accepted() -> None:
+    """The other side of the threshold — INV-8."""
+    alloc = CarrierAllocation(
+        version="uniform-v1",
+        basis=CarrierAllocationBasis.DECLARED_UNIFORM,
+        shares={"6E": 1.0, "AI": 1.0},
+        ratified_by="@Rexy-5097",
+        ratified_date=date(2026, 9, 11),
+        sensitivity_band_ref="ADR-00XX sensitivity band",
+    )
+    weights = within_route_weights(
+        _cells_two_carriers(),
+        fare_class_shares={FareClass.STANDARD: 1.0},
+        channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+        carrier_allocation=alloc,
+    )
+    assert sums_to_one(weights)
+    assert len(weights) == 2
+
+
+def test_measured_shares_flow_through_to_the_weights() -> None:
+    """A ratified measured allocation reaches v[c|r] in the declared proportion."""
+    alloc = CarrierAllocation(
+        version="measured-v1",
+        basis=CarrierAllocationBasis.MEASURED_TRAFFIC,
+        shares={"6E": 0.75, "AI": 0.25},
+        ratified_by="@Rexy-5097",
+        ratified_date=date(2026, 9, 11),
+    )
+    weights = within_route_weights(
+        _cells_two_carriers(),
+        fare_class_shares={FareClass.STANDARD: 1.0},
+        channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+        carrier_allocation=alloc,
+    )
+    by_carrier = {k.split("|")[1]: v for k, v in weights.items()}
+    assert by_carrier["6E"] == pytest.approx(0.75)
+    assert by_carrier["AI"] == pytest.approx(0.25)
+
+
+def test_carrier_outside_a_ratified_allocation_raises_rather_than_defaulting() -> None:
+    """Silently giving an uncovered carrier zero would drop it from the index
+    without saying so."""
+    alloc = CarrierAllocation(
+        version="partial-v1",
+        basis=CarrierAllocationBasis.MEASURED_TRAFFIC,
+        shares={"6E": 1.0},
+        ratified_by="@Rexy-5097",
+        ratified_date=date(2026, 9, 11),
+    )
+    with pytest.raises(WeightError, match="has no share for"):
+        within_route_weights(
+            _cells_two_carriers(),
+            fare_class_shares={FareClass.STANDARD: 1.0},
+            channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+            carrier_allocation=alloc,
+        )
