@@ -1,0 +1,5 @@
+travel_date,source_id,time_ist,origin,destination,outcome,source_group,notes
+2026-09-18,indigo-direct,21:05,DEL,BOM,SUCCESS,,
+2026-09-26,indigo-direct,21:14,DEL,BOM,SUCCESS,,
+2026-10-02,indigo-direct,21:21,DEL,BOM,SUCCESS,,
+2026-10-11,indigo-direct,21:29,DEL,BOM,SUCCESS,,

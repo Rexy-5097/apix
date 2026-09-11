@@ -68,6 +68,9 @@ desktop.ini
 
 # ─── Data and Large Files ──────────────────────────────────────────────────
 *.csv
+# Except the collection templates: they are documentation the procedure links
+# to, not collected data, and they must ship with it.
+!tools/collection/templates/*.csv
 *.parquet
 *.arrow
 *.h5
