@@ -143,7 +143,7 @@ def test_attempt_count_is_reconciled_not_trusted(tmp_path: Path) -> None:
     report = run_load(
         tmp_path,
         [attempt_row()],
-        [fare_row(), fare_row(flight_number="5011", departure_time="07:45")],
+        [fare_row(), fare_row(flight_number="5011", departure_time="09:45")],
     )
     assert report["observations"] == 2
     assert report["integrity_problems"] == []
@@ -492,3 +492,96 @@ def test_an_edited_artifact_is_reported_by_verify(tmp_path: Path) -> None:
         assert "modified on disk" in problems[0]
     finally:
         store.close()
+
+
+# ─── The flight-selection rule is machine-checked, not trusted ───────────────
+#
+# ADR-0065 §4. One flight per departure band, bands 2-6. The selection happens
+# in a person's browser, so the loader is the only point it passes through code
+# — and a violation is undetectable downstream: "the earliest five" on a dense
+# route is internally consistent, silently morning-biased, and leaves
+# departure_hour_band degenerate for the whole study.
+
+
+def banded_day() -> tuple[list[str], list[str]]:
+    """One eligible flight in each contracted band — the compliant shape."""
+    times = [
+        ("2045", "06:20"),
+        ("5011", "09:45"),
+        ("6153", "13:10"),
+        ("2177", "16:35"),
+        ("6821", "19:50"),
+    ]
+    return (
+        [attempt_row()],
+        [fare_row(flight_number=fn, departure_time=dt) for fn, dt in times],
+    )
+
+
+def test_one_flight_per_band_loads(tmp_path: Path) -> None:
+    attempts, fares = banded_day()
+    report = run_load(tmp_path, attempts, fares)
+    assert report["observations"] == 5
+
+
+def test_two_flights_in_one_band_is_refused(tmp_path: Path) -> None:
+    """'The earliest five' clusters in bands 2-3 and must not load."""
+    earliest_five = [
+        fare_row(flight_number=fn, departure_time=dt)
+        for fn, dt in [
+            ("2045", "06:20"),
+            ("5011", "06:55"),
+            ("6153", "07:30"),
+            ("2177", "08:05"),
+            ("6821", "08:40"),
+        ]
+    ]
+    with pytest.raises(LoadError, match="different flights in departure band 2"):
+        run_load(tmp_path, [attempt_row()], earliest_five)
+
+
+def test_one_flight_at_two_fare_families_is_one_selection(tmp_path: Path) -> None:
+    """Two fare families on the same flight is one selection, not two."""
+    report = run_load(
+        tmp_path,
+        [attempt_row()],
+        [fare_row(), fare_row(fare_family_raw="FLEXI", payable_fare="7800.00")],
+    )
+    assert report["observations"] == 2
+
+
+def test_a_flight_outside_the_contracted_bands_is_refused(tmp_path: Path) -> None:
+    """Band 7 (21:00-24:00) is intermittently served and not collected."""
+    with pytest.raises(LoadError, match=r"outside the contracted bands"):
+        run_load(tmp_path, [attempt_row()], [fare_row(departure_time="22:15")])
+
+
+def test_a_missing_band_is_not_an_error(tmp_path: Path) -> None:
+    """An empty band is a market fact. Never pad it from a neighbour."""
+    report = run_load(
+        tmp_path,
+        [attempt_row()],
+        [
+            fare_row(flight_number="2045", departure_time="06:20"),
+            fare_row(flight_number="6821", departure_time="19:50"),
+        ],
+    )
+    assert report["observations"] == 2
+
+
+def test_a_sold_out_flight_still_occupies_its_band(tmp_path: Path) -> None:
+    """It was selected, so it counts against the one-per-band rule."""
+    with pytest.raises(LoadError, match="different flights in departure band 2"):
+        run_load(
+            tmp_path,
+            [attempt_row()],
+            [
+                fare_row(flight_number="2045", departure_time="06:20"),
+                fare_row(
+                    flight_number="5011",
+                    departure_time="07:30",
+                    availability="SOLD_OUT",
+                    payable_fare="",
+                ),
+            ],
+        )

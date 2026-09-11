@@ -1,9 +1,16 @@
 """Load one day of manual collection into the store.
 
 The bridge between a person with a browser and the canonical stores. Manual
-collection is the only mode currently permitted — the Checkpoint 2G automation
-gate leaves zero sources ``AUTOMATION_ALLOWED`` — so this is the Day-1 entry
-point, not a stopgap.
+collection is the only mode currently available, and this is the Day-1 entry
+point rather than a stopgap.
+
+Checkpoint 2I established *why*, and the reason is narrower than "nothing is
+automatable": two sources **are** ``AUTOMATION_ALLOWED`` — Amadeus and
+Travelpayouts are APIs, and permission to call them is explicit. Both are
+``data_admissibility: INADMISSIBLE``, because what they return is cached rather
+than transactable. The one source whose data *is* a spec A.1 offer prohibits
+automation and expressly permits a person in a browser. **The intersection of
+"may automate" and "data is usable" is empty**, so a human collects.
 
     python tools/collection/load_manual.py \\
         --store data/collection \\
@@ -291,6 +298,60 @@ def read_fares(
     return out, unpriced
 
 
+#: Departure-hour bands the Day-1 contract collects — §B.2, 3-hour bands
+#: anchored at 00:00 IST, so 2..6 spans 06:00-21:00.
+CONTRACT_BANDS = frozenset({2, 3, 4, 5, 6})
+
+
+def _check_departure_bands(
+    by_attempt: dict[str, list[Observation]],
+    unpriced: list[tuple[UnpricedFlight, str]],
+) -> None:
+    """Enforce the flight-selection rule — ADR-0065 §4, contract §5.
+
+    One flight per departure band, bands 2-6. This is the rule that keeps the
+    sample price-blind and spans the commercial day, and it is the one rule
+    whose violation is **undetectable downstream**: a day collected as "the
+    earliest five" is internally consistent and silently biased toward the
+    morning bank, with `departure_hour_band` degenerate.
+
+    Nothing else checks it, because the selection happens in a person's browser.
+    So it is checked here, at the only point the data passes through code.
+    """
+    per_attempt: dict[str, dict[int, set[str]]] = {}
+    for aid, observations in by_attempt.items():
+        for o in observations:
+            # Keyed by flight, so one flight quoted at two fare families is one
+            # selection, not two.
+            per_attempt.setdefault(aid, {}).setdefault(o.departure_hour_band, set()).add(
+                f"{o.carrier}{o.flight_number}@{o.departure_time_local:%H:%M}"
+            )
+    for flight, aid in unpriced:
+        band = flight.departure_time_local.hour // 3
+        per_attempt.setdefault(aid, {}).setdefault(band, set()).add(
+            f"{flight.carrier}{flight.flight_number}@{flight.departure_time_local:%H:%M}"
+        )
+
+    for aid, bands in sorted(per_attempt.items()):
+        outside = sorted(set(bands) - CONTRACT_BANDS)
+        if outside:
+            raise LoadError(
+                f"attempt {aid} has flights in departure band(s) {outside}, outside the "
+                f"contracted bands {sorted(CONTRACT_BANDS)} (06:00-21:00). The Day-1 "
+                "contract does not collect them; bands 0, 1 and 7 are intermittently "
+                "served and churn the matched set"
+            )
+        for band, flights in sorted(bands.items()):
+            if len(flights) > 1:
+                raise LoadError(
+                    f"attempt {aid} has {len(flights)} different flights in departure "
+                    f"band {band}: {sorted(flights)}. The contract takes exactly ONE — "
+                    "the earliest in each band. More than one means the selection was "
+                    "made some other way, and 'the earliest five' is every flight in "
+                    "the morning bank"
+                )
+
+
 def load_day(args: argparse.Namespace) -> dict[str, object]:
     window = load_windows(args.window)
     started = datetime.now() if args.started is None else args.started
@@ -314,6 +375,8 @@ def load_day(args: argparse.Namespace) -> dict[str, object]:
     by_attempt: dict[str, list[Observation]] = {}
     for obs, aid in fares:
         by_attempt.setdefault(aid, []).append(obs)
+
+    _check_departure_bands(by_attempt, unpriced)
 
     # The count written to the store is derived from the observations actually
     # parsed, never from a column the collector filled in. verify() then

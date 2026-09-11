@@ -4,7 +4,8 @@
 > **Governs:** every fare observation that enters APIx
 > **Companion to:** [`acquisition-protocol.md`](acquisition-protocol.md) — that
 > document says *what the rules are and why*; this one says *what to do*.
-> **Protocol version recorded on each run:** `acquisition-protocol-2G`
+> **Protocol version recorded on each run:** `acquisition-protocol-2I`
+> **Frozen values:** [`day-1-contract.md`](day-1-contract.md)
 
 ---
 
@@ -44,7 +45,7 @@ challenge. A challenge is a stop signal, not an obstacle.
 | Passengers | **1 adult**, Economy |
 | Stops | **Non-stop only** |
 | Travel dates | **four** searches: today **+7**, **+15**, **+21**, **+30** days |
-| Flights per search | **5**, chosen by the rule in §5 |
+| Flights per search | **5** — one per departure band, by the rule in §5 |
 | Window | **21:00–22:00 IST**, every day |
 
 A full day is **4 searches** and up to **20 fare rows**. Budget 20–30 minutes.
@@ -135,26 +136,46 @@ not one flight.
 
 ## 5. How the 5 flights are selected — the rule that protects the data
 
-> ## **Take the first 5 eligible flights by DEPARTURE TIME, earliest first.**
+> ## **Sort by DEPARTURE TIME. Take the earliest eligible flight in each of the five time bands below.**
 > ## **Never by price. Never "the cheapest 5". Never whatever the page shows first.**
-
-IndiGo's results default to **cheapest-first**. Taking "the first five" off that
-list selects *cheap flights* — and next week it selects a different five, from a
-list sorted by a price that has moved. The index would then measure the
-selection rule rather than the market, and **no downstream test can detect or
-undo that bias**, because the data would be internally consistent and wrong.
 
 **Do this, every single time:**
 
 1. Find the sort control on the results page.
 2. Set it to **Departure — Earliest first**.
-3. Take the **top 5 eligible** flights in that order.
+3. Working down the list, take the **first eligible flight whose departure time
+   falls in each band**:
 
-If fewer than 5 eligible flights exist, take all of them and record how many.
-That is a market fact, not a shortfall.
+| Band | Departure between | Take |
+|---|---|---|
+| 2 | **06:00 and 08:59** | the first one |
+| 3 | **09:00 and 11:59** | the first one |
+| 4 | **12:00 and 14:59** | the first one |
+| 5 | **15:00 and 17:59** | the first one |
+| 6 | **18:00 and 20:59** | the first one |
+
+That is **5 flights**, one per band. Flights departing before 06:00 or from
+21:00 onwards are **not collected**.
+
+**A band with no eligible flight simply gets no row.** Do not substitute a
+flight from a neighbouring band to make up the count. An empty band is a market
+fact; a substituted flight is a different product wearing the right slot.
+
+**Why by band and not "the earliest five".** DEL–BOM has 15–25 IndiGo non-stops
+a day, so the earliest five are all morning flights. Departure band is part of
+what identifies the product being tracked, and collecting only mornings would
+leave that dimension untested for the whole 30 days. Banding is the same amount
+of work and covers the whole day.
+
+**Why never by price.** IndiGo's results default to **cheapest-first**. Taking
+"the first five" off that list selects *cheap flights* — and next week it
+selects a different five, from a list sorted by a price that has moved. The
+index would then measure the selection rule rather than the market, and **no
+downstream test can detect or undo that bias**, because the data would be
+internally consistent and wrong.
 
 If the sort control is missing or broken, **do not eyeball it**: read every
-eligible flight's departure time, sort them yourself, and take the earliest 5.
+eligible flight's departure time, sort them yourself, and apply the bands.
 Note it in `--notes`.
 
 ---
@@ -432,6 +453,16 @@ On success it prints the day's quality report and exits `0`. If `verify()` found
 an inconsistency it still prints the report but exits `2` — **investigate before
 the next run**.
 
+### Back up the store, every day
+
+```bash
+cp -r data/collection /path/to/your/backup/apix-collection-$(date +%Y%m%d)
+```
+
+`data/collection/` is gitignored and holds the only copy of the evidence. A disk
+failure at day 25 destroys a study that cannot be re-collected, because §A.3
+assigns by exact lead time — those flights, dates and prices are gone.
+
 ---
 
 ## 13. What to do when something is wrong
@@ -459,7 +490,7 @@ distance. §A.3's exactness is what makes the index mean anything.
 [ ] Four travel dates computed:  today +7, +15, +21, +30
 [ ] Per search:  DEL > BOM, one way, 1 adult, Economy, Regular fare
 [ ] Sort set to DEPARTURE TIME — EARLIEST FIRST      <- the one that matters
-[ ] Top 5 eligible non-stop 6E flights
+[ ] One flight per band: 06-09, 09-12, 12-15, 15-18, 18-21  (5 rows)
 [ ] Cheapest fare including checked baggage, one row per flight
 [ ] Components recorded only where displayed — blanks left blank, never 0
 [ ] Screenshot per search, named {date}-{window}-{travel_date}.png
