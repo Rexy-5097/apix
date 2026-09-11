@@ -53,6 +53,10 @@ def run(**kw: object) -> CollectionRun:
         "basket_version": "2026-Q3",
         "parser_version": "1.0",
         "collector_version": "abc1234",
+        "collector_identity": "fixture",
+        "protocol_version": "acquisition-protocol-2G",
+        "methodology_version": "2.1",
+        "frame_id": "DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T30",
     }
     base.update(kw)
     return CollectionRun(**base)  # type: ignore[arg-type]

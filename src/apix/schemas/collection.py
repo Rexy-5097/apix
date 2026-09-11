@@ -58,6 +58,22 @@ class CollectionRun:
     parser_version: str
     #: Git commit of the collector.
     collector_version: str
+    #: **Who** performed the run. For a manual run this is a person, and that is
+    #: the point: manual collection is permitted where automated collection is
+    #: not, so the record must say which one happened. A run claiming to be
+    #: manual with no named human is not auditable.
+    collector_identity: str
+    #: Version of `compliance/acquisition-protocol.md` the run followed.
+    #: Changing the protocol mid-window changes what the window measured, so the
+    #: version is recorded per run rather than assumed constant.
+    protocol_version: str
+    #: Methodology in force — spec O.1. Carried here as well as on the version
+    #: vector so a collection run is interpretable without a published output.
+    methodology_version: str
+    #: The empirical frame in force — narrower than ``basket_version``. A frame
+    #: fixes route, carrier, channel and APW set; a basket is the whole cell
+    #: universe. See ``source_registry/collection-frame.md``.
+    frame_id: str
     finished_ts: datetime | None = None
     notes: str = ""
 
@@ -75,6 +91,10 @@ class CollectionRun:
                 ("basket_version", self.basket_version),
                 ("parser_version", self.parser_version),
                 ("collector_version", self.collector_version),
+                ("collector_identity", self.collector_identity),
+                ("protocol_version", self.protocol_version),
+                ("methodology_version", self.methodology_version),
+                ("frame_id", self.frame_id),
             )
             if not value
         )
