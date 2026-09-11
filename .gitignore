@@ -120,3 +120,13 @@ temp/
 
 # ─── AgentOS Specific ──────────────────────────────────────────────────────
 # Add project-specific ignores below this line
+
+# Personal Claude Code permissions — never shared
+.claude/settings.local.json
+
+# Collected fare evidence. Retained for five years per the acquisition protocol,
+# but retention is not version control: this holds a SQLite store of live fares
+# and screenshots of a carrier's own pages, and pushing those to a public remote
+# would redistribute their content. An evidence archive is a separate, owner-led
+# decision -- see compliance/manual-collection-procedure.md section 9.
+data/collection/
