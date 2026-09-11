@@ -1,16 +1,37 @@
-# APIx formula specification — v2.1 amendment (DRAFT)
+# APIx formula specification — v2.1 amendment
 
-> **Status:** DRAFT — not frozen, not in force. Awaiting final methodology audit
-> by @Rexy-5097.
+> **Status:** FROZEN for `methodology_version` `2.1` · **IN FORCE**
+> **Date frozen:** 2026-09-10 · **Checkpoint:** 2E · **Owner:** @Rexy-5097
 > **Amends:** `apix_formula_spec_v1.md` (FROZEN, `methodology_version 2.0`)
 > **Resolves:** [AMB-1](AMB-1-resolution.md), AMB-6 · confirms AMB-2, AMB-3, AMB-4
-> **Leaves open:** AMB-5
-> **Decision record:** [`ADR-0062`](../../artifacts/decisions/ADR-0062-item-cell-separation.md)
-> **Proposed `methodology_version`:** `2.1`
+> **Leaves open:** AMB-5, and see
+> [OPEN-AMBIGUITIES-checkpoint-2.md](OPEN-AMBIGUITIES-checkpoint-2.md) for
+> AMB-7 … AMB-10
+> **Decision records:** [`ADR-0062`](../../artifacts/decisions/ADR-0062-item-cell-separation.md)
+> (the item/cell separation) · [`ADR-0063`](../../artifacts/decisions/ADR-0063-freeze-methodology-v2-1.md)
+> (this freeze)
 >
-> **v2.0 is preserved unchanged.** This is a delta document. Nothing here is in
-> force until the owner freezes it and a separate implementation change lands.
+> **v2.0 is preserved unchanged.** This is a delta document.
 > **Sections of v2.0 not named below are UNCHANGED** and remain authoritative.
+>
+> ### What the freeze asserts, and what it does not
+>
+> **Asserts.** Every rule below is in force and is implemented on `main`. The
+> implementation shipped in PR #5 and was audited against this text at
+> Checkpoint 2E; the one divergence found — §O's `source_precedence` field,
+> absent from the version vector — was corrected before this freeze.
+>
+> **Does not assert.** Freezing this amendment settles **nothing** about
+> `expected_cells` (AMB-8) or the allocation of `v[c|r]` across carriers
+> (AMB-9). Both affect published values, neither is determined by v2.0 or by
+> this document, and both are registered as OPEN rather than absorbed into the
+> freeze. `min_route_coverage`, `max_cell_imputation` and every other §I
+> threshold are **UNCHANGED** and remain exactly as v2.0 wrote them.
+>
+> Freezing this document does **not** create a parallel series under §R.2. No
+> APIx series has been published under any `methodology_version`, so there is no
+> continuity to protect and no linking factor to compute — see ADR-0063 for the
+> governance reasoning against the spec's own rule.
 
 ## How to read this document
 
@@ -563,7 +584,7 @@ the matched pairs are identical — so it is numerically harmless, but it leaves
 parent naming seven interleaved chains under one key. Restored for identity
 hygiene. **CLARIFIED (numerically) / CHANGED (key shape).**
 
-### §E.5 — Runtime fallback ladder — **CHANGED (narrowed)**
+### §E.4.1 — Runtime fallback ladder — **NEW (narrowing §E.4's terminal branch)**
 
 $$\boxed{\text{CELL} \;\longrightarrow\; \text{carrier-pooled PARENT} \;\longrightarrow\; \text{SUPPRESS}}$$
 
@@ -858,9 +879,8 @@ Structure and rendering (§O.2) are **UNCHANGED**.
 §P · §Q · §R
 
 > **§E.5 note.** v2.0's §E.5 (*disappearance and resumption*) is **UNCHANGED**.
-> The fallback ladder above is numbered §E.5 in the summary for readability only;
-> in the frozen v2.1 text it will be issued as **§E.4.1** so no existing section
-> number is displaced.
+> The fallback ladder above is issued as **§E.4.1**, as this note required before
+> the freeze, so no existing section number is displaced.
 
 **§G.4 note (no change, restated for accuracy).** The seven APW buckets and
 $\alpha = 1/7$ are **APIx DESIGN DECISIONS**. MoSPI's adopted domestic airfare

@@ -161,6 +161,37 @@ class RouteResult:
 
 
 @dataclass(frozen=True, slots=True)
+class FreshnessDistribution:
+    """Chain freshness across the live set — spec C.3.
+
+    Spec C.3 requires freshness to be *"recorded per cell and published as a
+    distribution"*. A mean would hide the shape that matters: under normal
+    weekly operation freshness runs 0 on a chain's link day through 6 on the day
+    before its next, so a healthy publication is spread across ``[0, 6]`` rather
+    than concentrated anywhere. ``p90`` above 6 means chains are missing links;
+    above 13 means the spec C.3 ceiling has been breached and cells should have
+    left the live set.
+
+    ``never_matched`` counts cells with no computed relative at all — spec J.1
+    entrants at their parent's level. That is a different state from stale and
+    is reported separately rather than collapsed into a large number.
+
+    Percentiles use the **nearest-rank** method on the sorted integer day
+    counts: ``index = ceil(p/100 * n) - 1``, clamped to ``[0, n-1]``. No
+    interpolation, so every published value is an integer number of days that
+    some cell actually had, and the reduction is bit-stable (spec P.2).
+    """
+
+    n: int
+    p10: int | None = None
+    p25: int | None = None
+    median: int | None = None
+    p75: int | None = None
+    p90: int | None = None
+    never_matched: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class QualityMetrics:
     """What a statistical analyst needs to judge the number — spec I, dossier §12."""
 
@@ -179,6 +210,10 @@ class QualityMetrics:
     carried_weight_share: float = 0.0
     tier1_weight_share: float = 0.0
     tier2_weight_share: float = 0.0
+    # Spec C.3 requires freshness to be published as a distribution, not a mean.
+    # Empty rather than None when no cell has ever matched, so a consumer never
+    # has to distinguish "not computed" from "nothing to compute".
+    freshness: FreshnessDistribution = field(default_factory=lambda: FreshnessDistribution(n=0))
 
 
 @dataclass(frozen=True, slots=True)
