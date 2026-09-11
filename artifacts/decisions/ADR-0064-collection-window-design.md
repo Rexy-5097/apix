@@ -152,8 +152,8 @@ rather than what was planned.
 `frame_id` carries the role:
 
 ```
-DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T30@primary        → feeds the index
-DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T30@diagnostic-oq1 → OQ-1 evidence only
+DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30@primary        → feeds the index
+DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30@diagnostic-oq1 → OQ-1 evidence only
 ```
 
 **Only `@primary` runs are index input.** A consumer that blends the two would

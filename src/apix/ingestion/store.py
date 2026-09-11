@@ -5,6 +5,7 @@ cloud, no new dependency: ``sqlite3`` and ``hashlib`` are standard library, and
 the whole store is a path you can copy, diff and commit a checksum of.
 
     collection_run ──► collection_attempt ──► canonical_observation
+                                     │       └► unpriced_flight
                                      │                  │
                                      └──► raw_artifact ◄┘
 
@@ -31,7 +32,7 @@ import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 
@@ -252,7 +253,75 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_observation_duplicate
         travel_date, departure_time_local, fare_family_raw
     );
 CREATE INDEX IF NOT EXISTS ix_observation_date ON canonical_observation(collection_date);
+
+-- A flight that was listed but sold no seat at any price. Spec D.6: "a sold-out
+-- flight is not a missing price; it is a disappeared item."
+--
+-- It needs its own table because `canonical_observation` cannot hold it.
+-- `Observation.payable_fare` is a non-optional Decimal and this schema requires
+-- it positive, so the only ways to store a sold-out flight there are to invent a
+-- number or to write a zero — and a zero asserts the fare WAS zero. Dropping the
+-- row instead would make "sold out" indistinguishable from "flight not
+-- operating", which is exactly the distinction AMB-8's denominator turns on.
+--
+-- This is observed fact, not expectation: the flight appeared in the schedule
+-- the source rendered. It is therefore not the circular basket table that
+-- `storage-design.md` rules out.
+CREATE TABLE IF NOT EXISTS unpriced_flight (
+    unpriced_id          TEXT PRIMARY KEY,
+    run_id               TEXT NOT NULL REFERENCES collection_run(run_id),
+    attempt_id           TEXT NOT NULL REFERENCES collection_attempt(attempt_id),
+    collection_date      TEXT NOT NULL,
+    origin               TEXT NOT NULL,
+    destination          TEXT NOT NULL,
+    travel_date          TEXT NOT NULL,
+    carrier              TEXT NOT NULL,
+    flight_number        TEXT NOT NULL,
+    departure_time_local TEXT NOT NULL,
+    observation_ts       TEXT NOT NULL,
+    source_id            TEXT NOT NULL,
+    availability         TEXT NOT NULL,
+    detail               TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS ix_unpriced_date ON unpriced_flight(collection_date);
 """
+
+
+@dataclass(frozen=True, slots=True)
+class UnpricedFlight:
+    """A flight that was listed but offered no purchasable fare — spec D.6.
+
+    Carries no price and never will. It exists so that "sold out" and "not
+    operating" stay distinguishable, which is what AMB-8's coverage denominator
+    turns on: a sold-out flight is an expected cell that produced no quote, and
+    a flight that does not operate is not an expected cell at all.
+    """
+
+    unpriced_id: str
+    run_id: str
+    attempt_id: str
+    collection_date: date
+    origin: str
+    destination: str
+    travel_date: date
+    carrier: str
+    flight_number: str
+    departure_time_local: time
+    observation_ts: datetime
+    source_id: str
+    availability: Availability = Availability.SOLD_OUT
+    detail: str = ""
+
+    def __post_init__(self) -> None:
+        if self.availability is Availability.AVAILABLE:
+            raise ValueError(
+                "an AVAILABLE flight has a purchasable fare and belongs in "
+                "canonical_observation; recording it here would lose the price"
+            )
+
+    @property
+    def route(self) -> str:
+        return f"{self.origin}-{self.destination}"
 
 
 def _dec(value: Decimal | None) -> str | None:
@@ -432,6 +501,29 @@ class CollectionStore:
                 "recorded twice; it is not repaired here"
             ) from exc
 
+    def record_unpriced_flight(self, flight: UnpricedFlight) -> None:
+        """Persist a flight that was listed but sold no seat — spec D.6."""
+        with self._tx() as c:
+            c.execute(
+                "INSERT INTO unpriced_flight VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    flight.unpriced_id,
+                    flight.run_id,
+                    flight.attempt_id,
+                    flight.collection_date.isoformat(),
+                    flight.origin,
+                    flight.destination,
+                    flight.travel_date.isoformat(),
+                    flight.carrier,
+                    flight.flight_number,
+                    flight.departure_time_local.isoformat(),
+                    flight.observation_ts.isoformat(),
+                    flight.source_id,
+                    flight.availability.value,
+                    flight.detail,
+                ),
+            )
+
     # ── reads ─────────────────────────────────────────────────────────────
 
     def runs(self) -> list[CollectionRun]:
@@ -531,6 +623,35 @@ class CollectionStore:
                     fees=_undec(r["fees"]),
                     user_development_fee=_undec(r["user_development_fee"]),
                 ),
+            )
+            for r in self._conn.execute(sql, args).fetchall()
+        ]
+
+    def unpriced_flights(self, collection_date: date | None = None) -> list[UnpricedFlight]:
+        sql = "SELECT * FROM unpriced_flight"
+        args: tuple[str, ...] = ()
+        if collection_date is not None:
+            sql += " WHERE collection_date = ?"
+            args = (collection_date.isoformat(),)
+        sql += " ORDER BY unpriced_id"
+        return [
+            UnpricedFlight(
+                unpriced_id=r["unpriced_id"],
+                run_id=r["run_id"],
+                attempt_id=r["attempt_id"],
+                collection_date=date.fromisoformat(r["collection_date"]),
+                origin=r["origin"],
+                destination=r["destination"],
+                travel_date=date.fromisoformat(r["travel_date"]),
+                carrier=r["carrier"],
+                flight_number=r["flight_number"],
+                departure_time_local=datetime.strptime(
+                    r["departure_time_local"], "%H:%M:%S"
+                ).time(),
+                observation_ts=datetime.fromisoformat(r["observation_ts"]),
+                source_id=r["source_id"],
+                availability=Availability(r["availability"]),
+                detail=r["detail"],
             )
             for r in self._conn.execute(sql, args).fetchall()
         ]
@@ -652,7 +773,12 @@ def summarise(store: CollectionStore, collection_date: date) -> dict[str, object
             {o.apw_bucket.value for o in observations if o.apw_bucket is not None}
         ),
         "fare_classes": sorted({o.fare_class.value for o in observations}),
-        "sold_out": sum(1 for o in observations if o.availability is Availability.SOLD_OUT),
+        # Listed but unpurchasable — spec D.6. Read from its own table, because
+        # a sold-out flight has no fare and so cannot be a canonical observation.
+        "unpriced_flights": len(store.unpriced_flights(collection_date)),
+        "sold_out_observations": sum(
+            1 for o in observations if o.availability is Availability.SOLD_OUT
+        ),
         "incomplete_fare_breakdown": incomplete,
         "artifacts": len(store.artifact_refs()),
         "integrity_problems": store.verify(collection_date),
@@ -665,6 +791,7 @@ __all__ = [
     "ArtifactStore",
     "CollectionStore",
     "StoreError",
+    "UnpricedFlight",
     "open_store",
     "summarise",
 ]

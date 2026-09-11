@@ -2,7 +2,8 @@
 
 **Owner:** [@slazyverse](https://github.com/slazyverse) · **Checkpoint:** 2G · **Status:** designed, **not implemented**
 
-Seven stores. Nothing more, because everything here has to exist before Day 1
+Seven stores, plus one small table 2H added when the loader made its absence
+concrete. Nothing more, because everything here has to exist before Day 1
 and anything that does not is scope that delays the clock.
 
 Technology follows `context/tech_stack.md`: **PostgreSQL 16** for records,
@@ -58,6 +59,26 @@ One row per `Observation`. All §A.2 required fields, plus the 2G additions:
 
 **Immutable.** Corrections create a new row under a new `run_id`; §R.3 —
 published values are never overwritten in place.
+
+#### 2a. `unpriced_flight` — the flights this table cannot hold
+
+Added in 2H, when the loader was built and the gap became concrete.
+
+A flight that was listed but sold no seat at any price is a **disappeared item**
+(§D.6), not a missing price. It cannot live in `canonical_observation`:
+`payable_fare` is non-optional and constrained positive, so the only ways to put
+it there are to invent a number or to write a zero — and a zero asserts the fare
+*was* zero.
+
+Dropping it instead would be worse. "Sold out" and "this flight does not
+operate" would become the same absence, and that distinction is exactly what
+AMB-8's coverage denominator turns on: a sold-out flight is an expected cell
+that produced no quote; a flight that does not operate is not an expected cell
+at all.
+
+It carries flight identity, timestamps, provenance and `availability` — and no
+price, ever. It is **observed fact, not expectation**, so it is not the circular
+basket table ruled out below.
 
 ### 3. `collection_attempt` — the store that makes missingness measurable
 
@@ -141,7 +162,7 @@ stays retrievable.
 
 1. **`collection_run` + `collection_attempt`** — smallest, and they unblock the
    attempt log the manual spike already produces.
-2. **`canonical_observation`** + the raw artifact bucket.
+2. **`canonical_observation`** + `unpriced_flight` + the raw artifact bucket.
 3. **`source_metadata`** snapshotting.
 4. **`cell_state`** — needed only when the index runs, not when collection starts.
 5. **`publication`** — needed only at first publication.

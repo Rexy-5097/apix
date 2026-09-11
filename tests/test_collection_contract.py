@@ -56,7 +56,7 @@ def run(**kw: object) -> CollectionRun:
         "collector_identity": "fixture",
         "protocol_version": "acquisition-protocol-2G",
         "methodology_version": "2.1",
-        "frame_id": "DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T30",
+        "frame_id": "DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30",
     }
     base.update(kw)
     return CollectionRun(**base)  # type: ignore[arg-type]
