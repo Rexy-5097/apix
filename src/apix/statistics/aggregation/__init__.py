@@ -10,7 +10,11 @@ from apix.statistics.aggregation.weights import (
     suppressed_weight_share,
     validate,
 )
-from apix.statistics.aggregation.within_route import within_route_weights
+from apix.statistics.aggregation.within_route import (
+    CarrierAllocation,
+    CarrierAllocationBasis,
+    within_route_weights,
+)
 from apix.statistics.aggregation.young_laspeyres import (
     AggregationError,
     aggregate_levels,
@@ -21,6 +25,8 @@ __all__ = [
     "EQUAL_APW_WEIGHT",
     "APWWeighting",
     "AggregationError",
+    "CarrierAllocation",
+    "CarrierAllocationBasis",
     "WeightError",
     "aggregate_levels",
     "aggregate_over_live_set",

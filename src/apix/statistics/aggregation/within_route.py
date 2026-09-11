@@ -43,10 +43,111 @@ Two ways to satisfy it, both explicit:
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from datetime import date
+from enum import Enum
 
 from apix.schemas.enums import Channel, FareClass
 from apix.schemas.keys import CellKey
 from apix.statistics.aggregation.weights import EQUAL_APW_WEIGHT, WeightError, normalise
+
+
+class CarrierAllocationBasis(Enum):
+    """On what evidence a carrier allocation rests — AMB-9.
+
+    The basis is recorded because the three are not interchangeable and a
+    consumer of the index needs to know which one produced the weights.
+    """
+
+    #: Measured passenger shares per carrier on this route. **No official source
+    #: is known to exist**: DGCA publishes city-pair traffic and carrier traffic
+    #: as two separate, uncrossed tables, so a carrier's share OF A GIVEN ROUTE
+    #: cannot be read from them.
+    MEASURED_TRAFFIC = "MEASURED_TRAFFIC"
+    #: Scheduled seat capacity per carrier per route, from published schedules.
+    #: Spec G.2's declared fallback pattern — *"a proxy for passenger volume
+    #: with a stated and testable bias"*. Constructible IF the DGCA schedule
+    #: yields per-flight frequency and aircraft type. Currently unretrieved.
+    CAPACITY_PROXY = "CAPACITY_PROXY"
+    #: Equal weight per carrier, as a **declared, documented choice** with a
+    #: published sensitivity band. This is spec G.4's own pattern for alpha
+    #: under OQ-7: *"equal weights across APW buckets as a declared, documented
+    #: choice, accompanied by a sensitivity analysis"*. Legitimate only WITH the
+    #: band — see :class:`CarrierAllocation`.
+    DECLARED_UNIFORM = "DECLARED_UNIFORM"
+
+
+@dataclass(frozen=True, slots=True)
+class CarrierAllocation:
+    """A ratified rule for allocating ``v[c|r]`` across carriers — AMB-9.
+
+    **This type is the seam, and it is deliberately hard to fill in.** Spec G.3
+    defines no carrier term, so any allocation is a methodology decision the
+    owner must make. Making it a versioned object rather than a loose mapping
+    means a ratified rule drops into the pipeline without redesign, and an
+    *unratified* one cannot drop in by accident.
+
+    Two constraints are enforced rather than documented:
+
+    1. **Ratification is required.** ``ratified_by`` and ``ratified_date`` must
+       both be present. A weight vector with no owner behind it is an invention.
+    2. **A uniform declaration requires its sensitivity band.** Spec G.4's
+       precedent is equal weights *"accompanied by a sensitivity analysis
+       showing how far the index moves under plausible alternative curves"*.
+       Equal weights without the band is not the G.4 pattern — it is the guess
+       the pattern exists to replace, and it would weight a carrier holding
+       ~60% of a route's passengers identically to one holding 3%.
+
+    ``shares`` need not sum to 1; it is normalised with everything else.
+    """
+
+    version: str
+    basis: CarrierAllocationBasis
+    shares: Mapping[str, float]
+    ratified_by: str
+    ratified_date: date
+    #: Required when ``basis`` is DECLARED_UNIFORM. Identifies the published
+    #: sensitivity analysis, per the spec G.4 pattern.
+    sensitivity_band_ref: str | None = None
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.version:
+            raise WeightError("carrier allocation must carry a version")
+        if not self.ratified_by or not self.ratified_date:
+            raise WeightError(
+                f"carrier allocation {self.version!r} is not ratified. AMB-9 is an open "
+                "methodology question and spec G.3 defines no carrier term, so an "
+                "allocation without a named owner and date is an invention, not a rule"
+            )
+        if not self.shares:
+            raise WeightError(f"carrier allocation {self.version!r} declares no shares")
+        bad = sorted(k for k, v in self.shares.items() if v < 0 or v != v)
+        if bad:
+            raise WeightError(f"carrier shares must be finite and >= 0; bad: {bad}")
+        if self.basis is CarrierAllocationBasis.DECLARED_UNIFORM and not self.sensitivity_band_ref:
+            raise WeightError(
+                f"carrier allocation {self.version!r} declares uniform weights with no "
+                "sensitivity_band_ref. Spec G.4's precedent for an unavailable weight is "
+                "equal weights as a declared choice ACCOMPANIED BY a published sensitivity "
+                "band; without the band this is the guess that pattern exists to replace"
+            )
+
+    def share_for(self, carrier: str) -> float:
+        """The declared share for one carrier.
+
+        Raises rather than defaulting: a carrier absent from a ratified
+        allocation is outside the rule's scope, and silently giving it zero
+        would drop it from the index without saying so.
+        """
+        try:
+            return self.shares[carrier]
+        except KeyError:
+            raise WeightError(
+                f"carrier {carrier!r} has no share in ratified allocation "
+                f"{self.version!r} (AMB-9); the allocation covers "
+                f"{sorted(self.shares)}"
+            ) from None
 
 
 def _cell_id(cell: CellKey) -> str:
@@ -64,7 +165,7 @@ def within_route_weights(
     *,
     fare_class_shares: Mapping[FareClass, float],
     channel_shares: Mapping[Channel, float],
-    carrier_shares: Mapping[str, float] | None = None,
+    carrier_allocation: CarrierAllocation | None = None,
 ) -> dict[str, float]:
     """Build ``v[c|r]`` for one route's cells — spec G.3.
 
@@ -75,11 +176,14 @@ def within_route_weights(
         fare_class_shares: ``β``, observed composition shares in the weight
             reference period, held fixed for the index year (spec G.3, LOCKED).
         channel_shares: ``δ``, on the same basis.
-        carrier_shares: Relative weight per carrier on this route. **Required
-            whenever the route carries more than one carrier**, because spec G.3
-            defines no carrier term and the allocation is an open methodology
-            question (AMB-9). Need not sum to 1 — it is normalised with
-            everything else.
+        carrier_allocation: A **ratified** :class:`CarrierAllocation`.
+            **Required whenever the route carries more than one carrier**,
+            because spec G.3 defines no carrier term and the allocation is an
+            open methodology question (AMB-9).
+
+            A single-carrier route needs none: with one carrier there is no
+            allocation to make, which is why the Checkpoint 2G empirical frame
+            can run before AMB-9 is ruled on.
 
     Returns:
         ``v[c|r]`` keyed by cell id, summing to 1 (spec G.5, INV-1), in sorted
@@ -89,8 +193,8 @@ def within_route_weights(
         WeightError: if ``cells`` is empty; if the cells span more than one
             route; if a fare class or channel present in the cells has no
             declared share; if the route carries several carriers and
-            ``carrier_shares`` is absent or incomplete; or if the resulting
-            vector is degenerate.
+            ``carrier_allocation`` is absent or does not cover them; or if the
+            resulting vector is degenerate.
 
     ``alpha`` is spec G.4's LOCKED ``1/7`` per APW bucket — a declared v1 choice
     published with a sensitivity band, pending OQ-7. It is not measured and this
@@ -107,15 +211,16 @@ def within_route_weights(
         )
 
     carriers = sorted({c.carrier for c in cells})
-    if len(carriers) > 1 and carrier_shares is None:
+    if len(carriers) > 1 and carrier_allocation is None:
         raise WeightError(
             f"route {routes[0]} carries {len(carriers)} carriers {carriers} and no "
-            "carrier_shares were declared. Spec G.3 defines v[c|r] as "
+            "ratified carrier_allocation was supplied. Spec G.3 defines v[c|r] as "
             "alpha_apw x beta_fare_class x delta_channel and has no carrier term, "
             "so the allocation across carriers is undetermined by the frozen "
-            "methodology (AMB-9). Declare it — measured shares, or uniform as a "
-            "stated choice with a published sensitivity band per the spec G.4 "
-            "pattern. It is never inserted silently here."
+            "methodology (AMB-9). Supply a ratified CarrierAllocation — measured "
+            "shares, a capacity proxy, or uniform as a stated choice with a "
+            "published sensitivity band per the spec G.4 pattern. It is never "
+            "inserted silently here."
         )
 
     missing_fare = sorted(
@@ -128,10 +233,14 @@ def within_route_weights(
     if missing_channel:
         raise WeightError(f"no delta (channel share) declared for {missing_channel} (spec G.3)")
 
-    if carrier_shares is not None:
-        missing_carrier = sorted(c for c in carriers if c not in carrier_shares)
+    if carrier_allocation is not None:
+        missing_carrier = sorted(c for c in carriers if c not in carrier_allocation.shares)
         if missing_carrier:
-            raise WeightError(f"no carrier share declared for {missing_carrier} (AMB-9)")
+            raise WeightError(
+                f"ratified allocation {carrier_allocation.version!r} has no share for "
+                f"{missing_carrier} (AMB-9); it covers "
+                f"{sorted(carrier_allocation.shares)}"
+            )
 
     raw: dict[str, float] = {}
     for cell in sorted(cells, key=lambda c: c.sort_key):
@@ -142,11 +251,16 @@ def within_route_weights(
         weight = (
             EQUAL_APW_WEIGHT * fare_class_shares[cell.fare_class] * channel_shares[cell.channel]
         )
-        if carrier_shares is not None:
-            weight *= carrier_shares[cell.carrier]
+        if carrier_allocation is not None:
+            weight *= carrier_allocation.share_for(cell.carrier)
         raw[_cell_id(cell)] = weight
 
     return normalise(raw)
 
 
-__all__ = ["WeightError", "within_route_weights"]
+__all__ = [
+    "CarrierAllocation",
+    "CarrierAllocationBasis",
+    "WeightError",
+    "within_route_weights",
+]

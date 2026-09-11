@@ -1,0 +1,190 @@
+# APIx source precedence — spec D.8
+#
+# The ordered, versioned, price-blind rule that decides WHICH source prices a
+# matched item when several quote the same flight.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY THIS FILE EXISTS
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# v2.0 defined no reconciliation rule, so the implementation fell back to
+# dictionary insertion order — an arbitrary, undeclared rule. Spec D.8 calls that
+# "the one outcome unacceptable under any resolution".
+#
+# Spec D.8.2 fixes six properties this list must have:
+#
+#   Deterministic       an explicit total order, never arrival order
+#   Price-blind         selection NEVER inspects the fare. No minimum, median or
+#                       mean is taken, so the rule CANNOT bias the level by
+#                       construction
+#   Same-source-paired  the fare comes from the highest-ranked source present in
+#                       BOTH t and t-7, so a cross-source ratio is impossible
+#   Versioned           `version` below is recorded in the version vector
+#   Auditable           the winning source_id is stored on each matched pair
+#   Reversible          changing this list is a version-vector change, visible
+#                       in every vintage
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHAT IS DECIDED HERE, AND WHAT IS NOT
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# DECIDED: the structure, the properties, the version identifier, and the rule
+# that an unlisted source ranks after every listed one.
+#
+# NOT DECIDED: the ORDER ITSELF between two collectable sources in one channel.
+# Nothing in the dossier, the frozen spec or the v2.1 amendment states how to
+# rank one airline portal against another, or one aggregator against another.
+# It is an APIx DESIGN DECISION and it is **not derivable from any evidence this
+# project holds**. Inventing an order and calling it methodology is exactly what
+# spec S forbids.
+#
+# Every multi-entry ordering below is therefore marked
+# `status: OWNER_APPROVAL_REQUIRED` and MUST be ratified by @Rexy-5097 before it
+# governs a published number.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY THE SPIKE CAN PROCEED ANYWAY
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Precedence only bites when two sources in ONE channel quote the SAME item.
+# With exactly one source per channel the order is vacuous — there is nothing to
+# rank — and the selected source is the only source.
+#
+# The Checkpoint 2G automation gate leaves ZERO sources AUTOMATION_ALLOWED and
+# exactly two MANUAL_PERMITTED. A single-source-per-channel spike is therefore
+# the only configuration currently available, and it is one in which this
+# ordering has no effect on any number.
+#
+# That is why `spike-single-source-v1` below is usable NOW and needs no ruling,
+# while `full-frame-v1` is a draft that does.
+
+schema_version: "1.0.0"
+declared_date: "2026-09-11"
+owner: "@slazyverse"
+methodology_owner: "@Rexy-5097"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# IN FORCE
+# ─────────────────────────────────────────────────────────────────────────────
+
+active_version: spike-single-source-v1
+
+precedence_lists:
+
+  - version: spike-single-source-v1
+    status: USABLE_WITHOUT_RULING
+    rationale: >-
+      One source per channel, so no two sources can quote the same item and the
+      ordering is vacuous. Recorded explicitly rather than left empty, because
+      spec D.8 requires a DECLARED rule to be applied on every matching call —
+      an undeclared rule is what v2.1 exists to remove, and "there was only one
+      source" is a reason the order did not matter, not a reason to skip it.
+    channels:
+      AIRLINE_DIRECT:
+        # The only carrier whose terms have been read and whose manual carve-out
+        # is explicit. See registry.yaml -> indigo -> manual_gate.
+        - indigo-direct
+      AGGREGATOR: []
+      LICENSED_FEED: []
+      DECLARED_TARIFF:
+        - indigo-tariff-sheet
+
+  - version: full-frame-v1
+    status: OWNER_APPROVAL_REQUIRED
+    ratified_by: null
+    ratified_date: null
+    rationale: >-
+      DRAFT. The ordering below is NOT derived from evidence and MUST NOT govern
+      a published number until ratified. It is recorded so the shape is
+      reviewable, not because the order is justified.
+    proposed_ordering_principle: >-
+      PROPOSED, NOT RATIFIED: carrier-direct before aggregator within a channel
+      list, on the ground that a carrier is the origin of its own inventory
+      while an aggregator redistributes it — so a carrier-direct quote is one
+      hop closer to the price the passenger pays, and the dossier already calls
+      carrier portals "the primary observation channel" (p.11). This is a
+      PLAUSIBLE argument, not a finding. Ranking two aggregators against each
+      other has no argument at all and is left alphabetical purely so the rule
+      is deterministic — which is a property, not a justification.
+    channels:
+      AIRLINE_DIRECT:
+        - indigo-direct
+        - airindia-direct
+        - akasa-direct
+        - spicejet-direct
+        - airindiaexpress-direct
+      AGGREGATOR:
+        - makemytrip
+        - goibibo
+        - cleartrip
+        - easemytrip
+        - ixigo
+        - yatra
+      LICENSED_FEED:
+        - amadeus-self-service
+        - travelpayouts
+      DECLARED_TARIFF:
+        - indigo-tariff-sheet
+    blocking_notes:
+      - >-
+        Every AGGREGATOR entry is currently AUTOMATION_PROHIBITED or
+        AUTOMATION_UNKNOWN, so this list cannot be exercised as written.
+      - >-
+        makemytrip and goibibo share source group `mmt_group`. Ranking them
+        against each other is meaningless for effective n: spec B.6 counts them
+        as ONE observation however they are ordered.
+      - >-
+        LICENSED_FEED ordering is unjustifiable until OQ-8 establishes what
+        either feed actually covers.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RULES THAT APPLY TO EVERY LIST
+# ─────────────────────────────────────────────────────────────────────────────
+
+rules:
+  unlisted_source_rank: >-
+    A source not named in the channel's list ranks AFTER every listed source and
+    is ordered lexicographically among other unlisted sources. Deterministic,
+    and still price-blind.
+  price_blindness: >-
+    Selection reads source identity and period membership only. It never reads
+    the fare. This is structural: a rule that cannot see the price cannot be
+    accused of choosing on it.
+  same_source_pairing: >-
+    The fare is taken from the highest-ranked source present in BOTH t and t-7.
+    If no source is present in both, the item is unmatched and enters neither
+    side (spec D.1).
+  source_transition: >-
+    When the SELECTED source changes between consecutive links, the pair is
+    flagged SOURCE_TRANSITION and excluded for EXACTLY ONE link, then resumes.
+    Frequency is OQ-A9, unmeasured.
+  cross_channel: >-
+    Precedence NEVER operates across channels. Spec B.5 makes channel part of
+    the cell key: an airline-direct fare and an aggregator fare are different
+    products, not two readings of one, and averaging them "produces a number
+    that is not the price of anything".
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OPEN
+# ─────────────────────────────────────────────────────────────────────────────
+
+open_questions:
+  - id: AMB-10
+    question: >-
+      `source_precedence` is carried on every published output (spec O.1, v2.1)
+      but sits OUTSIDE spec P.1's five-field reproducibility tuple. Two runs
+      with different precedence lists can price the same snapshot differently
+      and claim the same tuple.
+    status: OPEN
+    blocking: false
+    becomes_blocking_when: the active list is revised for the first time
+  - id: OQ-A2
+    question: >-
+      Cross-source spread within and across independent source groups — the
+      evidence that would justify a permanent reconciliation statistic
+      (median across groups is the leading v2.2 candidate).
+    status: OPEN
+    blocking: false
+    note: >-
+      Cannot be measured until more than one source is collectable, and cannot
+      be INTERPRETED until source-group independence is established.

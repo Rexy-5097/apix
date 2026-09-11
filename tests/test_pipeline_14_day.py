@@ -49,7 +49,11 @@ from apix.schemas.keys import CellKey
 from apix.schemas.observation import Entitlements, Observation
 from apix.schemas.results import ApixLResult, CellState
 from apix.schemas.version_vector import VersionVector
-from apix.statistics.aggregation.within_route import within_route_weights
+from apix.statistics.aggregation.within_route import (
+    CarrierAllocation,
+    CarrierAllocationBasis,
+    within_route_weights,
+)
 from apix.statistics.elementary.jevons import compute_jevons
 from apix.statistics.elementary.matching import build_matched_set, cell_key_for
 from apix.statistics.elementary.sources import SourcePrecedence
@@ -84,6 +88,24 @@ STANDARD = Entitlements(
 PRECEDENCE = SourcePrecedence(
     version="src-v1",
     order={Channel.AIRLINE_DIRECT: ("indigo-direct", "ai-direct")},
+)
+
+#: A DECLARED SYNTHETIC allocation, for fixtures only.
+#:
+#: AMB-9 is open and spec G.3 defines no carrier term, so no allocation is
+#: authorised on a publication path. A fixture is a different matter: these
+#: chains need a second carrier to make the parent stratum non-trivial, and the
+#: weights must come from somewhere stated. `ratified_by` names the fixture, not
+#: a person, precisely so this can never be mistaken for a ruling.
+FIXTURE_ALLOCATION = CarrierAllocation(
+    version="fixture-uniform-v1",
+    basis=CarrierAllocationBasis.DECLARED_UNIFORM,
+    shares={"6E": 1.0, "AI": 1.0},
+    ratified_by="tests/test_pipeline_14_day.py (FIXTURE ONLY — not a ruling)",
+    ratified_date=date(2026, 9, 11),
+    sensitivity_band_ref="n/a — synthetic fixture, no published index",
+    notes="Equal weights so the fixture exercises the parent stratum. Carries no "
+    "methodological claim about real carrier shares.",
 )
 
 
@@ -225,7 +247,7 @@ def run_pipeline(
         cells,
         fare_class_shares={FareClass.STANDARD: 1.0},
         channel_shares={Channel.AIRLINE_DIRECT: 1.0},
-        carrier_shares={c: 1.0 for c in sorted({k.carrier for k in cells})} or None,
+        carrier_allocation=FIXTURE_ALLOCATION,
     )
 
     results = [
@@ -573,6 +595,7 @@ def test_publication_layer_accepts_as_of_states() -> None:
         sorted({s.cell for s in states}, key=lambda c: c.sort_key),
         fare_class_shares={FareClass.STANDARD: 1.0},
         channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+        carrier_allocation=FIXTURE_ALLOCATION,
     )
 
     def at(t: date, store: Sequence[CellState]) -> ApixLResult:
@@ -602,6 +625,7 @@ def test_calculate_apix_l_still_rejects_a_future_dated_state() -> None:
         sorted({s.cell for s in states}, key=lambda c: c.sort_key),
         fare_class_shares={FareClass.STANDARD: 1.0},
         channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+        carrier_allocation=FIXTURE_ALLOCATION,
     )
     latest = max(states, key=lambda s: s.collection_date)
     with pytest.raises(ApixLError, match="after the period"):
@@ -625,6 +649,7 @@ def test_shuffled_state_order_produces_identical_results() -> None:
         sorted({s.cell for s in states}, key=lambda c: c.sort_key),
         fare_class_shares={FareClass.STANDARD: 1.0},
         channel_shares={Channel.AIRLINE_DIRECT: 1.0},
+        carrier_allocation=FIXTURE_ALLOCATION,
     )
 
     def run(order: Sequence[CellState]) -> list[float | None]:

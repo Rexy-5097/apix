@@ -32,6 +32,38 @@
 # terms have not been read.
 #
 # ─────────────────────────────────────────────────────────────────────────────
+# AUTOMATION GATE — added at Checkpoint 2G
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# `automation_gate` is the single field a collector reads before making any
+# request. It has four values and ONE of them permits automated collection:
+#
+#   AUTOMATION_ALLOWED     the source's own published terms permit automated
+#                          collection. Requires POSITIVE evidence, quoted.
+#   AUTOMATION_PROHIBITED  the source's terms prohibit it, OR its robots.txt
+#                          disallows the path APIx needs. Either is decisive
+#                          under compliance/collection-control-contract.md C-2.
+#   AUTOMATION_UNKNOWN     no blocking evidence found, terms unread. BLOCKS
+#                          collection. Absence of a prohibition is not a permission.
+#   MANUAL_ONLY            automated collection is prohibited, but collection by
+#                          a person in a browser is carved out or unaddressed.
+#
+# `manual_gate` is separate and deliberately so. A human reading a published
+# price in a browser is a different activity from a scripted retrieval, and at
+# least one source says so in its own terms. MoSPI's CPI collects airfare this
+# way: Expert Group Report, "Airfare data are to be collected by State Regional
+# Offices from the well-known websites."
+#
+# RULE OF CONSTRUCTION, applied throughout: robots.txt is a crawling directive,
+# NOT a licence, and Terms of Use are NOT inferred from it. A robots Disallow
+# sets automation_gate to PROHIBITED because THIS PROJECT honours robots.txt by
+# its own contract — not because it establishes what the terms say. Conversely a
+# permissive robots.txt yields UNKNOWN, never ALLOWED, because silence in
+# robots.txt grants nothing.
+#
+# AS OF 2026-09-11: zero sources are AUTOMATION_ALLOWED.
+#
+# ─────────────────────────────────────────────────────────────────────────────
 # AUDIT PROVENANCE
 # ─────────────────────────────────────────────────────────────────────────────
 #
@@ -178,6 +210,16 @@ sources:
       Largest domestic carrier by fleet and frequency, so its absence would
       distort any exploratory frame more than any other single source. It is
       also the one this audit failed to reach. Re-audit first.
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_PERMITTED
+    automation_gate_basis: >-
+      IndiGo BluChip Programme Terms and Conditions, obtained 2026-09-11. Three explicit prohibitions: (a) "Committing unauthorized systematic retrieval of data or other content from the Platform to create or compile, directly or indirectly, a collection, compilation, database, or directory of information... without the written permission of IndiGo"; (b) "Engage in any automated use of the Program/Platform... or using any data mining tools, robots, or similar data gathering and extraction tools"; (c) "use, launch, development, or distribution of any automated system, including without limitation, any spider, robot, cheat utility, scraper, or offline reader that can access the Platform".
+    manual_gate_basis: >-
+      The SAME clause carves out manual use: "Except as may be the result of standard search engine or INTERNET BROWSER USAGE". A person reading a published price in a browser is expressly outside the prohibition.
+    automation_gate_caveat: >-
+      SCOPE CAVEAT, material: this is the LOYALTY PROGRAMME agreement, not the general website Terms of Use. "Platform" is defined by reference to the Program's hosting applications, which is arguably narrower than goindigo.in as a whole. The general Terms of Use and the Conditions of Carriage are separate documents, both referenced in the text obtained, BOTH STILL UNREAD. Re-classify when they are.
+    automation_gate_date: "2026-09-11"
 
   - source_id: air_india
     display_name: Air India
@@ -197,6 +239,12 @@ sources:
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      No terms retrieved. robots.txt unreachable from the audit host.
+    automation_gate_date: "2026-09-11"
 
   - source_id: air_india_express
     display_name: Air India Express
@@ -237,6 +285,14 @@ sources:
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      robots.txt Disallow: /flight-availability covers the fare path. Decisive under the project's own control contract C-2, which honours robots.txt.
+    automation_gate_caveat: >-
+      Terms of Use NOT read. The robots directive is not evidence of what the terms say.
+    automation_gate_date: "2026-09-11"
 
   - source_id: akasa_air
     display_name: Akasa Air
@@ -264,6 +320,14 @@ sources:
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      robots.txt raises no objection (Allow: / , no Disallow at all) — but that grants NOTHING. Terms of Use not retrieved, so automation is UNKNOWN, not ALLOWED.
+    automation_gate_caveat: >-
+      The cleanest robots position of any source audited. Terms remain the gate.
+    automation_gate_date: "2026-09-11"
 
   - source_id: spicejet
     display_name: SpiceJet
@@ -304,6 +368,12 @@ sources:
 # ─────────────────────────────────────────────────────────────────────────────
 # CHANNEL D — AGGREGATOR PORTALS
 # ─────────────────────────────────────────────────────────────────────────────
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      robots.txt does not disallow the rendered search path, but writes three absolute-URL Disallow lines whose INTENT covers /api/v1. Honour the intent. Terms of Use not retrieved.
+    automation_gate_date: "2026-09-11"
 
   - source_id: makemytrip
     display_name: MakeMyTrip
@@ -322,6 +392,12 @@ sources:
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      Neither robots.txt nor terms retrieved; four attempts timed out.
+    automation_gate_date: "2026-09-11"
 
   - source_id: goibibo
     display_name: Goibibo
@@ -343,6 +419,14 @@ sources:
     notes: >-
       Shares group mmt_group with makemytrip. Collecting both yields ONE
       observation for effective-n purposes (spec B.6), not two.
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      Not verified by this audit. A Checkpoint 2F workflow agent REPORTED "Disallow: /flights/*?*" covering every parameterised flight URL, but the auditor could not retrieve the file to confirm it. Recorded as REPORTED, not VERIFIED, and classified UNKNOWN accordingly.
+    automation_gate_caveat: >-
+      If the reported directive is confirmed, this becomes AUTOMATION_PROHIBITED.
+    automation_gate_date: "2026-09-11"
 
   - source_id: yatra
     display_name: Yatra
@@ -361,6 +445,12 @@ sources:
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      Neither robots.txt nor terms retrieved; four attempts timed out.
+    automation_gate_date: "2026-09-11"
 
   - source_id: easemytrip
     display_name: EaseMyTrip
@@ -391,6 +481,14 @@ sources:
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      robots.txt Disallow: /flight-search/listing* covers the results page carrying the fares. Decisive under control contract C-2.
+    automation_gate_caveat: >-
+      Terms of Use NOT read.
+    automation_gate_date: "2026-09-11"
 
   - source_id: cleartrip
     display_name: Cleartrip
@@ -422,6 +520,14 @@ sources:
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      robots.txt Disallow: /flights/search* on desktop and mobile, plus /api/, after a blanket Allow: / . The general permission does not survive the specific prohibition (control contract C-2).
+    automation_gate_caveat: >-
+      Terms of Use NOT read.
+    automation_gate_date: "2026-09-11"
 
   - source_id: ixigo
     display_name: ixigo
@@ -460,6 +566,14 @@ sources:
 # CHANNEL A — LICENSED FEEDS (supplementary and backfill; NEVER a silent
 # substitute for the observation being claimed — spec H.3, OQ-8)
 # ─────────────────────────────────────────────────────────────────────────────
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      robots.txt Disallow: /flights/search and /api/ for all agents. The only crawl-delay in the file is scoped to MSNBot and states nothing about a general cadence.
+    automation_gate_caveat: >-
+      Terms of Use NOT read.
+    automation_gate_date: "2026-09-11"
 
   - source_id: amadeus_self_service
     display_name: Amadeus Self-Service APIs
@@ -488,6 +602,14 @@ sources:
       domestic sectors and field availability."
       Spec H.3 constrains its use: AUTHORIZED_FEED is never silently
       substituted for a LIVE_SCRAPE observation being claimed.
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      An authorised API is governed by its licence, which has not been read. This is OQ-8 and it is untouched.
+    automation_gate_caveat: >-
+      If licensed and covering Indian domestic sectors, this is the only known route to the spec A.4 fee decomposition that no portal is known to render.
+    automation_gate_date: "2026-09-11"
 
   - source_id: travelpayouts
     display_name: Travelpayouts
@@ -513,6 +635,14 @@ sources:
 # ─────────────────────────────────────────────────────────────────────────────
 # CHANNEL B — DECLARED TARIFF SHEETS (reference envelope, not a transacted price)
 # ─────────────────────────────────────────────────────────────────────────────
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      Licence not read. OQ-8.
+    automation_gate_caveat: >-
+      Whether its fare data is a redistribution of a feed also reaching the aggregators is unknown and bears on source-group independence.
+    automation_gate_date: "2026-09-11"
 
   - source_id: airline_tariff_sheets
     display_name: Airline declared tariff sheets (DGCA direction of 13 May 2025)
@@ -545,6 +675,16 @@ sources:
 # REFERENCE SOURCES — not fare observations. These carry the weights and the
 # expected-cell frame, and they are what AMB-8, AMB-9, OQ-4 and OQ-8 turn on.
 # ─────────────────────────────────────────────────────────────────────────────
+    # ── Checkpoint 2G automation gate ──
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_PERMITTED
+    automation_gate_basis: >-
+      A published PDF fetched once per month per carrier is a different risk profile from repeated fare-search automation, but no terms were read, so the automated gate stays UNKNOWN.
+    manual_gate_basis: >-
+      Downloading a published tariff sheet by hand is ordinary use of a public document that DGCA Circular 02/2010 requires carriers to display.
+    automation_gate_caveat: >-
+      IndiGo's sheet was obtained this way on 2026-09-11: 41 pp, 4,729 directed routes, 100 cities, Fare-1..Fare-14 bands.
+    automation_gate_date: "2026-09-11"
 
 reference_sources:
   - reference_id: dgca_citypair_domestic_traffic
