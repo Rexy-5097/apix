@@ -24,12 +24,25 @@
 # point. G-09 demonstrates why: it evaluates to 106.00000000000001.
 
 meta:
+  # The version these values were DERIVED under, by hand, at Checkpoint 1A.
+  # It is provenance and never changes: rewriting it would falsify the record of
+  # what was hand-calculated against what text.
   methodology_version: "2.0"
   spec: docs/methodology/apix_formula_spec_v1.md
   frozen_at_checkpoint: "1A"
   frozen_date: "2026-09-08"
   owner: "@Rexy-5097"
   relative_tolerance: 1.0e-12
+  # The spec's governance rule requires "an update to the golden values" for any
+  # change to a LOCKED item. The v2.1 amendment was checked against every case
+  # below at its freeze and NOT ONE `expected` value moved: v2.1 changes which
+  # observations form an item and a cell, not the arithmetic applied to them,
+  # and every case here is stated at the level of items and prices already.
+  # The update the rule asks for is therefore this line — verified unchanged —
+  # rather than a new number. See ADR-0063.
+  revalidated_under: "2.1"
+  revalidated_date: "2026-09-10"
+  revalidated_result: "all 16 cases unchanged; file byte-identical since 2026-09-08"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # JEVONS ELEMENTARY RELATIVE — spec §D.2

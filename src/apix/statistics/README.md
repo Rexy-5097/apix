@@ -24,9 +24,11 @@ This file is a **map, not a specification**. The contract is:
 | Document | Role |
 |---|---|
 | [`apix_formula_spec_v1.md`](../../../docs/methodology/apix_formula_spec_v1.md) | `methodology_version 2.0`. **FROZEN and immutable historical record.** Superseded in the sections named below |
-| [`apix_formula_spec_v2_1_draft.md`](../../../docs/methodology/apix_formula_spec_v2_1_draft.md) | The v2.1 amendment. **Authoritative for every rule it changes** |
+| [`apix_formula_spec_v2_1.md`](../../../docs/methodology/apix_formula_spec_v2_1.md) | The v2.1 amendment, **FROZEN and in force**. Authoritative for every rule it changes |
 | [`AMB-1-resolution.md`](../../../docs/methodology/AMB-1-resolution.md) | Why the amendment exists, with the proof |
-| [`ADR-0062`](../../../artifacts/decisions/ADR-0062-item-cell-separation.md) | The decision record |
+| [`ADR-0062`](../../../artifacts/decisions/ADR-0062-item-cell-separation.md) | The item/cell separation |
+| [`ADR-0063`](../../../artifacts/decisions/ADR-0063-freeze-methodology-v2-1.md) | The v2.1 freeze, and AMB-7 as an implementation gap |
+| [`OPEN-AMBIGUITIES-checkpoint-2.md`](../../../docs/methodology/OPEN-AMBIGUITIES-checkpoint-2.md) | AMB-1 … AMB-10. **AMB-8 and AMB-9 block the pipeline** |
 
 When code and methodology disagree, **the methodology wins and the code is
 wrong** — unless the methodology is self-contradictory, in which case stop and
@@ -87,10 +89,48 @@ is **held out**, which is a different quality event from suppression.
 | `elementary/outliers.py` | median/MAD, unscaled, `n >= 5`, MAD = 0 declines |
 | `elementary/{admissibility,dedup}.py` | spec A.6 and D.4 |
 | `index/parent.py` | `J(P,t)`, `I(P,t)`, the independent-live set |
-| `index/chaining.py` | chaining, carry, suppression, new-cell entry |
-| `index/apix_l.py` | route and national aggregation, tier and status weight shares |
+| `index/chaining.py` | chaining, carry, suppression, new-cell entry — **one cell, one weekly link** |
+| `index/publication.py` | as-of selection of the daily live set, the freshness ceiling, `publish` |
+| `index/apix_l.py` | route and national aggregation, tier and status weight shares, the freshness distribution |
+| `aggregation/within_route.py` | `v[c\|r]` from §G.3 — refuses to invent the carrier allocation |
 | `aggregation/` | Young / Modified Laspeyres, weights, renormalisation |
 | `tpd/`, `uncertainty/` | not implemented — later checkpoints |
+
+## A link day and a publication day are different operations
+
+This is what AMB-7 was, and it is the shape the pipeline must keep:
+
+```
+LINK DAY (once per cell per 7 days)      PUBLICATION DAY (every day)
+  observations at t and t-7                latest state per CellKey  §C.2
+  build_matched_set        §D.1, D.8       as-of at t                §C.2
+  compute_jevons           §D.2            freshness ceiling, 13 d   §C.3
+  advance_cell             §E.2/E.4/J      weighted mean of LEVELS   §F.2/F.3
+```
+
+The second loop **never calls into the first**. `J(c,t)` is a *seven-day*
+relative; applying it once per calendar day compounds it sevenfold and turns a
+1% weekly move into 7.2135%. A cell that does not link contributes its most
+recent level **repeated, never multiplied** — and it has had no state event, so
+there is no fifth `CellStatus` and no daily row for it anywhere.
+
+The link loop is driven by the **basket**, not by the observations: a cell due to
+link today with no observations must still reach `advance_cell`, or §E.4 carry
+and §I suppression can never fire. Which cells are due means which cells are
+expected, which is **AMB-8**.
+
+Proven end to end over 14 consecutive dates in
+[`tests/test_pipeline_14_day.py`](../../../tests/test_pipeline_14_day.py).
+
+## Two open questions are blocked at the code boundary, not defaulted
+
+| Question | What the code does |
+|---|---|
+| **AMB-8** — what is an `expected_cell`? | `publish` requires `expected_cells_by_route`, no default. `calculate_apix_l` keeps the observed-count fallback for unit fixtures and **caveats every published output that relies on it**, saying the coverage figure is optimistic rather than measured |
+| **AMB-9** — how is `v[c\|r]` allocated across carriers? | `within_route_weights` **raises** on a multi-carrier route with no declared `carrier_shares`. `day_of_week` needs no declaration: v2.1 §C.2 rules it is not an independent weight dimension, so the seven weekday variants divide their group's weight equally — a derivation, not a choice |
+
+Neither is a threshold this layer may pick. §S: *"None of these may be resolved
+by choosing a plausible value."*
 
 ## Tier 2 is an identity relaxation, not a threshold relaxation
 
@@ -156,6 +196,13 @@ sampling variation.**
 **distributions**, never means — a mean of `1.000 items per cell` was what hid
 AMB-1 in plain sight. Its frame is synthetic and proves only that the mechanism
 works.
+
+It measures **one collection date at full frame width**, deliberately, and is
+left calling `calculate_apix_l` directly rather than `publish`. Its purpose is
+per-stage density and runtime on a wide frame — the input to OQ-5's bootstrap
+budget — and routing it through the as-of layer would measure a different thing
+on a frame that has only one date to be as-of. Multi-date behaviour is proven in
+`tests/test_pipeline_14_day.py` instead, which is where it belongs.
 
 Whether real Indian schedules produce viable carrier-specific cells is
 **OQ-A1**, answered by the seven-day collection spike. **OQ-A2** (cross-source

@@ -1,6 +1,8 @@
 # ADR-0062: Separate the matching ITEM from the elementary CELL
 
-> **Status:** Proposed (DRAFT — awaiting final methodology audit) | **Date:** 2026-09-09 | **Decider:** Rexy-5097
+> **Status:** Accepted | **Date:** 2026-09-09 | **Accepted:** 2026-09-10 (Checkpoint 2E) | **Decider:** Rexy-5097
+>
+> Put in force by the v2.1 freeze — see [ADR-0063](ADR-0063-freeze-methodology-v2-1.md).
 
 ---
 
@@ -278,7 +280,7 @@ version-vector structure are unchanged.
 **Sequenced; each step gated on the previous. No step is taken before the owner's
 audit of this ADR and the two methodology documents.**
 
-1. Freeze `apix_formula_spec_v2_1_draft.md`; `methodology_version` is set there
+1. Freeze `apix_formula_spec_v2_1.md`; `methodology_version` is set there
    and nowhere else.
 2. Write **E2E-01 … E2E-13** against the frozen amendment and confirm they
    **fail** (specification-first). E2E-06b, E2E-11, E2E-12 and E2E-13 cover the
@@ -324,7 +326,7 @@ merged via #2).
 ## References
 
 - [`docs/methodology/AMB-1-resolution.md`](../../docs/methodology/AMB-1-resolution.md)
-- [`docs/methodology/apix_formula_spec_v2_1_draft.md`](../../docs/methodology/apix_formula_spec_v2_1_draft.md)
+- [`docs/methodology/apix_formula_spec_v2_1.md`](../../docs/methodology/apix_formula_spec_v2_1.md)
 - [`docs/methodology/OPEN-AMBIGUITIES-checkpoint-2.md`](../../docs/methodology/OPEN-AMBIGUITIES-checkpoint-2.md)
 - `docs/methodology/apix_formula_spec_v1.md` — v2.0, FROZEN, unchanged
 - MoSPI, *CPI 2024 Series FAQ* (Annexure V)

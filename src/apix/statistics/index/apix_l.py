@@ -24,6 +24,7 @@ from apix.schemas.keys import CellKey
 from apix.schemas.results import (
     ApixLResult,
     CellState,
+    FreshnessDistribution,
     QualityMetrics,
     RouteResult,
 )
@@ -39,6 +40,12 @@ MIN_ROUTE_COVERAGE = 0.60
 MAX_SUPPRESSED_WEIGHT = 0.15
 MAX_TIER3_WEIGHT = 0.25
 
+# Spec C.3 — LOCKED. Freshness is "∈ [0, 6] under normal operation": 0 on a
+# chain's link day through 6 on the day before its next. This is the top of the
+# declared normal range, not a new threshold — nothing is suppressed on it. The
+# suppression ceiling is 13 days (two missed links) and lives in ``chaining``.
+MAX_PUBLISHED_FRESHNESS_DAYS = 6
+
 
 class ApixLError(ValueError):
     """APIx-L could not be computed from the inputs given."""
@@ -51,6 +58,50 @@ def cell_id(cell: CellKey) -> str:
     and the aggregation reduces in one well-defined order (spec P.2).
     """
     return "|".join(str(part) for part in cell.sort_key)
+
+
+def _nearest_rank(sorted_days: Sequence[int], percentile: int) -> int:
+    """Nearest-rank percentile — no interpolation, so the result is a real day.
+
+    ``index = ceil(p/100 * n) - 1``, clamped into range. Integer arithmetic
+    throughout, so the reduction is bit-stable and locale-independent (spec P.2).
+    """
+    n = len(sorted_days)
+    rank = -(-percentile * n // 100) - 1  # ceil division, then 0-based
+    return sorted_days[min(max(rank, 0), n - 1)]
+
+
+def _freshness_distribution(
+    states: Sequence[CellState], collection_date: date
+) -> FreshnessDistribution:
+    """Freshness across the live set, as a distribution — spec C.3.
+
+    Measured from the **publication** date against each cell's last computed
+    relative, not from the cell's own link date: on any publication date most
+    cells last linked days ago, and that gap is the quantity spec C.3 defines.
+
+    Only live cells are described. A suppressed cell's staleness is reported
+    through its suppression reason and its weight share; including it here would
+    make the published distribution a mix of two different populations.
+    """
+    live = [s for s in states if s.is_live]
+    days = sorted(
+        (collection_date - s.last_matched_date).days
+        for s in live
+        if s.last_matched_date is not None
+    )
+    never = sum(1 for s in live if s.last_matched_date is None)
+    if not days:
+        return FreshnessDistribution(n=0, never_matched=never)
+    return FreshnessDistribution(
+        n=len(days),
+        p10=_nearest_rank(days, 10),
+        p25=_nearest_rank(days, 25),
+        median=_nearest_rank(days, 50),
+        p75=_nearest_rank(days, 75),
+        p90=_nearest_rank(days, 90),
+        never_matched=never,
+    )
 
 
 def _route_result(
@@ -137,10 +188,18 @@ def calculate_apix_l(
     """Compute the national APIx-L level — spec L.1.
 
     Args:
-        cell_states: Cell levels for this period, already advanced through
-            :func:`~apix.statistics.index.chaining.advance_cell`. Suppressed and
+        cell_states: The live set at ``collection_date``. Suppressed and
             held-out cells are included; they are excluded from aggregation here
             and their weight is renormalised away rather than counted as zero.
+
+            States dated **before** ``collection_date`` are expected and correct:
+            each cell advances on its own seven-day chain (spec E.2), so on any
+            publication date most cells last linked days ago and contribute the
+            level of that link (spec C.2). Assemble the set with
+            :func:`~apix.statistics.index.publication.latest_states_as_of`, or
+            call :func:`~apix.statistics.index.publication.publish`, which does
+            it and applies the spec C.3 freshness ceiling. States dated *after*
+            it are rejected (spec R.3).
         cell_weights: ``v[c|r]`` keyed by :func:`cell_id`, for every cell in the
             basket including suppressed ones.
         route_weights: ``w[r]`` keyed by route, for every route in the basket
@@ -181,12 +240,20 @@ def calculate_apix_l(
     except ValueError as exc:
         raise ApixLError(str(exc)) from exc
 
-    mismatched = sorted({s.collection_date for s in cell_states} - {collection_date})
-    if mismatched:
+    # Spec C.2, R.3 — AMB-7. A state dated *after* the period being published is
+    # a caller defect: it would leak a later period's information into an earlier
+    # vintage. A state dated *before* it is the normal case, not an error — each
+    # cell advances on its own seven-day chain, so on any publication date most
+    # cells last linked days ago and contribute the level of that link. The
+    # differencing spec C.2 forbids happens in ``build_matched_set``, which has
+    # its own single-date guard; this function computes weighted arithmetic means
+    # of LEVELS (spec F.1) and differences nothing.
+    future = sorted({s.collection_date for s in cell_states if s.collection_date > collection_date})
+    if future:
         raise ApixLError(
-            f"cell states carry collection dates {mismatched} but APIx-L was asked "
-            f"for {collection_date}; mixing periods would difference a Monday "
-            "against a Tuesday (spec C.2)"
+            f"cell states carry collection dates {future} after the period "
+            f"{collection_date} being published; a later period's information "
+            "must never enter an earlier vintage (spec R.3)"
         )
 
     tiers = route_tiers or {}
@@ -227,6 +294,15 @@ def calculate_apix_l(
     )
     tier3_share = tier_shares.get(Tier.TIER_3, 0.0)
     status_shares = _status_weight_shares(cell_states, cell_weights, route_weights)
+    freshness = _freshness_distribution(all_states, collection_date)
+
+    # Spec I's `min_route_coverage` is "60% of expected cells", and what counts
+    # as an expected cell is an OPEN methodology question (AMB-8). Without a
+    # declared denominator ``_route_result`` falls back to the observed count,
+    # which can never fall below 100% and therefore never suppresses. That is a
+    # documented convenience for unit fixtures and must not pass silently on a
+    # publication, so every live route missing a declared denominator is named.
+    undeclared = sorted(r for r in live_levels if r not in expected)
 
     if not live_levels:
         return ApixLResult(
@@ -246,6 +322,7 @@ def calculate_apix_l(
                 carried_weight_share=status_shares.get(CellStatus.CARRIED, 0.0),
                 tier1_weight_share=tier_shares.get(Tier.TIER_1, 0.0),
                 tier2_weight_share=tier_shares.get(Tier.TIER_2, 0.0),
+                freshness=freshness,
             ),
             published=False,
             suppression_reason=(
@@ -272,6 +349,19 @@ def calculate_apix_l(
             f"Tier-3 weight share {tier3_share:.1%} exceeds {MAX_TIER3_WEIGHT:.0%} "
             "(spec I): the headline carries the unit-value caveat"
         )
+    if undeclared:
+        caveats.append(
+            f"route coverage for {undeclared} was measured against the observed "
+            "cell count because no expected-cell denominator was declared "
+            "(spec I, AMB-8): coverage cannot fall below 100% and no route can "
+            "be suppressed on it — the figure is optimistic, not measured"
+        )
+    if freshness.p90 is not None and freshness.p90 > MAX_PUBLISHED_FRESHNESS_DAYS:
+        caveats.append(
+            f"freshness p90 is {freshness.p90}d, beyond the {MAX_PUBLISHED_FRESHNESS_DAYS}d "
+            "normal range of spec C.3: at least a tenth of the live set has missed "
+            "a weekly link"
+        )
 
     return ApixLResult(
         collection_date=collection_date,
@@ -291,6 +381,7 @@ def calculate_apix_l(
             carried_weight_share=status_shares.get(CellStatus.CARRIED, 0.0),
             tier1_weight_share=tier_shares.get(Tier.TIER_1, 0.0),
             tier2_weight_share=tier_shares.get(Tier.TIER_2, 0.0),
+            freshness=freshness,
         ),
         renormalised_route_weights=renormalised,
         published=True,

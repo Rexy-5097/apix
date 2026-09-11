@@ -15,7 +15,7 @@ The doctrine this file encodes:
 Every test here starts from ``Observation`` values and asserts a property of the
 statistical object that results. None of them accepts a matched set as an input.
 
-Authority: ``docs/methodology/apix_formula_spec_v2_1_draft.md`` and
+Authority: ``docs/methodology/apix_formula_spec_v2_1.md`` and
 ``docs/methodology/AMB-1-resolution.md``. Where a test cites a section, that
 section is the contract it enforces.
 """

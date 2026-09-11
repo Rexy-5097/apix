@@ -4,7 +4,7 @@
 > methodology audit by @Rexy-5097 (owner)
 > **Checkpoint:** 2B · **Date:** 2026-09-09
 > **Amends:** `apix_formula_spec_v1.md` (FROZEN, `methodology_version 2.0`) — **untouched**
-> **Draft amendment:** [`apix_formula_spec_v2_1_draft.md`](apix_formula_spec_v2_1_draft.md)
+> **Amendment (FROZEN, v2.1):** [`apix_formula_spec_v2_1.md`](apix_formula_spec_v2_1.md)
 > **Decision record:** [`ADR-0062`](../../artifacts/decisions/ADR-0062-item-cell-separation.md)
 >
 > No production code, production test, golden fixture, PR or commit was changed

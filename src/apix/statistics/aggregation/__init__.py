@@ -10,6 +10,7 @@ from apix.statistics.aggregation.weights import (
     suppressed_weight_share,
     validate,
 )
+from apix.statistics.aggregation.within_route import within_route_weights
 from apix.statistics.aggregation.young_laspeyres import (
     AggregationError,
     aggregate_levels,
@@ -28,4 +29,5 @@ __all__ = [
     "sums_to_one",
     "suppressed_weight_share",
     "validate",
+    "within_route_weights",
 ]
