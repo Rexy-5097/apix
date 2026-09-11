@@ -1,0 +1,107 @@
+# Collection windows for the 30-day study — spec A.5, OQ-1
+#
+# Declared per ADR-0064, which is PROPOSED and awaiting owner ratification.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHAT THIS FILE IS NOT
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# It does NOT resolve OQ-1. Spec A.5 is "LOCKED as a rule, EMPIRICAL as a value"
+# and the published window's start and end are "not yet fixed". This file
+# declares what the STUDY samples so OQ-1 becomes answerable at the end of it.
+#
+# The distinction is easy to lose and expensive to lose: a convenient collection
+# time must not harden into a published methodology parameter because it was
+# written down first.
+#
+# Spec A.3 assigns APW by EXACT lead time, so a time-of-day not sampled during
+# the window can never be recovered — the flights, the dates and the prices are
+# gone. That is why the diagnostic window exists at all.
+
+schema_version: "1.0.0"
+declared_date: "2026-09-11"
+adr: ADR-0064
+status: AWAITING_OWNER_RATIFICATION
+owner: "@slazyverse"
+ratifier: "@Rexy-5097"
+timezone: "Asia/Kolkata (IST)"
+
+windows:
+
+  - id: primary
+    start: "21:00"
+    end: "22:00"
+    cadence: EVERY_COLLECTION_DAY
+    feeds_index: true
+    frame_suffix: "@primary"
+    rationale: >-
+      A slot a person can reliably hold for 30 consecutive days. Reliability is
+      the binding constraint on a manual study — a window that is missed is
+      worse than one that is theoretically better, because a missed day costs
+      TWO weekly links (the index compares t against t-7).
+      This is NOT a claim that 21:00 is the correct published window.
+
+  - id: diagnostic_oq1
+    start: "09:00"
+    end: "10:00"
+    cadence: SCHEDULED_DAYS_ONLY
+    feeds_index: false
+    frame_suffix: "@diagnostic-oq1"
+    scheduled_study_days: [1, 4, 7, 10, 13, 16, 19]
+    rationale: >-
+      Approximately 12 hours from the primary window, which maximises the chance
+      of detecting intraday movement if it exists; a two-hour gap could show
+      nothing and prove nothing. The +3 stride over seven sessions walks the
+      full weekday cycle, so each weekday is paired exactly once.
+    purpose: >-
+      OQ-1 evidence ONLY. Spec A.5 asserts that "a quote at 03:00 and one at
+      18:00 are two different prices, not two draws from the same price". These
+      paired observations are what turns that assertion into a measurement.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RULES
+# ─────────────────────────────────────────────────────────────────────────────
+
+rules:
+  index_input: >-
+    ONLY runs whose frame_id ends "@primary" are index input. Blending the two
+    would average 09:00 and 21:00 prices, which spec A.5 says are different
+    prices — "a between-source comparison measures the clock as much as the
+    market".
+  separate_runs: >-
+    A paired day produces TWO CollectionRun records, each with its own declared
+    window. Spec A.5 permits flag-and-exclude within one run, but that puts two
+    populations in one record and relies on every downstream consumer honouring
+    the flag. Separate runs make the separation structural.
+  record_actual: >-
+    CollectionRun.collection_window_start/_end record the window ACTUALLY used,
+    not the one planned. A session that ran 21:05-21:40 records 21:05-21:40.
+  tolerance: >-
+    A session starting within +/-30 minutes of the declared start is inside the
+    protocol. Beyond that, record it, and see acquisition-protocol.md section 15.
+  no_mid_study_change: >-
+    The windows do not change during the 30 days. Changing them ends the window
+    and restarts the study, because day 1 and day 20 would no longer be
+    comparable. OQ-1 is resolved AFTER the study, never during it.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WHAT WOULD RESOLVE OQ-1
+# ─────────────────────────────────────────────────────────────────────────────
+
+oq1_resolution_criteria:
+  measurement: >-
+    For each paired day, the distribution of log(fare at 09:00) - log(fare at
+    21:00) over the same (flight, travel_date, fare_class).
+  interpretation:
+    material: >-
+      If the paired spread is large relative to the day-over-day movement the
+      index is trying to measure, the window is load-bearing and its value must
+      be fixed with care and published as a methodology parameter.
+    immaterial: >-
+      If the paired spread is small, the window is a convenience and the
+      published calendar can be relaxed. That is a publishable finding in its
+      own right and simplifies spec R.1.
+  not_resolved_by: >-
+    Seven paired days can establish whether movement is MATERIAL. They cannot
+    characterise the full intraday curve, and they measure 09:00-vs-21:00 rather
+    than intraday variation generally. Any stronger claim needs a wider design.
