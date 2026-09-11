@@ -79,6 +79,94 @@ class Entitlements:
 
 
 @dataclass(frozen=True, slots=True)
+class FareBreakdown:
+    """The components of the payable fare, where the source renders them — spec A.4.
+
+    Spec A.4 is explicit that this is **recorded, not required**:
+
+        *"Decomposition is recorded, not required. Where a base/tax/fee split is
+        available it is stored and reported. Where it is not, the total still
+        enters the index. **The index is never blocked on a breakdown the site
+        does not render.**"*
+
+    So every component is optional and ``None`` means *"the source did not show
+    it"* — never zero. A zero would assert the charge does not exist; ``None``
+    asserts we could not see it. Collapsing the two would silently turn a
+    rendering gap into a fact about the fare.
+
+    PS 26056 mandates a four-way split — *"separates base fare from taxes,
+    user-development fee and convenience charges"* — so ``user_development_fee``
+    is carried separately from ``fees`` rather than folded into it.
+
+    **Nothing here enters the index.** Spec A.4 fixes the index price as the
+    total payable, and these components exist for diagnostics: they are the only
+    way to test whether channel fee structures drift differently, which is the
+    exposure spec D.8's ``SOURCE_TRANSITION`` rule was written to guard.
+    """
+
+    base_fare: Decimal | None = None
+    taxes: Decimal | None = None
+    fees: Decimal | None = None
+    user_development_fee: Decimal | None = None
+
+    def __post_init__(self) -> None:
+        negative = sorted(
+            name
+            for name, value in (
+                ("base_fare", self.base_fare),
+                ("taxes", self.taxes),
+                ("fees", self.fees),
+                ("user_development_fee", self.user_development_fee),
+            )
+            if value is not None and value < 0
+        )
+        if negative:
+            raise ValueError(f"fare components must be >= 0; negative: {negative}")
+
+    @property
+    def is_complete(self) -> bool:
+        """Whether every component was rendered by the source."""
+        return all(
+            v is not None
+            for v in (self.base_fare, self.taxes, self.fees, self.user_development_fee)
+        )
+
+    @property
+    def declared_total(self) -> Decimal | None:
+        """Sum of the rendered components, or None when none were rendered.
+
+        Deliberately **not** compared against ``payable_fare`` as a hard
+        invariant: a partial breakdown sums to less than the total by
+        construction, and sites round components independently. Use
+        :meth:`reconciles_with` when a complete breakdown is present.
+        """
+        present = [
+            v
+            for v in (self.base_fare, self.taxes, self.fees, self.user_development_fee)
+            if v is not None
+        ]
+        return sum(present, Decimal("0")) if present else None
+
+    def reconciles_with(self, payable_fare: Decimal, tolerance: Decimal = Decimal("1.00")) -> bool:
+        """Whether a **complete** breakdown adds up to the payable fare.
+
+        Returns False for an incomplete breakdown rather than guessing: a
+        partial split cannot reconcile and should not be reported as failing to.
+        A rupee of tolerance absorbs independent per-component rounding.
+        """
+        if not self.is_complete:
+            return False
+        total = self.declared_total
+        assert total is not None  # narrowed by is_complete
+        return abs(total - payable_fare) <= tolerance
+
+
+#: A breakdown in which the source rendered nothing. The default for any
+#: observation whose page shows only a total.
+NO_BREAKDOWN = FareBreakdown()
+
+
+@dataclass(frozen=True, slots=True)
 class Observation:
     """One displayed, transactable offer — spec A.1.
 
@@ -109,6 +197,22 @@ class Observation:
     payable_fare: Decimal
     source_type: SourceType
     availability: Availability = Availability.AVAILABLE
+    #: The independent source group this quote belongs to — spec B.6.
+    #:
+    #: **None means "ungrouped", never "independent".** Spec B.6 is LOCKED:
+    #: *"Two aggregators reselling one inventory feed are ONE observation, not
+    #: two."* Effective sample size is computed on groups, so defaulting an
+    #: unknown group to the ``source_id`` would silently assert independence —
+    #: precisely the error the rule exists to prevent, and it inflates effective
+    #: N in the direction that flatters the index.
+    #:
+    #: Group membership is a fact about corporate ownership and inventory
+    #: supply. It is not derivable from prices: two sites showing different
+    #: fares is not evidence of independence. See ``source_registry/``.
+    source_group: str | None = None
+    #: Fare components where the source rendered them — spec A.4. Optional by
+    #: design; the index uses ``payable_fare`` regardless.
+    fare_breakdown: FareBreakdown = NO_BREAKDOWN
 
     @property
     def lead_time_days(self) -> int:

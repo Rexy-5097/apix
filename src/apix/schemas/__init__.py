@@ -5,12 +5,19 @@ collection or computation, which is why CODEOWNERS requires both the statistical
 and data-engineering owners to review this package.
 """
 
+from apix.schemas.collection import (
+    CollectionAttempt,
+    CollectionRun,
+    exclusion_rate,
+    has_stop_signal,
+)
 from apix.schemas.enums import (
     APWBucket,
     Availability,
     CellStatus,
     ChangePolicy,
     Channel,
+    CollectionOutcome,
     ExclusionReason,
     FareClass,
     SourceType,
@@ -18,7 +25,7 @@ from apix.schemas.enums import (
     UndefinedRelativeReason,
 )
 from apix.schemas.keys import CellKey, ItemKey, ParentKey
-from apix.schemas.observation import Entitlements, Observation
+from apix.schemas.observation import NO_BREAKDOWN, Entitlements, FareBreakdown, Observation
 from apix.schemas.results import (
     BASE_INDEX_LEVEL,
     RELATIVE_TOLERANCE,
@@ -36,6 +43,7 @@ from apix.schemas.version_vector import MODEL_VERSION_NOT_APPLICABLE, VersionVec
 __all__ = [
     "BASE_INDEX_LEVEL",
     "MODEL_VERSION_NOT_APPLICABLE",
+    "NO_BREAKDOWN",
     "RELATIVE_TOLERANCE",
     "APWBucket",
     "ApixLResult",
@@ -45,9 +53,13 @@ __all__ = [
     "CellStatus",
     "ChangePolicy",
     "Channel",
+    "CollectionAttempt",
+    "CollectionOutcome",
+    "CollectionRun",
     "Entitlements",
     "ExcludedObservation",
     "ExclusionReason",
+    "FareBreakdown",
     "FareClass",
     "ItemKey",
     "JevonsResult",
@@ -61,4 +73,6 @@ __all__ = [
     "Tier",
     "UndefinedRelativeReason",
     "VersionVector",
+    "exclusion_rate",
+    "has_stop_signal",
 ]

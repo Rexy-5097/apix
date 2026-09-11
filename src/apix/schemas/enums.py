@@ -151,3 +151,98 @@ class UndefinedRelativeReason(Enum):
     NO_MATCHED_ITEMS = "NO_MATCHED_ITEMS"
     BELOW_MIN_MATCHED_ITEMS = "BELOW_MIN_MATCHED_ITEMS"
     NO_PRIOR_PERIOD = "NO_PRIOR_PERIOD"
+
+
+class CollectionOutcome(Enum):
+    """What happened on one collection attempt — spec H.1.
+
+    **The distinction this enum exists to preserve.** Spec H.1 names five ways a
+    quote can be absent, and only ONE of them means the cell was never expected:
+
+    ==================  ==============================
+    H.1 class           In the coverage denominator?
+    ==================  ==============================
+    No flight           **No** -- "cell not expected"
+    Structural missing  Yes, then suppressed
+    Technical missing   Yes, then carried (spec E.4)
+    Unavailable source  Yes -- **our** failure
+    Parser failure      Yes -- **our** failure
+    ==================  ==============================
+
+    A quote table records only successes, so in a quote table all five look
+    identical: an empty result. **Missingness cannot be measured from a table of
+    successes**, which is why every attempt gets a record whether or not it
+    produced a fare.
+
+    That distinction is exactly what **AMB-8** turns on. Without it, "no service
+    was scheduled" and "the site blocked us" are the same absence, and the
+    spec I coverage denominator stays undefined however long collection runs.
+    """
+
+    #: Quotes retrieved and parsed.
+    SUCCESS = "SUCCESS"
+    #: No service scheduled on that weekday/slot. Spec H.1: *"Cell not expected;
+    #: excluded from denominators of coverage."* The ONLY outcome that leaves
+    #: the denominator.
+    NO_FLIGHT = "NO_FLIGHT"
+    #: The product no longer exists -- route dropped, flight retired. Spec H.1:
+    #: cell suppressed, **not** carried indefinitely.
+    STRUCTURAL_MISSING = "STRUCTURAL_MISSING"
+    #: Collection ran, source reachable, quote absent for a transient reason.
+    #: Spec H.1: item excluded from M, cell-level carry per spec E.4.
+    TECHNICAL_FAILURE = "TECHNICAL_FAILURE"
+    #: Source down, rate-limited, or circuit-breaker open. Spec H.1: *"source-day
+    #: recorded as a retrieval failure. Never silently substituted from another
+    #: channel."*
+    SOURCE_UNAVAILABLE = "SOURCE_UNAVAILABLE"
+    #: Page fetched, fields unextractable. Spec H.1: excluded with a reason code;
+    #: *"counts toward the exclusion rate alarm."*
+    PARSER_FAILURE = "PARSER_FAILURE"
+    #: An access challenge was presented. **A stop signal, never an obstacle.**
+    #: Recorded separately from SOURCE_UNAVAILABLE because it is a *policy*
+    #: event with a compliance meaning, not a transient outage.
+    CAPTCHA_OR_ANTIBOT_STOP = "CAPTCHA_OR_ANTIBOT_STOP"
+
+    @property
+    def excludes_cell_from_expectation(self) -> bool:
+        """Whether this outcome removes the cell from the spec I denominator.
+
+        True for ``NO_FLIGHT`` alone. Every other absence keeps the cell in the
+        denominator, because the cell *was* expected and something went wrong --
+        either in the market or in our collection.
+        """
+        return self is CollectionOutcome.NO_FLIGHT
+
+    @property
+    def is_collector_failure(self) -> bool:
+        """Whether the absence is **ours**, not the market's.
+
+        These must never be read as an absent fare. A blocked collector that
+        silently became "no quote" would understate coverage loss and, worse,
+        would look like a price signal.
+        """
+        return self in (
+            CollectionOutcome.SOURCE_UNAVAILABLE,
+            CollectionOutcome.PARSER_FAILURE,
+            CollectionOutcome.CAPTCHA_OR_ANTIBOT_STOP,
+        )
+
+    @property
+    def is_market_fact(self) -> bool:
+        """Whether the absence says something true about the market."""
+        return self in (
+            CollectionOutcome.NO_FLIGHT,
+            CollectionOutcome.STRUCTURAL_MISSING,
+            CollectionOutcome.TECHNICAL_FAILURE,
+        )
+
+    @property
+    def is_stop_signal(self) -> bool:
+        """Whether the collector must back off rather than retry.
+
+        An access challenge is a stop signal (CLAUDE.md, dossier section 05).
+        There is no CAPTCHA solver, no fingerprint evasion and no identity
+        rotation intended to defeat access controls. Retrying past this is
+        prohibited, not merely discouraged.
+        """
+        return self is CollectionOutcome.CAPTCHA_OR_ANTIBOT_STOP
