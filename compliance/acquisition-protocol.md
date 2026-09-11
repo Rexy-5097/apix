@@ -68,12 +68,30 @@ Full justification and growth order: [`source_registry/collection-frame.md`](../
 
 ## 5. Flight selection within a search — the rule that protects the data
 
-> **Take the first N flights by DEPARTURE TIME. Never by price.**
+> **Sort by DEPARTURE TIME. Take the earliest eligible flight in each
+> departure-hour band 2–6. Never select by price.**
 
-N = 5. Results default to cheapest-first; taking "the first five" from a
-price-sorted list **selects cheap flights**, and does so from a differently
-sorted list next week. The index would then measure the selection rule rather
-than the market — a bias no downstream test can detect or undo.
+**N = 5** — one per band. §B.2 anchors 3-hour bands at 00:00 IST, so bands 2–6
+span **06:00–21:00**. A band with no eligible flight yields no row; that is a
+market fact, not a failure.
+
+**Why never by price.** Results default to cheapest-first; taking "the first
+five" from a price-sorted list **selects cheap flights**, and does so from a
+differently sorted list next week. The index would then measure the selection
+rule rather than the market — a bias no downstream test can detect or undo.
+
+**Why bands rather than simply the earliest five** (amended at 2I, ADR-0065).
+DEL–BOM carries roughly 15–25 IndiGo non-stops a day, so "the earliest five"
+is every flight in the morning bank. `departure_hour_band` is part of the cell
+key (§B.2), and it would have been **degenerate for the entire study** — a
+dimension of the matched item left unexercised against real data for 30 days.
+Banding costs nothing (same N, same burden), spans the commercial day, and keeps
+every property that made the old rule safe: deterministic, reproducible, and
+never involving price.
+
+Bands 0, 1 and 7 (21:00–06:00) are excluded deliberately: they are
+intermittently served, and an intermittently served band churns the matched set
+— spending weekly links on the thinnest part of the schedule.
 
 The rule must be identical on every collection day. If it changes, the window is
 over.

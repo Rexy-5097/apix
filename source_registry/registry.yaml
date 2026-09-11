@@ -35,8 +35,9 @@
 # AUTOMATION GATE — added at Checkpoint 2G
 # ─────────────────────────────────────────────────────────────────────────────
 #
-# `automation_gate` is the single field a collector reads before making any
-# request. It has four values and ONE of them permits automated collection:
+# `automation_gate` is the first of TWO fields a collector must clear before
+# making any request. It has four values and ONE of them permits automated
+# collection:
 #
 #   AUTOMATION_ALLOWED     the source's own published terms permit automated
 #                          collection. Requires POSITIVE evidence, quoted.
@@ -61,7 +62,34 @@
 # permissive robots.txt yields UNKNOWN, never ALLOWED, because silence in
 # robots.txt grants nothing.
 #
-# AS OF 2026-09-11: zero sources are AUTOMATION_ALLOWED.
+# 2I CONFIRMED THIS THE HARD WAY. Akasa Air has the cleanest robots.txt of any
+# source audited -- no Disallow at all -- and terms that prohibit copying any
+# information from the site "in print, visual or electronic form, for any purpose
+# whatsoever", with no browser carve-out. It is stricter than IndiGo, which
+# robots.txt could never have told us. A source rated on robots.txt alone has had
+# the wrong check done.
+#
+# `data_admissibility` is the SECOND gate, added at Checkpoint 2I, and it is
+# orthogonal to the first. Permission and usefulness are independent properties:
+# a source can be freely automatable and produce data the index must not touch.
+#
+#   ADMISSIBLE    the source yields a spec A.1 displayed, TRANSACTABLE offer.
+#   INADMISSIBLE  it does not -- cached prices, stale prices, declared tariff
+#                 categories, or a redistribution that breaks spec B.6 source
+#                 independence. BLOCKS use as index input regardless of permission.
+#   NOT_ASSESSED  not yet examined.
+#
+# BOTH gates must clear. Reading only the first is how a project ends up
+# lawfully collecting numbers that are not prices.
+#
+# AS OF 2026-09-12 (Checkpoint 2I), after reading the licensed-feed documentation:
+#
+#   AUTOMATION_ALLOWED  : amadeus_self_service, travelpayouts -- BOTH INADMISSIBLE
+#   data ADMISSIBLE     : indigo -- but AUTOMATION_PROHIBITED, MANUAL_PERMITTED
+#
+# The intersection of "may automate" and "data is usable" is EMPTY. That is why
+# collection is manual: not because automation permission is missing everywhere,
+# but because the two sources that grant it do not sell a transactable price.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # AUDIT PROVENANCE
@@ -194,10 +222,14 @@ sources:
     source_group: carrier_direct_6e
     robots_status: NOT_VERIFIED
     robots_evidence: >-
-      https://www.goindigo.in/robots.txt — request timed out (60s).
-      https://goindigo.in/robots.txt — TLS failure, "self signed certificate in
-      certificate chain", attributable to the audit host's intercepting proxy
-      rather than to the source. Not retried by other means.
+      RE-AUDITED 2026-09-12, still NOT VERIFIED. https://www.goindigo.in/robots.txt
+      and the Terms of Use path both timed out at 60s from the audit host,
+      reproducing the 2F failure. A control fetch of akasaair.com/robots.txt
+      succeeded in the same session, so this is specific to goindigo.in from this
+      host and NOT a general network fault. Cause undetermined; recorded as an
+      unresolved verification item, read as a finding in neither direction. It does
+      mean the general Terms of Use -- the document that actually governs, per the
+      scope caveat -- remain unread.
     tos_status: NOT_VERIFIED
     permitted_cadence_if_stated: NOT_VERIFIED
     rate_limit_if_stated: NOT_VERIFIED
@@ -205,7 +237,7 @@ sources:
     captcha_or_interstitial_observed: NOT_TESTED
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
-    evidence_date: "2026-09-10"
+    evidence_date: "2026-09-12"
     notes: >-
       Largest domestic carrier by fleet and frequency, so its absence would
       distort any exploratory frame more than any other single source. It is
@@ -220,6 +252,11 @@ sources:
     automation_gate_caveat: >-
       SCOPE CAVEAT, material: this is the LOYALTY PROGRAMME agreement, not the general website Terms of Use. "Platform" is defined by reference to the Program's hosting applications, which is arguably narrower than goindigo.in as a whole. The general Terms of Use and the Conditions of Carriage are separate documents, both referenced in the text obtained, BOTH STILL UNREAD. Re-classify when they are.
     automation_gate_date: "2026-09-11"
+    data_admissibility: ADMISSIBLE
+    data_admissibility_basis: >-
+      Live fares displayed to a browsing consumer: a spec A.1 displayed, transactable
+      offer by construction. This is the only reviewed source that is BOTH permitted
+      for the collection mode used (manual) and admissible as index input.
 
   - source_id: air_india
     display_name: Air India
@@ -319,15 +356,28 @@ sources:
     captcha_or_interstitial_observed: NOT_TESTED
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
-    evidence_date: "2026-09-10"
+    evidence_date: "2026-09-12"
     # ── Checkpoint 2G automation gate ──
-    automation_gate: AUTOMATION_UNKNOWN
+    automation_gate: AUTOMATION_PROHIBITED
     manual_gate: MANUAL_UNKNOWN
     automation_gate_basis: >-
-      robots.txt raises no objection (Allow: / , no Disallow at all) — but that grants NOTHING. Terms of Use not retrieved, so automation is UNKNOWN, not ALLOWED.
+      Akasa Air Terms and Conditions, retrieved 2026-09-12. The customer is "not
+      permitted to copy, replicate, modify, derivative, display, perform, create
+      derivative works from, transfer or sell any information obtained from the
+      Website, whether in print, visual or electronic form, FOR ANY PURPOSE
+      WHATSOEVER, without the prior written permission of Akasa Air." Broader than
+      an anti-automation clause, and -- unlike IndiGo -- carrying NO carve-out for
+      ordinary browser use.
     automation_gate_caveat: >-
-      The cleanest robots position of any source audited. Terms remain the gate.
-    automation_gate_date: "2026-09-11"
+      The instructive case for the whole register. Akasa had the cleanest robots.txt
+      of any source audited and the strictest terms. Reading robots.txt told us
+      nothing; only the terms decided.
+    automation_gate_date: "2026-09-12"
+    manual_gate_basis: >-
+      The copying prohibition reaches "print, visual or electronic form" and has no
+      browser carve-out. Whether transcribing a displayed price by hand falls inside
+      it is a legal reading this project has not obtained. Not treated as permitted.
+    data_admissibility: NOT_ASSESSED
 
   - source_id: spicejet
     display_name: SpiceJet
@@ -585,14 +635,14 @@ sources:
     robots_status: NOT_APPLICABLE
     robots_note: >-
       An authorised API is governed by its licence terms, not by robots.txt.
-    tos_status: NOT_VERIFIED
+    tos_status: READ_VIA_PUBLIC_DOCUMENTATION
     permitted_cadence_if_stated: NOT_VERIFIED
     rate_limit_if_stated: NOT_VERIFIED
     automated_collection_status: NOT_VERIFIED
     captcha_or_interstitial_observed: NOT_APPLICABLE
     required_observation_fields: CLAIMED_BUT_UNVERIFIED
     known_field_gaps: UNKNOWN
-    evidence_date: "2026-09-10"
+    evidence_date: "2026-09-12"
     notes: >-
       The dossier (p.11) describes Channel A as "Structured fares with base /
       tax / fee ALREADY DECOMPOSED". If that holds it is the only route to the
@@ -603,13 +653,25 @@ sources:
       Spec H.3 constrains its use: AUTHORIZED_FEED is never silently
       substituted for a LIVE_SCRAPE observation being claimed.
     # ── Checkpoint 2G automation gate ──
-    automation_gate: AUTOMATION_UNKNOWN
+    automation_gate: AUTOMATION_ALLOWED
     manual_gate: NOT_APPLICABLE
     automation_gate_basis: >-
-      An authorised API is governed by its licence, which has not been read. This is OQ-8 and it is untouched.
+      A published Self-Service API with public documentation and open developer
+      registration. Programmatic access is the product; permission is positive and
+      explicit. NOTE: automation permission is NOT sufficient -- see
+      data_admissibility, which is what actually blocks this source.
     automation_gate_caveat: >-
-      If licensed and covering Indian domestic sectors, this is the only known route to the spec A.4 fee decomposition that no portal is known to render.
-    automation_gate_date: "2026-09-11"
+      Production access additionally requires "a signed contract with an airline
+      consolidator", which the project does not hold. That is a commercial gate with
+      a lead time in weeks and is an OWNER decision, not an engineering one.
+    automation_gate_date: "2026-09-12"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      Amadeus documentation retrieved 2026-09-12: the test environment uses "static
+      cached data" and "prices aren't real". A cached, non-transactable price is not
+      a spec A.1 displayed, transactable offer -- using it would be fabrication with
+      an API key attached. Only the production tier carries real fares, and that is
+      contract-gated.
 
   - source_id: travelpayouts
     display_name: Travelpayouts
@@ -617,16 +679,16 @@ sources:
     source_type: AUTHORIZED_FEED
     canonical_domain: travelpayouts.com
     collection_method: NOT_DESIGNED
-    source_group: licensed_feed
+    source_group: aviasales
     robots_status: NOT_APPLICABLE
-    tos_status: NOT_VERIFIED
+    tos_status: READ_VIA_PUBLIC_DOCUMENTATION
     permitted_cadence_if_stated: NOT_VERIFIED
     rate_limit_if_stated: NOT_VERIFIED
     automated_collection_status: NOT_VERIFIED
     captcha_or_interstitial_observed: NOT_APPLICABLE
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
-    evidence_date: "2026-09-10"
+    evidence_date: "2026-09-12"
     notes: >-
       An affiliate network. Whether its fare data is a licensed redistribution
       of a GDS feed also reaching the aggregators is UNKNOWN and bears directly
@@ -636,13 +698,26 @@ sources:
 # CHANNEL B — DECLARED TARIFF SHEETS (reference envelope, not a transacted price)
 # ─────────────────────────────────────────────────────────────────────────────
     # ── Checkpoint 2G automation gate ──
-    automation_gate: AUTOMATION_UNKNOWN
+    automation_gate: AUTOMATION_ALLOWED
     manual_gate: NOT_APPLICABLE
     automation_gate_basis: >-
-      Licence not read. OQ-8.
+      A published affiliate data API with open registration. Programmatic access is
+      the product. As with Amadeus, permission is not the blocker -- see
+      data_admissibility.
     automation_gate_caveat: >-
       Whether its fare data is a redistribution of a feed also reaching the aggregators is unknown and bears on source-group independence.
-    automation_gate_date: "2026-09-11"
+    automation_gate_date: "2026-09-12"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      Two independent disqualifications, documentation retrieved 2026-09-12.
+      (1) The Aviasales Data API "transfers data from the cache based on user search
+      history", retained 2 to 7 days. A 2-to-7-day-old cache of what users happened
+      to search is not a price at an instant; it is a biased sample of demand.
+      Fails spec A.1.
+      (2) Spec B.6: the cache IS Aviasales inventory, the same feed reaching the
+      aggregator channel. Treating it as independent would inflate effective N in
+      the direction that flatters the index. This RESOLVES the question left open at
+      2F -- it is NOT independent of the aggregators.
 
   - source_id: airline_tariff_sheets
     display_name: Airline declared tariff sheets (DGCA direction of 13 May 2025)

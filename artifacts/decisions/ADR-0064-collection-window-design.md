@@ -1,6 +1,6 @@
 # ADR-0064: Collection window design for the 30-day study
 
-> **Status:** Proposed — **awaiting owner ratification** | **Date:** 2026-09-11
+> **Status:** **RATIFIED** 2026-09-12 by [ADR-0065](ADR-0065-day-1-acquisition-decisions.md) | **Date:** 2026-09-11
 > **Decider:** @Rexy-5097 (methodology) | **Proposer:** @slazyverse (ingestion)
 > **Checkpoint:** 2H | **Bears on:** OQ-1, §A.5, §R.1
 
@@ -20,6 +20,21 @@ window value it eventually informs is not.
 The distinction matters because the two are easy to conflate, and conflating
 them would let a convenient collection time harden into a methodology parameter
 without anyone ruling on it.
+
+## Addendum — 2026-09-12, at ratification
+
+**Ratified** by [ADR-0065](ADR-0065-day-1-acquisition-decisions.md) §2. The
+decision stands as written; two corrections were made to its arithmetic.
+
+The effort figures above were costed against **three** searches per day, before
+T+21 was added to the frame. With four they are 120 primary and **28** extra
+diagnostic searches, for **148** total. The conclusion is unchanged — roughly
+23% more effort, not 100% — but the numbers were wrong and are corrected in the
+tables.
+
+What this ADR ratifies is a **sampling design**, not a methodology parameter.
+OQ-1 — the *published* window — remains open and is resolved after the study,
+from the evidence the study gathers.
 
 ## Context
 
@@ -50,7 +65,7 @@ window can never be recovered: the flights, the dates and the prices are gone.
 | | |
 |---|---|
 | **OQ-1 evidence** | **None.** Intraday variation cannot be measured from one time of day. Choosing A assumes the window does not matter, which is precisely the question |
-| **Effort** | 3 searches/day × 30 days = **90 sessions** |
+| **Effort** | 4 searches/day × 30 days = **120 sessions** |
 | **Reproducibility** | Sound. One declared window, uniformly applied |
 | **30-day impact** | None — this is the baseline |
 
@@ -59,7 +74,7 @@ window can never be recovered: the flights, the dates and the prices are gone.
 | | |
 |---|---|
 | **OQ-1 evidence** | **Direct and complete.** Paired observations of the same flight on the same day at two times, for all 30 days |
-| **Effort** | 6 searches/day × 30 days = **180 sessions — double** |
+| **Effort** | 8 searches/day × 30 days = **240 sessions — double** |
 | **Reproducibility** | Sound, provided both windows are declared and the index consumes only one |
 | **30-day impact** | Doubles a manual burden for a month. **The realistic failure mode is attrition**, and a missed day costs two weekly links |
 
@@ -68,7 +83,7 @@ window can never be recovered: the flights, the dates and the prices are gone.
 | | |
 |---|---|
 | **OQ-1 evidence** | **Sufficient.** ~7 paired days × ~15 flights ≈ **100+ paired observations**, one on each weekday, so the weekly cycle is covered |
-| **Effort** | 90 + **21 extra searches** ≈ 2.5 extra hours across the month |
+| **Effort** | 120 + **28 extra searches** ≈ 2.5 extra hours across the month |
 | **Reproducibility** | Sound. Each window is its own run with its own declared bounds |
 | **30-day impact** | **~23% more effort, not 100%** |
 
@@ -130,7 +145,7 @@ movement exists. A gap of two hours could show nothing and prove nothing.
 
 **Bad, and accepted**
 
-- 21 extra searches of manual effort.
+- 28 extra searches of manual effort.
 - Seven paired days is enough to detect **material** movement, not to
   characterise its full shape. A precise intraday curve would need Option B.
 - The diagnostic window is at a **fixed** time, so it measures 09:00-vs-21:00
