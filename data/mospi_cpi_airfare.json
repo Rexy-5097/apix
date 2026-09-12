@@ -8,7 +8,15 @@
  "unit": "index (2012=100)",
  "retrieved": "2026-09-12",
  "series": {
-  "2014-December": {
+  "2014-December-base2012": {
+   "year": 2014,
+   "month": "December",
+   "baseyear": "2012",
+   "index": 103.0,
+   "inflation": null,
+   "status": "F"
+  },
+  "2014-December-base2010": {
    "year": 2014,
    "month": "December",
    "baseyear": "2010",
@@ -16,7 +24,7 @@
    "inflation": null,
    "status": "F"
   },
-  "2015-December": {
+  "2015-December-base2012": {
    "year": 2015,
    "month": "December",
    "baseyear": "2012",
@@ -24,7 +32,7 @@
    "inflation": -25.15,
    "status": "F"
   },
-  "2016-December": {
+  "2016-December-base2012": {
    "year": 2016,
    "month": "December",
    "baseyear": "2012",
@@ -32,7 +40,7 @@
    "inflation": 14.14,
    "status": "F"
   },
-  "2017-December": {
+  "2017-December-base2012": {
    "year": 2017,
    "month": "December",
    "baseyear": "2012",
@@ -40,7 +48,7 @@
    "inflation": -13.98,
    "status": "F"
   },
-  "2018-December": {
+  "2018-December-base2012": {
    "year": 2018,
    "month": "December",
    "baseyear": "2012",
@@ -48,7 +56,7 @@
    "inflation": 5.02,
    "status": "F"
   },
-  "2019-December": {
+  "2019-December-base2012": {
    "year": 2019,
    "month": "December",
    "baseyear": "2012",
@@ -56,7 +64,7 @@
    "inflation": -9.56,
    "status": "F"
   },
-  "2020-December": {
+  "2020-December-base2012": {
    "year": 2020,
    "month": "December",
    "baseyear": "2012",
@@ -64,7 +72,7 @@
    "inflation": 128.37,
    "status": "F"
   },
-  "2021-December": {
+  "2021-December-base2012": {
    "year": 2021,
    "month": "December",
    "baseyear": "2012",
@@ -72,7 +80,7 @@
    "inflation": 24.36,
    "status": "F"
   },
-  "2022-December": {
+  "2022-December-base2012": {
    "year": 2022,
    "month": "December",
    "baseyear": "2012",
@@ -80,7 +88,7 @@
    "inflation": 18.36,
    "status": "F"
   },
-  "2023-December": {
+  "2023-December-base2012": {
    "year": 2023,
    "month": "December",
    "baseyear": "2012",
@@ -88,7 +96,7 @@
    "inflation": -18.82,
    "status": "F"
   },
-  "2024-December": {
+  "2024-December-base2012": {
    "year": 2024,
    "month": "December",
    "baseyear": "2012",
@@ -96,7 +104,7 @@
    "inflation": 3.52,
    "status": "F"
   },
-  "2025-December": {
+  "2025-December-base2012": {
    "year": 2025,
    "month": "December",
    "baseyear": "2012",
