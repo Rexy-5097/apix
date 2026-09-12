@@ -37,6 +37,7 @@ import csv
 import json
 import mimetypes
 import sys
+from dataclasses import replace
 from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -408,6 +409,30 @@ def load_day(args: argparse.Namespace) -> dict[str, object]:
                 }
             )
         )
+
+    # collection-windows.yaml `record_actual`: the run records the window
+    # ACTUALLY used, not the one planned -- "a session that ran 21:05-21:40
+    # records 21:05-21:40". Deriving it from the observations rather than
+    # asking for it keeps the record honest by construction; the declared
+    # window stays in `notes` so the deviation is auditable rather than lost.
+    stamps = [o.observation_ts for o, _ in fares] + [f.observation_ts for f, _ in unpriced]
+    if stamps:
+        actual_start, actual_end = min(stamps), max(stamps)
+        declared = f"{run.collection_window_start:%H:%M}-{run.collection_window_end:%H:%M}"
+        drift_start = (actual_start - run.collection_window_start).total_seconds() / 60
+        drift_end = (actual_end - run.collection_window_end).total_seconds() / 60
+        note = (
+            f"declared window {args.window} {declared}; actual "
+            f"{actual_start:%H:%M}-{actual_end:%H:%M} "
+            f"(start {drift_start:+.0f} min, end {drift_end:+.0f} min)"
+        )
+        # The run keeps the DECLARED window. Widening it to the observed span
+        # would make any breach of the protocol window vanish -- and it is
+        # exactly that breach spec A.5 exists to flag, so that late quotes are
+        # excluded from the index while remaining in the store. The actual span
+        # is recoverable from the observation timestamps regardless, so nothing
+        # is lost by recording it here as a note instead.
+        run = replace(run, notes=f"{run.notes}; {note}".lstrip("; "))
 
     # Resolve every screenshot to exactly one attempt, still before any write.
     # Doing this inside the store block would leave a run and its attempts

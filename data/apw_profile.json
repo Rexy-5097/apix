@@ -1,0 +1,93 @@
+{
+ "collection_date": "2026-09-12",
+ "route": "DEL-BOM",
+ "carrier": "6E",
+ "fare_family": "Saver",
+ "data_class": "REAL_MARKET_OBSERVATION",
+ "is_index": false,
+ "is_time_series": false,
+ "n_observations": 30,
+ "apw_profile": {
+  "1": {
+   "travel_date": "2026-09-13",
+   "n": 5,
+   "geomean": 6561.3,
+   "min": 6530.0,
+   "max": 6688.0,
+   "spread_pct": 2.4,
+   "relative_to_t1": 1.0
+  },
+  "3": {
+   "travel_date": "2026-09-15",
+   "n": 5,
+   "geomean": 6902.55,
+   "min": 6530.0,
+   "max": 8158.0,
+   "spread_pct": 24.9,
+   "relative_to_t1": 1.052
+  },
+  "7": {
+   "travel_date": "2026-09-19",
+   "n": 5,
+   "geomean": 6633.64,
+   "min": 6530.0,
+   "max": 6898.0,
+   "spread_pct": 5.6,
+   "relative_to_t1": 1.011
+  },
+  "15": {
+   "travel_date": "2026-09-27",
+   "n": 5,
+   "geomean": 6849.76,
+   "min": 6530.0,
+   "max": 7160.0,
+   "spread_pct": 9.6,
+   "relative_to_t1": 1.044
+  },
+  "30": {
+   "travel_date": "2026-10-12",
+   "n": 5,
+   "geomean": 6601.99,
+   "min": 6530.0,
+   "max": 6898.0,
+   "spread_pct": 5.6,
+   "relative_to_t1": 1.0062
+  },
+  "60": {
+   "travel_date": "2026-11-11",
+   "n": 5,
+   "geomean": 9090.99,
+   "min": 8720.0,
+   "max": 9665.0,
+   "spread_pct": 10.8,
+   "relative_to_t1": 1.3855
+  }
+ },
+ "band_profile": {
+  "2": {
+   "n": 6,
+   "geomean": 7240.07
+  },
+  "3": {
+   "n": 6,
+   "geomean": 6852.47
+  },
+  "4": {
+   "n": 6,
+   "geomean": 7135.47
+  },
+  "5": {
+   "n": 6,
+   "geomean": 6976.39
+  },
+  "6": {
+   "n": 6,
+   "geomean": 7086.8
+  }
+ },
+ "missing_apw": [
+  45
+ ],
+ "index_computable": false,
+ "index_blocker": "spec C.1 requires t vs t-7; one collection date yields zero matched pairs"
+}

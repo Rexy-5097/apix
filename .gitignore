@@ -71,6 +71,10 @@ desktop.ini
 # Except the collection templates: they are documentation the procedure links
 # to, not collected data, and they must ship with it.
 !tools/collection/templates/*.csv
+# The 2J panel: verified.csv IS the dataset, and the loader CSVs are what was
+# actually loaded. Small, and the whole result is unreviewable without them.
+!collection-input/extract/*.csv
+!collection-input/loader/*.csv
 *.parquet
 *.arrow
 *.h5
@@ -133,3 +137,11 @@ temp/
 # would redistribute their content. An evidence archive is a separate, owner-led
 # decision -- see compliance/manual-collection-procedure.md section 9.
 data/collection/
+
+# Checkpoint 2J manual collection: the screenshot corpus is 186 MB of raw
+# evidence and OCR spill. It is retained locally per the 5-year artifact policy
+# and hash-committed into the store, but it does not belong in git.
+collection-input/raw/
+collection-input/crop/
+collection-input/ocr/
+collection-input/loader/shots/

@@ -1,0 +1,7 @@
+travel_date,source_id,time_ist,origin,destination,outcome,source_group,notes
+2026-09-13,indigo-direct,20:54,DEL,BOM,SUCCESS,,"manual browser capture, screenshots retained"
+2026-09-15,indigo-direct,21:03,DEL,BOM,SUCCESS,,"manual browser capture, screenshots retained"
+2026-09-19,indigo-direct,21:10,DEL,BOM,SUCCESS,,"manual browser capture, screenshots retained"
+2026-09-27,indigo-direct,21:18,DEL,BOM,SUCCESS,,"manual browser capture, screenshots retained"
+2026-10-12,indigo-direct,21:39,DEL,BOM,SUCCESS,,"manual browser capture, screenshots retained"
+2026-11-11,indigo-direct,22:05,DEL,BOM,SUCCESS,,"manual browser capture, screenshots retained"
