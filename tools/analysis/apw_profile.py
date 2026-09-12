@@ -117,7 +117,10 @@ def main() -> None:
     print(f"  collection dates in store      : 1 ({COLLECTION_DATE})")
     print("  matched pairs M(c,t) available : 0  — requires t and t-7")
     print("  APIx-L index value             : NOT COMPUTABLE")
-    print("  APIx-TPD                       : NOT COMPUTABLE (min_quotes_window = 1,500; have 30)")
+    print(
+        f"  APIx-TPD                       : NOT COMPUTABLE "
+        f"(min_quotes_window = 1,500; have {len(obs)})"
+    )
 
     out = {
         "collection_date": COLLECTION_DATE.isoformat(),

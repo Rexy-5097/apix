@@ -6,7 +6,7 @@
  "data_class": "REAL_MARKET_OBSERVATION",
  "is_index": false,
  "is_time_series": false,
- "n_observations": 30,
+ "n_observations": 35,
  "apw_profile": {
   "1": {
    "travel_date": "2026-09-13",
@@ -53,6 +53,15 @@
    "spread_pct": 5.6,
    "relative_to_t1": 1.0062
   },
+  "45": {
+   "travel_date": "2026-10-27",
+   "n": 5,
+   "geomean": 7048.75,
+   "min": 7019.0,
+   "max": 7169.0,
+   "spread_pct": 2.1,
+   "relative_to_t1": 1.0743
+  },
   "60": {
    "travel_date": "2026-11-11",
    "n": 5,
@@ -65,29 +74,27 @@
  },
  "band_profile": {
   "2": {
-   "n": 6,
-   "geomean": 7240.07
+   "n": 7,
+   "geomean": 7208.07
   },
   "3": {
-   "n": 6,
-   "geomean": 6852.47
+   "n": 7,
+   "geomean": 6876.01
   },
   "4": {
-   "n": 6,
-   "geomean": 7135.47
+   "n": 7,
+   "geomean": 7118.71
   },
   "5": {
-   "n": 6,
-   "geomean": 6976.39
+   "n": 7,
+   "geomean": 6982.46
   },
   "6": {
-   "n": 6,
-   "geomean": 7086.8
+   "n": 7,
+   "geomean": 7098.49
   }
  },
- "missing_apw": [
-  45
- ],
+ "missing_apw": [],
  "index_computable": false,
  "index_blocker": "spec C.1 requires t vs t-7; one collection date yields zero matched pairs"
 }
