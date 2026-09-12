@@ -8,7 +8,7 @@ travel_date,source_id,time_ist,origin,destination,carrier,flight_number,departur
 2026-09-15,indigo-direct,21:03,DEL,BOM,6E,6107,09:30,0,145,Saver fare,AVAILABLE,6530.00,5065.00,1465.00,,,15,FEE,FEE,,s021
 2026-09-15,indigo-direct,21:04,DEL,BOM,6E,6676,12:00,0,135,Saver fare,AVAILABLE,6530.00,5065.00,1465.00,,,15,FEE,FEE,,s024
 2026-09-15,indigo-direct,21:05,DEL,BOM,6E,864,15:30,0,135,Saver fare,AVAILABLE,6530.00,5065.00,1465.00,,,15,FEE,FEE,,s028
-2026-09-15,indigo-direct,21:07,DEL,BOM,6E,329,18:00,0,135,Saver fare,AVAILABLE,6898.00,,,,,15,FEE,FEE,,"s034 | breakdown shown was LITE; Saver total from fare card, components NOT observed"
+2026-09-15,indigo-direct,21:07,DEL,BOM,6E,329,18:00,0,135,Saver fare,AVAILABLE,6898.00,5415.00,1483.00,,,15,FEE,FEE,,s034
 2026-09-19,indigo-direct,21:10,DEL,BOM,6E,6218,06:05,0,135,Saver fare,AVAILABLE,6530.00,5065.00,1465.00,,,15,FEE,FEE,,s043
 2026-09-19,indigo-direct,21:11,DEL,BOM,6E,6107,09:30,0,145,Saver fare,AVAILABLE,6530.00,5065.00,1465.00,,,15,FEE,FEE,,s047
 2026-09-19,indigo-direct,21:13,DEL,BOM,6E,6676,12:00,0,135,Saver fare,AVAILABLE,6688.00,5215.00,1473.00,,,15,FEE,FEE,,s057
