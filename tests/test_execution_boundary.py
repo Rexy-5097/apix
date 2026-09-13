@@ -390,6 +390,16 @@ def test_the_boundary_spells_out_that_exercised_is_not_validation(boundary: dict
     assert "not a validation claim" in boundary["caveat"]
 
 
+def test_the_replay_statement_is_the_agreed_wording(result) -> None:
+    """The exact sentence the project is allowed to make about the exclusion audit."""
+    assert result.as_dict()["statement"] == (
+        "45 of 46 mechanically decidable exclusions independently reproduce the "
+        "recorded §A.3/§B.2 verdict; 1 record lacks a readable departure time "
+        "and is not mechanically testable. All 35 accepted observations pass the "
+        "same relevant rule checks with zero false rejections."
+    )
+
+
 def test_the_boundary_claim_is_the_agreed_wording(boundary: dict) -> None:
     """The exact sentence the project is allowed to make about real data."""
     assert boundary["claim"] == BOUNDARY_CLAIM

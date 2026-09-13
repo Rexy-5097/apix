@@ -112,6 +112,11 @@ FRAME_SOURCE_ID = "indigo-direct"
 ASSUMED_CHANGE_POLICY = ChangePolicy.FEE
 
 
+def _count(n: int) -> str:
+    """Spell a small count in the public statement; "zero" reads harder than "0"."""
+    return "zero" if n == 0 else str(n)
+
+
 @dataclass(frozen=True, slots=True)
 class GroupReplay:
     """One recorded exclusion reason, replayed through its frozen rule."""
@@ -214,13 +219,15 @@ class ReplayResult:
             "spec_a_admitted": self.spec_a_admitted,
             "spec_a_rejected": self.spec_a_rejected,
             "spec_a_reject_reasons": list(self.spec_a_reject_reasons),
+            # The agreed public wording. Generated from the fields above rather
+            # than typed, so the sentence cannot outlive the numbers in it.
             "statement": (
                 f"{self.agree} of {self.candidates} mechanically decidable exclusions "
-                "independently reproduce the recorded A.3/B.2 verdict; "
+                "independently reproduce the recorded §A.3/§B.2 verdict; "
                 f"{self.not_testable} record lacks a readable departure time and is not "
                 f"mechanically testable. All {self.accepted_rechecked} accepted "
                 "observations pass the same relevant rule checks with "
-                f"{len(self.wrongly_rejected)} false rejections."
+                f"{_count(len(self.wrongly_rejected))} false rejections."
             ),
             "scope_note": (
                 f"{self.skipped_total} further recorded exclusions are collection-contract "

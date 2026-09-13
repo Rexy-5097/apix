@@ -1588,7 +1588,7 @@
   "spec_a_reject_reasons": [
    "LEAD_TIME_MATCHES_NO_BUCKET"
   ],
-  "statement": "45 of 46 mechanically decidable exclusions independently reproduce the recorded A.3/B.2 verdict; 1 record lacks a readable departure time and is not mechanically testable. All 35 accepted observations pass the same relevant rule checks with 0 false rejections.",
+  "statement": "45 of 46 mechanically decidable exclusions independently reproduce the recorded \u00a7A.3/\u00a7B.2 verdict; 1 record lacks a readable departure time and is not mechanically testable. All 35 accepted observations pass the same relevant rule checks with zero false rejections.",
   "scope_note": "76 further recorded exclusions are collection-contract selection or unreadable-field records. The engine has no verdict on them and none is claimed."
  },
  "execution_boundary": {
