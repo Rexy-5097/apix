@@ -1384,7 +1384,7 @@
  "benchmark": {
   "source": "MoSPI eSankhyiki api.mospi.gov.in/api/cpi/getItemIndex",
   "item": "Air Fare (normal): Economy Class(adult)",
-  "role": "VALIDATION_BENCHMARK_ONLY",
+  "role": "REFERENCE_ONLY",
   "is_apix_input": false,
   "unit": "index (2012=100)",
   "series": [

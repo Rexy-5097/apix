@@ -145,7 +145,7 @@ band  window          n     geo mean
 ==============================================================================
   source  MoSPI eSankhyiki api.mospi.gov.in/api/cpi/getItemIndex
   item    Air Fare (normal): Economy Class(adult)
-  role    VALIDATION_BENCHMARK_ONLY   is_apix_input=False
+  role    REFERENCE_ONLY   is_apix_input=False
   unit    index (2012=100) | monthly | All India
 
   period              base   index      y/y
@@ -181,7 +181,7 @@ band  window          n     geo mean
   APIx-L index value            NOT COMPUTABLE   a 2nd collection date exactly 7 days later (C.1)
   APIx-TPD estimate             NOT COMPUTABLE   min_quotes_window=1,500; panel has 35
   30-day back-test              NOT PERFORMED    daily fare history we do not have
-  National representativeness   NO               1 route of 2,186; 1 carrier of 5
+  National representativeness   NO               1 of 2,186 DGCA city pairs; 1 carrier (universe is an open ruling)
   Route weights (G)             NOT EXERCISED    >=2 routes + DGCA city-pair volumes
   Carrier allocation            OPEN - AMB-9     owner ruling; moot at one carrier
   Coverage denominator          OPEN - AMB-8     owner ruling on expected cells

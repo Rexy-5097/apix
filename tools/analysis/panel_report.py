@@ -291,7 +291,11 @@ def main() -> None:
         ),
         ("APIx-TPD estimate", "NOT COMPUTABLE", f"min_quotes_window=1,500; panel has {len(obs)}"),
         ("30-day back-test", "NOT PERFORMED", "daily fare history we do not have"),
-        ("National representativeness", "NO", "1 route of 2,186; 1 carrier of 5"),
+        (
+            "National representativeness",
+            "NO",
+            "1 of 2,186 DGCA city pairs; 1 carrier (universe is an open ruling)",
+        ),
         ("Route weights (G)", "NOT EXERCISED", ">=2 routes + DGCA city-pair volumes"),
         ("Carrier allocation", "OPEN - AMB-9", "owner ruling; moot at one carrier"),
         ("Coverage denominator", "OPEN - AMB-8", "owner ruling on expected cells"),
