@@ -554,8 +554,10 @@ def build(p: dict) -> str:
       logs — the log form is normative, not a numerical convenience. Matches MoSPI's own
       elementary aggregator for CPI.</span></div>
     <div class="row"><span class="cnt">§F</span><span class="txt"><strong>Young / Modified
-      Laspeyres.</strong> Weighted aggregation above the elementary level. Route weights come
-      from DGCA city-pair passenger volumes.</span></div>
+      Laspeyres.</strong> Weighted aggregation above the elementary level. Route weights are
+      <strong>specified</strong> to use DGCA city-pair passenger volumes; that source is
+      <strong>not yet secured</strong>, and with one route <strong>no route weighting is
+      exercised</strong>.</span></div>
     <div class="row"><span class="cnt">§M</span><span class="txt"><strong>APIx-TPD —
       SPECIFIED, NOT IMPLEMENTED.</strong> A quote-level Time Product Dummy hedonic regression,
       designed as a <em>parallel</em> estimator never chained into APIx-L. The specification
@@ -652,7 +654,7 @@ def build(p: dict) -> str:
       <tr><td>APIx-TPD estimate</td><td><span class="pill p-no">NOT COMPUTABLE</span></td><td class="m">min_quotes_window = {idx["tpd_min_quotes_window"]:,}; panel has {idx["tpd_quotes_available"]}</td></tr>
       <tr><td>30-day back-test</td><td><span class="pill p-no">NOT PERFORMED</span></td><td>daily fare history that does not exist and cannot be reconstructed</td></tr>
       <tr><td>Advance-purchase elasticity</td><td><span class="pill p-no">NOT ESTIMATED</span></td><td>travel-date effects separated from lead time</td></tr>
-      <tr><td>National representativeness</td><td><span class="pill p-no">NO</span></td><td>1 route of 2,186 city pairs; 1 carrier of 5</td></tr>
+      <tr><td>National representativeness</td><td><span class="pill p-no">NO</span></td><td>1 route of 2,186 DGCA city pairs (source: DGCA city-pair traffic, 66,453 rows); 1 carrier &mdash; the carrier universe is an open owner ruling (5 PS-named vs 9 scheduled operators), so no denominator is asserted</td></tr>
       <tr><td>Route weights (§G)</td><td><span class="pill p-hold">NOT EXERCISED</span></td><td>≥2 routes + DGCA city-pair volumes</td></tr>
       <tr><td>Carrier allocation</td><td><span class="pill p-hold">OPEN — AMB-9</span></td><td>owner ruling; moot at one carrier</td></tr>
       <tr><td>Coverage denominator</td><td><span class="pill p-hold">OPEN — AMB-8</span></td><td>owner ruling on expected cells</td></tr>
@@ -750,7 +752,9 @@ def build(p: dict) -> str:
   <span class="mono">{esc(p["data_class"])}</span>; the MoSPI series is an official reference.
   <span class="mono">synthetic_data_present = {esc(p["synthetic_data_present"])}</span>.</p>
   <p>Generated from <span class="mono">{esc(p["generated_from"])}</span> via
-  <span class="mono">data/panel.json</span> — no figure on this page is typed by hand.</p>
+  <span class="mono">data/panel.json</span> — every <strong>statistical</strong> figure is
+  derived from that contract. Contextual frame figures (the DGCA city-pair count, scale-up
+  targets) are typed and carry their source inline.</p>
 </footer>
 </div>
 """

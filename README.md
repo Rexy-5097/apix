@@ -165,8 +165,8 @@ published statistic.**
 
 ## Reproducing every published figure
 
-Nothing in `data/` is hand-written. All four artifacts regenerate **bit-for-bit**
-from the store:
+Nothing in `data/` is hand-written. All four artifacts regenerate **deterministically**
+from the store — identical content, verified after Git's EOL normalisation:
 
 ```bash
 python tools/analysis/build_panel_json.py     # store    -> data/panel.json
@@ -178,11 +178,18 @@ python tools/analysis/engine_demo.py --html   # fixture  -> data/engine-validati
 Verify reproducibility, then the full quality gate:
 
 ```bash
-git diff --exit-code data/            # no output = bit-for-bit reproducible
-python -m pytest -q                   # 369 passing
+git diff --exit-code data/            # no output = regeneration reproduced the content
+python -m pytest -q
 python -m ruff check . && python -m ruff format --check .
 python -m mypy src/apix
 ```
+
+**On reproducibility, precisely.** `.gitattributes` sets `* text=auto eol=lf`, so Git
+stores LF while regeneration on Windows writes CRLF. The regenerated **content** is
+deterministic; the **raw bytes are not identical across platforms**, and a
+`sha256sum` comparison on Windows will differ by exactly the CR count. Verify with
+`git diff --exit-code data/`, which compares normalised content — not with a raw
+checksum. We do not claim cross-platform byte equality.
 
 Run the engine live on the controlled 14-day fixture — the demo vehicle, and the
 only place an index number is ever computed:

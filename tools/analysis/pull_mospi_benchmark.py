@@ -111,7 +111,7 @@ def main() -> None:
             {
                 "source": "MoSPI eSankhyiki api.mospi.gov.in/api/cpi/getItemIndex",
                 "item": ITEM,
-                "role": "VALIDATION_BENCHMARK_ONLY",
+                "role": "REFERENCE_ONLY",
                 "is_apix_input": False,
                 "frequency": "monthly",
                 "geography": "All India",

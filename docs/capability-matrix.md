@@ -176,10 +176,10 @@ See [`OPEN-AMBIGUITIES-checkpoint-2.md`](methodology/OPEN-AMBIGUITIES-checkpoint
 
 | | |
 |---|---|
-| Tests | **369 passing** |
+| Automated quality gate | pytest, Ruff (`check` + `format --check`), mypy, internal-link check and the semantic claim audit — all green in CI on every commit |
 | Lint | `ruff check` + `ruff format --check` clean |
 | Types | `mypy src/apix` clean |
-| Reproducibility | `data/panel.json`, `dashboard.html`, `panel_report.txt`, `engine-validation.html` all regenerate **bit-for-bit** |
+| Reproducibility | `data/panel.json`, `dashboard.html`, `panel_report.txt`, `engine-validation.html` all regenerate **deterministically** — content-identical after Git's `eol=lf` normalisation. Verify with `git diff --exit-code data/`, not a raw checksum (see README) |
 | Real observations | 35 · 7/7 frozen APW buckets · 5/5 bands · 35/35 reconciled |
 | Provenance | 30 `PRIMARY_HASHED` + 5 `SECONDARY_CHAT_IMAGE` |
 | Exclusions | 122, each with a reason and an id |
