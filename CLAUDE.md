@@ -90,8 +90,9 @@ src/apix/
   ai/            EMPTY - explanation, parser diagnosis, schema mapping (planned)
   api/           EMPTY - FastAPI, SDMX serialisers (planned)
   experiments/   EMPTY - the six controlled scenarios, ablations (planned)
-dashboard/       README only; the delivered dashboard is generated HTML under
-                 data/, built by tools/analysis/build_dashboard.py
+dashboard-planned/  DESIGN ONLY, no code. The delivered dashboard is generated
+                    HTML at data/dashboard.html, built by
+                    tools/analysis/build_dashboard.py
 docs/            methodology, engineering, dossier
 tests/           incl. test_architecture.py, property tests
 ```
