@@ -1,9 +1,10 @@
 """Render the observed panel as plain text, straight from the store.
 
-This exists to be checked against the dashboard. The dashboard is hand-authored
-HTML with figures written into it; this reads the SQLite store and the analysis
-JSON and recomputes everything. If the two agree, the dashboard is verified; if
-they disagree, the store wins and the dashboard is wrong.
+This exists to be checked against the dashboard. Both are generated, but by
+different paths: the dashboard renders `data/panel.json`, while this reads the
+SQLite store directly and recomputes everything from the observations. Two
+independent derivations from the same source agreeing is the check. If they
+disagree, the store wins and the dashboard is wrong.
 """
 
 from __future__ import annotations
@@ -73,6 +74,10 @@ def main() -> None:
     w(rule("="))
     w("1. ADVANCE-PURCHASE PROFILE   (geometric mean of the 5 band fares, spec D.2)")
     w(rule("="))
+    w("*** DESCRIPTIVE APW PROFILE - NOT AN INDEX ***")
+    w("Each bucket is a separate cross-section on a DIFFERENT travel date.")
+    w("Differences between buckets are not temporal price movements, not inflation.")
+    w("")
     w(
         f"{'APW':<7}{'travel date':<14}{'n':<4}{'geo mean':>10}{'min':>9}{'max':>9}"
         f"{'spread':>9}{'vs T+1':>9}"
@@ -94,6 +99,49 @@ def main() -> None:
     w(f"missing                 : {[a for a in PRODUCTION_APW if a not in by_apw] or 'NONE'}")
     w("")
 
+    # ---- confound ----------------------------------------------------------
+    dows = {apw: by_apw[apw][0].travel_date.strftime("%a") for apw in sorted(by_apw)}
+    counts: dict[str, int] = defaultdict(int)
+    for d in dows.values():
+        counts[d] += 1
+    repeated = {d: n for d, n in sorted(counts.items()) if n > 1}
+    w(rule("-"))
+    w("LEAD TIME IS CONFOUNDED WITH TRAVEL DATE / DAY-OF-WEEK")
+    w(rule("-"))
+    w("  " + "  ".join(f"T+{a}->{d}" for a, d in dows.items()))
+    w(f"  {len(dows)} buckets span {len(counts)} distinct weekdays; repeated: {repeated or 'none'}")
+    w("  Advance-purchase buckets are not interchangeable time observations.")
+    w("  The APW profile does NOT isolate the effect of advance purchase, and is")
+    w("  not an inflation measure. This is why the matched t / t-7 design exists.")
+    w("")
+
+    # ---- dispersion --------------------------------------------------------
+    spreads = {}
+    for apw in by_apw:
+        fares = [float(o.payable_fare) for o in by_apw[apw]]
+        spreads[apw] = max(fares) / min(fares) - 1
+    widest = max(spreads, key=lambda a: spreads[a])
+    wob = by_apw[widest]
+    lo, hi = min(wob, key=lambda o: o.payable_fare), max(wob, key=lambda o: o.payable_fare)
+    others = max(v for a, v in spreads.items() if a != widest)
+    w(rule("-"))
+    w("WITHIN-BUCKET DISPERSION")
+    w(rule("-"))
+    w(
+        f"  Widest bucket: T+{widest} at {100 * spreads[widest]:.1f}% "
+        f"(next widest {100 * others:.1f}%)"
+    )
+    w(
+        f"    min  {lo.carrier} {lo.flight_number} dep {lo.departure_time_local:%H:%M}  "
+        f"{float(lo.payable_fare):>8,.0f}   {lo.observation_id}"
+    )
+    w(
+        f"    max  {hi.carrier} {hi.flight_number} dep {hi.departure_time_local:%H:%M}  "
+        f"{float(hi.payable_fare):>8,.0f}   {hi.observation_id}"
+    )
+    w("  The panel establishes the dispersion. It does NOT establish its cause.")
+    w("")
+
     # ---- quality -----------------------------------------------------------
     decomposed = sum(1 for o in obs if o.fare_breakdown.base_fare)
     reconciles = sum(
@@ -107,9 +155,13 @@ def main() -> None:
     w("2. DATA QUALITY")
     w(rule("="))
     w(f"  valid observations        {len(obs)}")
-    w(f"  expected cells            {expected}   (7 APW x 5 bands)")
-    w(f"  coverage                  {100 * len(obs) / expected:.1f}%")
-    w(f"  missing cells             {expected - len(obs)}")
+    w(f"  collection plan slots     {expected}   (7 APW x 5 bands)")
+    w(
+        f"  plan completion           {100 * len(obs) / expected:.1f}%"
+        "   (slots filled, NOT coverage)"
+    )
+    w(f"  plan slots unfilled       {expected - len(obs)}")
+    w("  statistical coverage      NOT ESTABLISHED   (AMB-8 open: 'expected cells' undefined)")
     w(f"  fully decomposed          {decomposed}/{len(obs)}")
     w(f"  base + tax == total       {reconciles}/{decomposed}")
     w(f"  runs                      {len(runs)}")

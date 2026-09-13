@@ -6,9 +6,22 @@ auditable infrastructure that produces it.**
 Built against MoSPI problem statement **26056**, Data Informatics & Innovation
 Division.
 
-> **Status: Task 0 — bootstrap.** Repository, AgentOS initialisation, Agent
-> Skills workflow, CI baseline and governance only. No APIx feature code has
-> been written yet. See [`context/state.md`](context/state.md).
+> **Status — hackathon prototype, 15 September 2026.** APIx is a
+> frozen-specification airfare index **engine** with a real-market evidence
+> pipeline. The complete seven-bucket advance-purchase panel for DEL–BOM has
+> been collected and audited under a fixed collection protocol. The engine is
+> implemented and tested, but **APIx deliberately does not publish a market
+> index yet**, because the longitudinal evidence the frozen methodology requires
+> does not exist. See [`context/state.md`](context/state.md).
+>
+> | | State |
+> |---|---|
+> | Real observations | **35** · 7/7 frozen APW buckets · DEL–BOM · IndiGo · collected 2026-09-12 |
+> | APIx-L engine | **implemented, tested** — verified end to end over 14 consecutive publication dates |
+> | APIx-L index value | **PENDING** — §C.1 needs matched `t / t−7`; one wave held. Unlocks 2026-09-19 |
+> | APIx-TPD | **specified (§M), NOT implemented** — no estimator exists |
+> | Uncertainty / CI | **NOT implemented** — no interval is reported anywhere |
+> | National representativeness | **not established** — 1 route, 1 carrier |
 
 ---
 
@@ -40,10 +53,15 @@ observations by parallel paths that are **never chained together**.
 | Method | Jevons short index at the elementary level, Young / Modified Laspeyres above | Quote-level Time Product Dummy hedonic regression, rolling window, mean-spliced |
 | Character | Deterministic, formula-transparent, no ML in the code path | An estimate under a stated hedonic model |
 | Purpose | A series a statistical office could adopt without changing its methodology | An independent quality-adjusted estimate of price movement |
+| **Status** | **Engine implemented and tested.** No index value published — see above | **Specified (§M). Estimator NOT implemented.** |
 
-**The gap between the two series is the deliverable.** It answers how much
-observed airfare movement survives conditioning on product composition, and how
-much does not.
+**Design intent — not a present deliverable.** The gap between the two series is
+what APIx is ultimately for: it answers how much observed airfare movement
+survives conditioning on product composition, and how much does not.
+**That comparison cannot be produced today.** APIx-L is blocked on a second
+collection wave, and APIx-TPD has no estimator — `src/apix/statistics/tpd/` is an
+empty package. Nothing in this repository currently computes a two-estimator
+divergence, and no such figure is published anywhere.
 
 ## The architectural rule
 
@@ -60,8 +78,10 @@ The published index must be reproducible from
 `(snapshot_id, methodology_version, weight_version, code_version)` alone.
 
 **Removal test:** delete the Claude API integration and the entire analytics
-layer. Collection, cleaning, deduplication, Jevons, Young/Modified Laspeyres,
-TPD and index publication must all still work.
+layer. Collection, cleaning, deduplication, Jevons, Young/Modified Laspeyres and
+index publication must all still work — they do, and `test_architecture.py`
+enforces it. (TPD is named in this rule by design, but is not implemented yet,
+so it is not part of what the test currently exercises.)
 
 ## Compliance
 
@@ -76,23 +96,43 @@ limitation to apologise for.
 
 ## Repository layout
 
+Every row states what is actually on disk today. **`EMPTY` means the package
+exists as a namespace and contains no implementation** — it is a reserved slot,
+not working code.
+
 ```
 src/apix/
-  schemas/       canonical contracts — written before any collector
-  ingestion/     collectors, compliance gate, snapshot store
+  schemas/       IMPLEMENTED  collection, enums, keys, observation, results,
+                              version_vector
+  ingestion/     IMPLEMENTED  store.py (SQLite snapshot store)
   statistics/    deterministic, no ML imports, invariant-tested
-    elementary/    Jevons relatives, matched-item tier ladder
-    aggregation/   Young / Modified Laspeyres, weights
-    tpd/           TPD specification, estimator, splice
-    uncertainty/   cell bootstrap
-    index/         APIx assembly, publication, vintages
-  analytics/     anomaly, forecasting, shock, decomposition   (reads the index)
-  ai/            explanation, parser diagnosis, schema mapping (reads the index)
-  api/           FastAPI, SDMX serialisers
-  experiments/   six controlled scenarios, ablations
-dashboard/       Next.js
+    elementary/  IMPLEMENTED  jevons, matching, admissibility, bands, dedup,
+                              outliers, sources
+    aggregation/ IMPLEMENTED  young_laspeyres, weights, within_route
+    index/       IMPLEMENTED  apix_l, chaining, linking, parent, publication
+    tpd/         EMPTY        SPECIFIED in methodology §M; estimator NOT written
+    uncertainty/ EMPTY        bootstrap SPECIFIED; estimator NOT written
+  analytics/     EMPTY        anomaly, forecasting, shock, decomposition — planned
+  ai/            EMPTY        explanation, parser diagnosis — planned
+  api/           EMPTY        FastAPI, SDMX serialisers — planned
+  experiments/   EMPTY        six controlled scenarios — planned
+dashboard/       README only  the delivered dashboard is generated HTML, below
 docs/            methodology, engineering, the dossier
 tests/           architecture boundary, property and invariant tests
+tools/analysis/  panel + dashboard generators, engine demo
+```
+
+**The dashboard is generated, never hand-authored:**
+
+```
+data/collection/collection.sqlite3          the store (real observations)
+  -> tools/analysis/build_panel_json.py
+  -> data/panel.json                        the contract every renderer reads
+  -> tools/analysis/build_dashboard.py      -> data/dashboard.html
+  -> tools/analysis/panel_report.py         -> data/panel_report.txt
+
+tools/analysis/engine_demo.py               engine run on a SYNTHETIC fixture
+  -> data/engine-validation.html            separate file, never merged above
 ```
 
 The dossier's section 13 tree is rooted at `apix/`, so those layers are the

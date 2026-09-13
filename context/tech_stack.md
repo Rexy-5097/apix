@@ -51,8 +51,14 @@ forbidden in Layer 2, because Layer 2 carries the reproducibility guarantee.
 
 ## Not yet installed
 
-Task 0 declares **no runtime dependencies**. `pyproject.toml` lists only dev
-tooling (pytest, Hypothesis, ruff, mypy, PyYAML). Nothing in dossier sections
-06–12 is implemented, so nothing that implements it is declared.
+APIx still declares **no runtime dependencies**, and that is now a property of
+the implementation rather than of its absence: the schemas, ingestion store,
+elementary layer, aggregation and index layer are all implemented on the Python
+standard library alone (`Decimal`, `sqlite3`, `math`). `pyproject.toml` lists
+only dev tooling (pytest, Hypothesis, ruff, mypy, PyYAML).
+
+What is **not** yet implemented — the TPD estimator, bootstrap/uncertainty,
+analytics, ai, api, experiments — is exactly what would first require third-party
+numerical or web dependencies.
 
 Dependencies are added per checkpoint, in the pull request that first needs them.

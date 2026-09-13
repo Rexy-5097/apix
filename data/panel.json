@@ -905,6 +905,20 @@
    "min": 6530.0,
    "max": 6688.0,
    "spread_pct": 2.4,
+   "min_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6218-20260913-Saver fare",
+    "flight": "6E 6218",
+    "dep": "06:05",
+    "band": 2,
+    "total": 6530.0
+   },
+   "max_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6676-20260913-Saver fare",
+    "flight": "6E 6676",
+    "dep": "12:00",
+    "band": 4,
+    "total": 6688.0
+   },
    "rel_to_first": 1.0
   },
   {
@@ -916,6 +930,20 @@
    "min": 6530.0,
    "max": 8158.0,
    "spread_pct": 24.9,
+   "min_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6107-20260915-Saver fare",
+    "flight": "6E 6107",
+    "dep": "09:30",
+    "band": 3,
+    "total": 6530.0
+   },
+   "max_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6218-20260915-Saver fare",
+    "flight": "6E 6218",
+    "dep": "06:05",
+    "band": 2,
+    "total": 8158.0
+   },
    "rel_to_first": 1.052
   },
   {
@@ -927,6 +955,20 @@
    "min": 6530.0,
    "max": 6898.0,
    "spread_pct": 5.6,
+   "min_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6218-20260919-Saver fare",
+    "flight": "6E 6218",
+    "dep": "06:05",
+    "band": 2,
+    "total": 6530.0
+   },
+   "max_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E329-20260919-Saver fare",
+    "flight": "6E 329",
+    "dep": "18:00",
+    "band": 6,
+    "total": 6898.0
+   },
    "rel_to_first": 1.011
   },
   {
@@ -938,6 +980,20 @@
    "min": 6530.0,
    "max": 7160.0,
    "spread_pct": 9.6,
+   "min_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6218-20260927-Saver fare",
+    "flight": "6E 6218",
+    "dep": "06:05",
+    "band": 2,
+    "total": 6530.0
+   },
+   "max_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6676-20260927-Saver fare",
+    "flight": "6E 6676",
+    "dep": "12:00",
+    "band": 4,
+    "total": 7160.0
+   },
    "rel_to_first": 1.044
   },
   {
@@ -949,6 +1005,20 @@
    "min": 6530.0,
    "max": 6898.0,
    "spread_pct": 5.6,
+   "min_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6107-20261012-Saver fare",
+    "flight": "6E 6107",
+    "dep": "09:30",
+    "band": 3,
+    "total": 6530.0
+   },
+   "max_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6218-20261012-Saver fare",
+    "flight": "6E 6218",
+    "dep": "06:05",
+    "band": 2,
+    "total": 6898.0
+   },
    "rel_to_first": 1.0062
   },
   {
@@ -960,6 +1030,20 @@
    "min": 7019.0,
    "max": 7169.0,
    "spread_pct": 2.1,
+   "min_obs": {
+    "observation_id": "20260913-primary-indigo-direct-6E6218-20261027-Saver fare",
+    "flight": "6E 6218",
+    "dep": "06:05",
+    "band": 2,
+    "total": 7019.0
+   },
+   "max_obs": {
+    "observation_id": "20260913-primary-indigo-direct-6E329-20261027-Saver fare",
+    "flight": "6E 329",
+    "dep": "18:30",
+    "band": 6,
+    "total": 7169.0
+   },
    "rel_to_first": 1.0743
   },
   {
@@ -971,9 +1055,64 @@
    "min": 8720.0,
    "max": 9665.0,
    "spread_pct": 10.8,
+   "min_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E6107-20261111-Saver fare",
+    "flight": "6E 6107",
+    "dep": "09:30",
+    "band": 3,
+    "total": 8720.0
+   },
+   "max_obs": {
+    "observation_id": "20260912-primary-indigo-direct-6E324-20261111-Saver fare",
+    "flight": "6E 324",
+    "dep": "13:15",
+    "band": 4,
+    "total": 9665.0
+   },
    "rel_to_first": 1.3855
   }
  ],
+ "apw_profile_class": "DESCRIPTIVE_CROSS_SECTION",
+ "apw_profile_disclaimer": "DESCRIPTIVE APW PROFILE - NOT AN INDEX. Each bucket is a separate cross-section on a different travel date. Differences between buckets are not temporal price movements and are not inflation.",
+ "dispersion": {
+  "widest_apw": 3,
+  "widest_spread_pct": 24.9,
+  "widest_min_obs": {
+   "observation_id": "20260912-primary-indigo-direct-6E6107-20260915-Saver fare",
+   "flight": "6E 6107",
+   "dep": "09:30",
+   "band": 3,
+   "total": 6530.0
+  },
+  "widest_max_obs": {
+   "observation_id": "20260912-primary-indigo-direct-6E6218-20260915-Saver fare",
+   "flight": "6E 6218",
+   "dep": "06:05",
+   "band": 2,
+   "total": 8158.0
+  },
+  "others_max_spread_pct": 10.8,
+  "cause_established": false,
+  "statement": "Observed within-bucket dispersion. The panel establishes the dispersion; it does not establish its cause."
+ },
+ "confound": {
+  "weekday_by_apw": {
+   "1": "Sun",
+   "3": "Tue",
+   "7": "Sat",
+   "15": "Sun",
+   "30": "Mon",
+   "45": "Tue",
+   "60": "Wed"
+  },
+  "distinct_weekdays": 5,
+  "repeated_weekdays": {
+   "Sun": 2,
+   "Tue": 2
+  },
+  "lead_time_confounded": true,
+  "statement": "Advance-purchase buckets are not interchangeable time observations. In this panel lead time is confounded with travel date / day-of-week, so the APW profile is descriptive and is not an inflation measure."
+ },
  "band_profile": [
   {
    "band": 2,
@@ -1008,10 +1147,13 @@
  ],
  "band_spread_pct": 4.8,
  "quality": {
-  "expected_cells": 35,
+  "plan_slots": 35,
   "valid_observations": 35,
-  "coverage_pct": 100.0,
-  "missing_cells": 0,
+  "plan_completion_pct": 100.0,
+  "plan_slots_unfilled": 0,
+  "plan_basis": "7 frozen APW buckets x 5 bands",
+  "statistical_coverage": "NOT_ESTABLISHED",
+  "statistical_coverage_blocker": "AMB-8 OPEN: spec I gates on '60% of expected cells' and nothing defines an expected cell. No denominator has been chosen, so no statistical coverage figure is computed.",
   "reconciled": 35,
   "decomposed": 35,
   "apw_expected": [

@@ -7,9 +7,11 @@ license = { file = "LICENSE" }
 # Dossier section 13 specifies Python 3.12 for the collection layer.
 requires-python = ">=3.12"
 
-# Runtime dependencies are added per checkpoint, not up front. Task 0 is
-# bootstrap only: nothing in dossier sections 06-12 is implemented yet, so
-# nothing that implements it is declared here.
+# Runtime dependencies are added per checkpoint, not up front. The implemented
+# layers -- schemas, ingestion, elementary, aggregation, index -- run on the
+# standard library alone, so this stays empty. The TPD estimator and the
+# bootstrap are the first pieces that would need a third-party numerical stack;
+# neither is implemented.
 dependencies = []
 
 [project.optional-dependencies]
@@ -71,6 +73,10 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 # HTML harder to read than the Python. Its "ambiguous" characters -- the arrow,
 # the em dash, the rupee sign -- are the intended output, not typos.
 "tools/analysis/build_dashboard.py" = ["E501", "RUF001"]
+# engine_demo.py carries the same kind of HTML template for the isolated
+# engine-validation page. Only RUF001 is waived: its typographic characters are
+# intended markup. E501 is NOT waived here -- the file is mostly real code.
+"tools/analysis/engine_demo.py" = ["RUF001"]
 
 [tool.mypy]
 python_version = "3.12"

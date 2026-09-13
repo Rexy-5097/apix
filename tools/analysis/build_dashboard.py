@@ -184,9 +184,21 @@ def build(p: dict) -> str:
     q, idx, frame = p["quality"], p["index_status"], p["frame"]
     prof = p["apw_profile"]
     first, last = prof[0], prof[-1]
-    delta = 100 * (last["rel_to_first"] - 1)
+    # Derive from the geomeans, not from `rel_to_first` -- that field is already
+    # rounded to 4dp, and rounding a rounded ratio again turns 38.5547% into
+    # 38.5%. One rounding, at display time only.
+    delta = 100 * (last["geomean"] / first["geomean"] - 1)
     ev = q["evidence_counts"]
     run_versions = p["runs"][0] if p["runs"] else {}
+    disp = p["dispersion"]
+    # JSON object keys are strings; restore the integer APW ordering.
+    weekday_by_apw = {
+        int(k): v
+        for k, v in sorted(p["confound"]["weekday_by_apw"].items(), key=lambda kv: int(kv[0]))
+    }
+    repeated_txt = (
+        ", ".join(f"{d} x{n}" for d, n in p["confound"]["repeated_weekdays"].items()) or "none"
+    )
 
     chips = "".join(
         f'<span class="chip{c}">{esc(t)}</span>'
@@ -279,7 +291,7 @@ def build(p: dict) -> str:
         for r in p["runs"]
     )
 
-    return f"""<title>APIx Real-Time Airfare Price Index</title>
+    return f"""<title>APIx Airfare Index Engine</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>{CSS}</style>
 
@@ -287,69 +299,134 @@ def build(p: dict) -> str:
 
 <header>
   <div class="chips">{chips}</div>
-  <h1>APIx — Real-Time Airfare Price Index</h1>
-  <p class="lede">A quality-adjusted airfare price index for India, built against MoSPI problem
-  statement 26056. This page shows the prototype's real empirical base and is deliberately
-  explicit about three different things: what has been <strong>observed</strong>, what is
-  <strong>computable now</strong>, and what becomes computable only after longitudinal
-  collection.</p>
+  <h1>APIx — Airfare Index Engine</h1>
+  <p class="lede">A frozen-specification airfare index engine with a real-market evidence
+  pipeline, built against MoSPI problem statement 26056. We have collected and audited the
+  complete seven-bucket advance-purchase panel for DEL–BOM under a fixed collection protocol.
+  The engine is implemented and tested, but we <strong>deliberately do not publish a market
+  index yet</strong>, because the longitudinal evidence the methodology requires does not
+  exist.</p>
 </header>
 
 <div class="status">
-  <div class="st yes"><span class="lab">Observed panel</span>
-    <span class="val">{q["valid_observations"]} / {q["expected_cells"]} cells</span>
-    <span class="why">{len(q["apw_observed"])}/{len(q["apw_expected"])} advance-purchase windows ·
+  <div class="st yes"><span class="lab">Observed</span>
+    <span class="val">{q["valid_observations"]} real observations</span>
+    <span class="why">{len(q["apw_observed"])}/{len(q["apw_expected"])} frozen APW buckets ·
     {len(q["bands_observed"])} departure bands · {esc(" · ".join(frame["routes"]))} ·
-    IndiGo {esc(" ".join(frame["carriers"]))}</span></div>
-  <div class="st yes"><span class="lab">Index engine</span>
+    IndiGo {esc(" ".join(frame["carriers"]))} · collected {esc(p["collection_date"])}</span></div>
+  <div class="st yes"><span class="lab">Engine</span>
     <span class="val">Implemented &amp; tested</span>
-    <span class="why">Jevons elementary → Young / Modified Laspeyres, with TPD as a parallel
-    estimator. Invariant-tested; no ML in the index path.</span></div>
-  <div class="st no"><span class="lab">Current index value</span>
-    <span class="val">Pending 2nd wave</span>
-    <span class="why">§C.1 is locked: <span class="mono">I(c,t) = I(c,t−7)·J(c,t)</span>.
-    {idx["collection_waves"]} collection wave held, so {idx["matched_pairs_available"]} matched
-    pairs exist. Unlocks <strong>{idx["next_wave_unlocking_index"]}</strong>.</span></div>
+    <span class="why">APIx-L: Jevons elementary → Young / Modified Laspeyres, verified end to end
+    over 14 consecutive publication dates. No ML in the index path.
+    <strong>APIx-TPD is specified (§M) but not implemented.</strong></span></div>
+  <div class="st no"><span class="lab">Index</span>
+    <span class="val">PENDING</span>
+    <span class="why">Frozen methodology requires matched <span class="mono">t / t−7</span>
+    evidence: §C.1 <span class="mono">I(c,t) = I(c,t−7)·J(c,t)</span>.
+    {idx["collection_waves"]} collection wave held ⇒ {idx["matched_pairs_available"]} matched
+    pairs. Unlock <strong>{idx["next_wave_unlocking_index"]}</strong>.</span></div>
+</div>
+
+<div class="warn">
+  <strong>No APIx market index value appears anywhere on this page.</strong>
+  <span>The advance-purchase profile below is <strong>descriptive cross-sectional evidence. It is
+  NOT a longitudinal airfare price index</strong>, and no figure on this page should be read as
+  airfare inflation.</span>
 </div>
 
 <!-- 2 APW -->
 <section>
-  <div class="sechead"><span class="n">01</span><h2>Observed APW profile</h2></div>
+  <div class="sechead"><span class="n">01</span><h2>Descriptive APW profile — not an index</h2></div>
+  <div class="warn">
+    <strong>DESCRIPTIVE APW PROFILE — NOT AN INDEX.</strong>
+    <span>{esc(p["apw_profile_disclaimer"])}</span>
+  </div>
   <p class="lede">Geometric mean of the five band fares at each advance-purchase distance.
   The geometric mean is spec §D.2's elementary aggregator, used here so the arithmetic matches
-  the index that will later run on these same observations. <strong>This is a descriptive
-  cross-sectional result, not an index and not a causal estimate.</strong></p>
+  the index that will later run on these same observations.</p>
   <div class="chartbox">{apw_chart(prof)}</div>
   <div class="tscroll"><table>
     <thead><tr><th>APW</th><th>travel date</th><th>day</th><th class="r">n</th>
       <th class="r">geo mean ₹</th><th class="r">min</th><th class="r">max</th>
-      <th class="r">spread</th><th class="r">vs T+{first["apw"]}</th></tr></thead>
+      <th class="r">spread</th><th class="r">ratio vs T+{first["apw"]}</th></tr></thead>
     <tbody>{apw_rows}</tbody></table></div>
   <div class="tiles">
-    <div class="tile"><span class="k">T+{first["apw"]} → T+{last["apw"]}</span>
+    <div class="tile"><span class="k">T+{last["apw"]} vs T+{first["apw"]} geo-mean</span>
       <span class="v">{delta:+.1f}%</span>
-      <span class="s">₹{rupee(first["geomean"])} → ₹{rupee(last["geomean"])}</span></div>
-    <div class="tile"><span class="k">widest within-day</span>
-      <span class="v">{max(e["spread_pct"] for e in prof):.1f}%</span>
-      <span class="s">across the 5 bands</span></div>
-    <div class="tile good"><span class="k">APW coverage</span>
+      <span class="s">descriptive difference — not a price movement</span></div>
+    <div class="tile"><span class="k">widest within-bucket spread</span>
+      <span class="v">{disp["widest_spread_pct"]:.1f}%</span>
+      <span class="s">T+{disp["widest_apw"]}, across the 5 bands</span></div>
+    <div class="tile good"><span class="k">frozen APW buckets observed</span>
       <span class="v">{len(q["apw_observed"])}/{len(q["apw_expected"])}</span>
-      <span class="s">complete frozen vector</span></div>
+      <span class="s">complete §A.3 vector</span></div>
   </div>
   <div class="warn">
-    <strong>Read the {delta:+.0f}% carefully — it is not an advance-purchase elasticity.</strong>
-    <span>Each APW sits on a <em>different travel date</em>, so date-specific and seasonal
-    effects are fully confounded with advance purchase. The T+{last["apw"]} observation
+    <strong>The {delta:+.1f}% is not airfare inflation.</strong>
+    <span>The T+{last["apw"]} observed APW geo-mean is {delta:.1f}% higher than the
+    T+{first["apw"]} observed APW geo-mean; <strong>this is descriptive and not a time-series
+    price movement</strong>. Each bucket sits on a different travel date, so date-specific and
+    seasonal effects are fully confounded with advance purchase. The T+{last["apw"]} travel date
     ({last["travel_date"]}) falls days after Diwali; a return-travel peak is a
-    <strong>hypothesis this panel cannot test</strong>, not a finding. Separating the two needs
-    the same travel date observed at several lead times — which is what longitudinal collection
-    produces.</span>
+    <strong>hypothesis this panel cannot test</strong>, not a finding.</span>
   </div>
+</section>
+
+<!-- 2b confound -->
+<section>
+  <div class="sechead"><span class="n">02</span><h2>Lead time is confounded with travel date</h2></div>
+  <p class="lede">{esc(p["confound"]["statement"])}</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>APW bucket</th>{"".join(f"<th class='r'>T+{a}</th>" for a in weekday_by_apw)}</tr></thead>
+    <tbody><tr><td class="m">travel weekday</td>
+      {"".join(f"<td class='m r'>{esc(d)}</td>" for d in weekday_by_apw.values())}</tr></tbody>
+  </table></div>
+  <div class="tiles">
+    <div class="tile"><span class="k">buckets</span>
+      <span class="v">{len(weekday_by_apw)}</span><span class="s">advance-purchase windows</span></div>
+    <div class="tile bad"><span class="k">distinct weekdays</span>
+      <span class="v">{p["confound"]["distinct_weekdays"]}</span>
+      <span class="s">repeated: {esc(repeated_txt)}</span></div>
+    <div class="tile bad"><span class="k">lead time isolated?</span>
+      <span class="v">NO</span><span class="s">confounded by construction</span></div>
+  </div>
+  <div class="warn">
+    <strong>This profile does not isolate the effect of advance purchase.</strong>
+    <span>Advance-purchase buckets are not interchangeable time observations. Separating lead
+    time from travel date needs the same cell observed at two collection dates seven days apart
+    — which is exactly what the matched <span class="mono">t / t−7</span> design does, and
+    exactly what one collection wave cannot provide.</span>
+  </div>
+</section>
+
+<!-- 2c dispersion -->
+<section>
+  <div class="sechead"><span class="n">03</span><h2>Within-bucket dispersion</h2></div>
+  <p class="lede">T+{disp["widest_apw"]} has the highest observed within-bucket fare dispersion
+  ({disp["widest_spread_pct"]}%), against {disp["others_max_spread_pct"]}% for the next widest
+  bucket. <strong>The current panel establishes the dispersion; it does not establish its
+  cause.</strong> No anomaly-detection definition is in force, so this is reported as observed
+  dispersion and not as an anomaly.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>role</th><th>flight</th><th>dep</th><th class="r">band</th>
+      <th class="r">fare ₹</th><th>observation id</th></tr></thead>
+    <tbody>
+      <tr><td class="m">minimum</td><td class="m">{esc(disp["widest_min_obs"]["flight"])}</td>
+        <td class="m">{esc(disp["widest_min_obs"]["dep"])}</td>
+        <td class="m r">{disp["widest_min_obs"]["band"]}</td>
+        <td class="m r"><strong>{rupee(disp["widest_min_obs"]["total"])}</strong></td>
+        <td class="m">{esc(disp["widest_min_obs"]["observation_id"])}</td></tr>
+      <tr><td class="m">maximum</td><td class="m">{esc(disp["widest_max_obs"]["flight"])}</td>
+        <td class="m">{esc(disp["widest_max_obs"]["dep"])}</td>
+        <td class="m r">{disp["widest_max_obs"]["band"]}</td>
+        <td class="m r"><strong>{rupee(disp["widest_max_obs"]["total"])}</strong></td>
+        <td class="m">{esc(disp["widest_max_obs"]["observation_id"])}</td></tr>
+    </tbody></table></div>
 </section>
 
 <!-- 3 bands -->
 <section>
-  <div class="sechead"><span class="n">02</span><h2>Departure-band structure</h2></div>
+  <div class="sechead"><span class="n">04</span><h2>Departure-band structure</h2></div>
   <p class="lede">§B.2 anchors 3-hour bands at 00:00 IST. Bands {esc(q["bands_expected"])} span the
   commercial day and are the contracted set; one flight per band, always the earliest, never
   chosen by price.</p>
@@ -361,7 +438,7 @@ def build(p: dict) -> str:
 
 <!-- 4 observations -->
 <section>
-  <div class="sechead"><span class="n">03</span><h2>Flight-level observations</h2></div>
+  <div class="sechead"><span class="n">05</span><h2>Flight-level observations</h2></div>
   <p class="lede">Every row is a real quote read off IndiGo's own website and verified against
   its screenshot. <span class="mono">seen</span> is the capture time; the last column is the
   evidence grade.</p>
@@ -374,17 +451,20 @@ def build(p: dict) -> str:
 
 <!-- 5 quality -->
 <section>
-  <div class="sechead"><span class="n">04</span><h2>Data quality</h2></div>
+  <div class="sechead"><span class="n">06</span><h2>Data quality</h2></div>
   <div class="tiles">
     <div class="tile good"><span class="k">valid observations</span>
       <span class="v">{q["valid_observations"]}</span><span class="s">real market quotes</span></div>
-    <div class="tile"><span class="k">expected cells</span>
-      <span class="v">{q["expected_cells"]}</span>
-      <span class="s">{len(q["apw_expected"])} APW × {len(q["bands_expected"])} bands</span></div>
-    <div class="tile good"><span class="k">coverage</span>
-      <span class="v">{q["coverage_pct"]}%</span><span class="s">no gaps</span></div>
-    <div class="tile good"><span class="k">missing cells</span>
-      <span class="v">{q["missing_cells"]}</span><span class="s">none</span></div>
+    <div class="tile"><span class="k">collection plan</span>
+      <span class="v">{q["valid_observations"]} / {q["plan_slots"]}</span>
+      <span class="s">{esc(q["plan_basis"])}</span></div>
+    <div class="tile good"><span class="k">plan completion</span>
+      <span class="v">{q["plan_completion_pct"]}%</span>
+      <span class="s">slots filled — not coverage</span></div>
+    <div class="tile good"><span class="k">plan slots unfilled</span>
+      <span class="v">{q["plan_slots_unfilled"]}</span><span class="s">none</span></div>
+    <div class="tile bad"><span class="k">statistical coverage</span>
+      <span class="v">n/a</span><span class="s">NOT ESTABLISHED — AMB-8 open</span></div>
     <div class="tile good"><span class="k">reconciled</span>
       <span class="v">{q["reconciled"]}/{q["decomposed"]}</span>
       <span class="s">base + tax = total</span></div>
@@ -392,6 +472,15 @@ def build(p: dict) -> str:
       <span class="v">{q["artifacts"]}</span><span class="s">SHA-256 addressed</span></div>
     <div class="tile bad"><span class="k">§A.5 window flags</span>
       <span class="v">{q["window_flags"]}</span><span class="s">stored + flagged</span></div>
+  </div>
+  <div class="warn">
+    <strong>{q["plan_completion_pct"]}% is collection-plan completion, not statistical
+    coverage.</strong>
+    <span>It says the collector filled every slot the Day-1 contract asked for
+    ({esc(q["plan_basis"])}). It says <em>nothing</em> about spec §I's
+    <span class="mono">min_route_coverage</span>, whose denominator — "expected cells" — is
+    undefined. That is <strong>AMB-8, still open</strong>: no denominator has been chosen, so no
+    statistical coverage figure is computed here. {esc(q["statistical_coverage_blocker"])}</span>
   </div>
   <div class="warn">
     <strong>The session breached its own declared window, and that is recorded rather than
@@ -407,7 +496,7 @@ def build(p: dict) -> str:
 
 <!-- 6 provenance -->
 <section>
-  <div class="sechead"><span class="n">05</span><h2>Provenance &amp; evidence</h2></div>
+  <div class="sechead"><span class="n">07</span><h2>Provenance &amp; evidence</h2></div>
   <p class="lede">Provenance is <strong>not uniform across the panel</strong>, and the data model
   records that as a derived fact rather than a label someone remembered to apply. An observation
   is <span class="mono">PRIMARY_HASHED</span> only if its run actually has a content-addressed
@@ -429,7 +518,7 @@ def build(p: dict) -> str:
 
 <!-- exclusion audit -->
 <section>
-  <div class="sechead"><span class="n">06</span><h2>Exclusion audit — {p["exclusions_total"]} screenshots</h2></div>
+  <div class="sechead"><span class="n">08</span><h2>Exclusion audit — {p["exclusions_total"]} screenshots</h2></div>
   <p class="lede">Nothing was deleted. Every screenshot that did not become an observation carries
   a reason, and the ids are listed so any one can be traced back.</p>
   <div class="rows">{excl_rows}</div>
@@ -439,7 +528,7 @@ def build(p: dict) -> str:
 
 <!-- 7 methodology -->
 <section>
-  <div class="sechead"><span class="n">07</span><h2>Statistical methodology</h2></div>
+  <div class="sechead"><span class="n">09</span><h2>Statistical methodology</h2></div>
   <div class="flow">
     <span class="step now">raw observation</span><span class="arr">→</span>
     <span class="step now">admissibility §A.6</span><span class="arr">→</span>
@@ -460,26 +549,37 @@ def build(p: dict) -> str:
     <div class="row"><span class="cnt">§F</span><span class="txt"><strong>Young / Modified
       Laspeyres.</strong> Weighted aggregation above the elementary level. Route weights come
       from DGCA city-pair passenger volumes.</span></div>
-    <div class="row"><span class="cnt">§M</span><span class="txt"><strong>APIx-TPD.</strong> A
-      quote-level Time Product Dummy hedonic regression, run as a <em>parallel</em> estimator and
-      never chained into APIx-L. The gap between the two is a deliverable in itself.</span></div>
-    <div class="row"><span class="cnt">§N</span><span class="txt"><strong>Bootstrap intervals.</strong>
-      Computed only where statistically estimable. With one wave there is no sampling
-      distribution over relatives, so none is reported.</span></div>
+    <div class="row"><span class="cnt">§M</span><span class="txt"><strong>APIx-TPD —
+      SPECIFIED, NOT IMPLEMENTED.</strong> A quote-level Time Product Dummy hedonic regression,
+      designed as a <em>parallel</em> estimator never chained into APIx-L. The specification
+      exists; <strong>the estimator is not implemented</strong>
+      (<span class="mono">src/apix/statistics/tpd/</span> is an empty package). The design intent
+      — publishing the gap between the two estimators — is a future deliverable, not a present
+      one.</span></div>
+    <div class="row"><span class="cnt">§N</span><span class="txt"><strong>Uncertainty —
+      NOT IMPLEMENTED.</strong> No bootstrap or confidence-interval estimator exists
+      (<span class="mono">src/apix/statistics/uncertainty/</span> is an empty package), and
+      <strong>no confidence interval is reported anywhere in APIx</strong>. Beyond the missing
+      code, the current collection design does not record the admissible-flight universe per
+      band, so it does not yet carry the sampling-design information a conventional uncertainty
+      estimator would need. Dispersion is reported instead, which assumes nothing.</span></div>
   </div>
 </section>
 
 <!-- 8 index engine -->
 <section>
-  <div class="sechead"><span class="n">08</span><h2>Index engine status</h2></div>
+  <div class="sechead"><span class="n">10</span><h2>Index engine status</h2></div>
   <div class="tiles">
-    <div class="tile good"><span class="k">engine</span><span class="v">READY</span>
+    <div class="tile good"><span class="k">APIx-L engine</span><span class="v">READY</span>
       <span class="s">implemented + invariant-tested</span></div>
     <div class="tile bad"><span class="k">APIx-L value</span><span class="v">PENDING</span>
       <span class="s">needs a 2nd collection wave</span></div>
-    <div class="tile bad"><span class="k">APIx-TPD</span><span class="v">PENDING</span>
-      <span class="s">{idx["tpd_quotes_available"]} quotes of
-      {idx["tpd_min_quotes_window"]:,} required</span></div>
+    <div class="tile bad"><span class="k">APIx-TPD</span><span class="v">NOT IMPLEMENTED</span>
+      <span class="s">specified §M; estimator absent. Panel is also
+      {idx["tpd_quotes_available"]} quotes of {idx["tpd_min_quotes_window"]:,} required</span></div>
+    <div class="tile bad"><span class="k">uncertainty / CI</span>
+      <span class="v">NOT IMPLEMENTED</span>
+      <span class="s">no estimator; no CI reported anywhere</span></div>
     <div class="tile hold"><span class="k">unlocks on</span>
       <span class="v" style="font-size:17px">{idx["next_wave_unlocking_index"]}</span>
       <span class="s">exactly t−7 from the held wave</span></div>
@@ -495,7 +595,7 @@ def build(p: dict) -> str:
 
 <!-- 9 benchmark -->
 <section>
-  <div class="sechead"><span class="n">09</span><h2>Official reference — MoSPI</h2></div>
+  <div class="sechead"><span class="n">11</span><h2>Official reference — MoSPI</h2></div>
   <p class="lede">Pulled first-hand from the Dataset Link named in the problem statement:
   <span class="mono">{esc(bench["source"])}</span>, item <em>{esc(bench["item"])}</em>.
   Role: <span class="mono">{esc(bench["role"])}</span> —
@@ -518,7 +618,7 @@ def build(p: dict) -> str:
 
 <!-- 10 scale -->
 <section>
-  <div class="sechead"><span class="n">10</span><h2>Scale-up architecture</h2></div>
+  <div class="sechead"><span class="n">12</span><h2>Scale-up architecture</h2></div>
   <p class="lede">DEL–BOM and IndiGo are <strong>current sample values, not architecture</strong>.
   The statistics layer never hard-codes a route or carrier; the cell key is
   <span class="mono">route × carrier × day_of_week × APW × fare_class × channel</span>, and the
@@ -537,7 +637,7 @@ def build(p: dict) -> str:
 
 <!-- 11 limitations -->
 <section>
-  <div class="sechead"><span class="n">11</span><h2>Limitations — what is not established</h2></div>
+  <div class="sechead"><span class="n">13</span><h2>Limitations — what is not established</h2></div>
   <div class="tscroll"><table>
     <thead><tr><th>claim</th><th>status</th><th>what it would take</th></tr></thead>
     <tbody>
@@ -559,7 +659,7 @@ def build(p: dict) -> str:
 
 <!-- 12 roadmap -->
 <section>
-  <div class="sechead"><span class="n">12</span><h2>Validation roadmap</h2></div>
+  <div class="sechead"><span class="n">14</span><h2>Validation roadmap</h2></div>
   <p class="lede">The 30-day back-test the problem statement asks for is <strong>not performed
   and not simulated</strong>. This is the route to it.</p>
   <div class="flow">
@@ -589,7 +689,7 @@ def build(p: dict) -> str:
 
 <!-- FAQ -->
 <section>
-  <div class="sechead"><span class="n">13</span><h2>Anticipated questions</h2></div>
+  <div class="sechead"><span class="n">15</span><h2>Anticipated questions</h2></div>
   <div class="faq">
     <div class="qa"><span class="q">Why don't you show an index value?</span>
       <span class="a">Because the locked longitudinal specification requires matched observations
