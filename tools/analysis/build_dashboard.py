@@ -342,8 +342,15 @@ def build(p: dict) -> str:
     <span>{esc(p["apw_profile_disclaimer"])}</span>
   </div>
   <p class="lede">Geometric mean of the five band fares at each advance-purchase distance.
-  The geometric mean is spec §D.2's elementary aggregator, used here so the arithmetic matches
-  the index that will later run on these same observations.</p>
+  These are computed with the <strong>same geometric-mean form §D.2 uses</strong>
+  (<span class="mono">exp(mean(ln p))</span>), so the arithmetic is the same family the index will
+  use on these observations later. <strong>They are not §D.2 relatives, and the index engine did
+  not produce them:</strong> §D.2 aggregates <em>price relatives</em> across a matched pair of
+  collection dates, which needs two waves. These are levels from a single wave, summarised by
+  <span class="mono">tools/analysis/build_panel_json.py</span>. No real observation has yet
+  entered <span class="mono">src/apix/statistics/</span> — see the
+  <a href="https://github.com/Rexy-5097/apix/blob/main/docs/capability-matrix.md">capability
+  matrix</a>.</p>
   <div class="chartbox">{apw_chart(prof)}</div>
   <div class="tscroll"><table>
     <thead><tr><th>APW</th><th>travel date</th><th>day</th><th class="r">n</th>

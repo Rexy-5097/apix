@@ -45,6 +45,18 @@ SECONDARY = "SECONDARY_CHAT_IMAGE"
 
 
 def geomean(v: list[float]) -> float:
+    """Geometric mean of *levels*, in logs — the same form spec D.2 uses.
+
+    **This is not a D.2 relative and the index engine does not produce it.**
+    D.2 aggregates price *relatives* across a matched pair of collection dates;
+    with one wave there is no pair, so there is nothing for the engine to
+    compute. What this summarises is a single wave's levels, descriptively.
+
+    The log form is kept deliberately so that the descriptive summary and
+    `apix.statistics.elementary.jevons` cannot drift into different arithmetic.
+    `test_panel_geomean_matches_the_spec_d2_log_form` asserts the agreement on
+    the real panel rather than leaving it to a comment.
+    """
     return math.exp(sum(math.log(x) for x in v) / len(v))
 
 

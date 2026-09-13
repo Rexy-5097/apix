@@ -1,5 +1,17 @@
 # Migration & Portability Report
 
+> ### ⚠️ AgentOS infrastructure artifact — **NOT APIx certification**
+>
+> This report certifies the vendored [AgentOS](../AGENTOS.md) development framework, which
+> this repository is *built with*. **It says nothing about APIx.**
+>
+> APIx is **not** production-certified, **not** released, and publishes **no market index**.
+> Statements below such as "READY FOR DISTRIBUTION", "CERTIFIED" or "v1.0.0" refer to
+> AgentOS only.
+>
+> **For APIx's actual status see [README.md](../README.md) and
+> [docs/capability-matrix.md](../docs/capability-matrix.md).**
+
 This report certifies the portability promise of AgentOS: "Clone AgentOS into a completely new project and it just works."
 
 ---

@@ -97,7 +97,11 @@ Eight open empirical questions are tracked in `docs/methodology/apix_formula_spe
 
 ---
 
-## Completed This Session (Checkpoint 2)
+## Completed This Session (Checkpoint 2) — HISTORICAL RECORD
+
+> **This block is a historical record of Checkpoint 2 (2026-09-08/09). Its counts
+> are the counts of that day, not current.** Current figures: **369 tests**; see
+> [`docs/capability-matrix.md`](../docs/capability-matrix.md) for what works today.
 
 - [x] Verified Checkpoint 1A merged at `530ef1a` — not assumed from the prior report
 - [x] Typed domain models for spec A, B, O — `src/apix/schemas/`
@@ -114,6 +118,10 @@ Eight open empirical questions are tracked in `docs/methodology/apix_formula_spe
       2,800 quotes to 140 on a full-frame day. Caught by the benchmark, not by a
       unit test — every dedup test used a single route
 - [x] Performance measured: 1.03s for 15,120 quotes / 72 routes
+      — **HISTORICAL SYNTHETIC BENCHMARK — NOT COLLECTED MARKET DATA.**
+      Generated load for `tools/ci/benchmark_apix_l.py`. APIx has collected
+      **35 real observations on 1 route from 1 carrier**; the 15,120 quotes and
+      72 routes are synthetic and describe throughput, never coverage.
 
 ---
 

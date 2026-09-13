@@ -180,6 +180,11 @@ techniques.
 
 ## Current phase
 
+**Authoritative capability answer: [`docs/capability-matrix.md`](docs/capability-matrix.md).**
+Read it before claiming any component works. It distinguishes real-data
+validated from fixture-only, specified-only and blocked.
+
+
 Hackathon prototype, 15 September 2026. See `context/state.md`.
 
 **Implemented and tested:** schemas, the SQLite ingestion store, the full

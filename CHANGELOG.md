@@ -1,5 +1,15 @@
 # CHANGELOG
 
+> ### ⚠️ This file documents **AgentOS**, not APIx
+>
+> [AgentOS](AGENTOS.md) is the vendored development/review framework this repository is
+> *built with*. It is **not part of the APIx statistical product** and produces none of
+> APIx's published numbers. Its version numbers, release notes and readiness statements
+> describe **AgentOS**, never APIx.
+>
+> **For APIx — the airfare price index — see [README.md](README.md) and
+> [docs/capability-matrix.md](docs/capability-matrix.md).**
+
 All notable changes to this template are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
