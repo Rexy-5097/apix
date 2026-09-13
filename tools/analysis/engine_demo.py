@@ -164,9 +164,7 @@ def console(d: dict) -> None:
     moved = [k for k in d["links"] if k["jevons"].relative not in (None, 1.0)]
     flat = [k for k in d["links"] if k["jevons"].relative == 1.0]
     if moved:
-        w(
-            f"   {len(moved)} link(s) moved: the fixture scales every price by x1.04 and the"
-        )
+        w(f"   {len(moved)} link(s) moved: the fixture scales every price by x1.04 and the")
         w("     Jevons of items all scaled by k is exactly k (INV-4b) - hand-checkable.")
     if flat:
         w(f"   {len(flat)} link(s) flat at exactly 1.000000: unchanged prices give J = 1")
@@ -215,8 +213,7 @@ def html(d: dict) -> str:
     xs = [round(x0 + (x1 - x0) * i / (n - 1), 1) for i in range(n)]
     pts = " ".join(f"{x},{yy(r.level)}" for x, r in zip(xs, results, strict=True))
     dots = "".join(
-        f'<circle cx="{x}" cy="{yy(r.level)}" r="4"/>'
-        for x, r in zip(xs, results, strict=True)
+        f'<circle cx="{x}" cy="{yy(r.level)}" r="4"/>' for x, r in zip(xs, results, strict=True)
     )
     xlab = "".join(
         f'<text x="{x}" y="{ybot + 18}">{r.collection_date.strftime("%d/%m")}</text>'
@@ -246,6 +243,7 @@ def html(d: dict) -> str:
         f"<td class='r'>{'yes' if r.published else 'no'}</td></tr>"
         for r in d["results"]
     )
+
     def link_row(k: dict) -> str:
         rel = k["jevons"].relative
         rel_txt = "undefined" if rel is None else f"{rel:.6f}"

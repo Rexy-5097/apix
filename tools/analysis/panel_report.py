@@ -127,12 +127,18 @@ def main() -> None:
     w(rule("-"))
     w("WITHIN-BUCKET DISPERSION")
     w(rule("-"))
-    w(f"  Widest bucket: T+{widest} at {100 * spreads[widest]:.1f}% "
-      f"(next widest {100 * others:.1f}%)")
-    w(f"    min  {lo.carrier} {lo.flight_number} dep {lo.departure_time_local:%H:%M}  "
-      f"{float(lo.payable_fare):>8,.0f}   {lo.observation_id}")
-    w(f"    max  {hi.carrier} {hi.flight_number} dep {hi.departure_time_local:%H:%M}  "
-      f"{float(hi.payable_fare):>8,.0f}   {hi.observation_id}")
+    w(
+        f"  Widest bucket: T+{widest} at {100 * spreads[widest]:.1f}% "
+        f"(next widest {100 * others:.1f}%)"
+    )
+    w(
+        f"    min  {lo.carrier} {lo.flight_number} dep {lo.departure_time_local:%H:%M}  "
+        f"{float(lo.payable_fare):>8,.0f}   {lo.observation_id}"
+    )
+    w(
+        f"    max  {hi.carrier} {hi.flight_number} dep {hi.departure_time_local:%H:%M}  "
+        f"{float(hi.payable_fare):>8,.0f}   {hi.observation_id}"
+    )
     w("  The panel establishes the dispersion. It does NOT establish its cause.")
     w("")
 

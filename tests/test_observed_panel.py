@@ -421,9 +421,7 @@ def test_confound_between_lead_time_and_weekday_is_recorded(panel: dict) -> None
     assert c["repeated_weekdays"], "at least one weekday must repeat for the confound to bind"
 
 
-def test_confound_weekdays_agree_with_the_observed_rows(
-    panel: dict, rows: list[dict]
-) -> None:
+def test_confound_weekdays_agree_with_the_observed_rows(panel: dict, rows: list[dict]) -> None:
     """Derived from the rows, so the disclosure cannot drift from the data."""
     from datetime import date as _date
 

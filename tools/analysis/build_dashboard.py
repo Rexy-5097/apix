@@ -192,9 +192,10 @@ def build(p: dict) -> str:
     run_versions = p["runs"][0] if p["runs"] else {}
     disp = p["dispersion"]
     # JSON object keys are strings; restore the integer APW ordering.
-    weekday_by_apw = {int(k): v for k, v in sorted(
-        p["confound"]["weekday_by_apw"].items(), key=lambda kv: int(kv[0])
-    )}
+    weekday_by_apw = {
+        int(k): v
+        for k, v in sorted(p["confound"]["weekday_by_apw"].items(), key=lambda kv: int(kv[0]))
+    }
     repeated_txt = (
         ", ".join(f"{d} x{n}" for d, n in p["confound"]["repeated_weekdays"].items()) or "none"
     )
