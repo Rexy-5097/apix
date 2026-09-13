@@ -22,6 +22,7 @@ Division.
 > | APIx-TPD | **specified (§M), NOT implemented** — no estimator exists |
 > | Uncertainty / CI | **NOT implemented** — no interval is reported anywhere |
 > | National representativeness | **not established** — 1 route, 1 carrier |
+> | Production readiness | **NOT production-ready** — one collection wave, one route, one carrier, one source; two open ambiguities (AMB-8, AMB-9) and one open question (OQ-1) |
 >
 > **Real market observations pass through APIx's admissibility, banding, key
 > construction, deduplication and source-precedence stages. The pipeline stops at
@@ -32,6 +33,100 @@ Division.
 > **[docs/claim-evidence-matrix.md](docs/claim-evidence-matrix.md)**.
 
 ---
+
+## ⚠ AgentOS is development infrastructure, not APIx
+
+This repository is *built with* **AgentOS**, a vendored engineering/review
+framework. It is **not part of the APIx statistical product**, contributes
+nothing to any published number, and its version numbers and readiness reports
+describe **AgentOS, never APIx**.
+
+It is large and it is visible, so to be unambiguous — the following are **AgentOS**,
+not APIx:
+
+- **Trees:** `runtime/`, `agents/`, `standards/`, `workflows/`, `checklists/`,
+  `templates/`, `profiles/`, `validation/`, `integrations/`, `metrics/`,
+  `examples/`, `tools/scripts/`, `production_certification/`,
+  `production_validation/`, `.agentos/`
+- **Root files:** `AGENTOS.md`, `ARCHITECTURE.md`, `CHANGELOG.md`,
+  `DOCUMENTATION_INDEX.md`, `ENGINEERING_PRINCIPLES.md`, `REPOSITORY_HEALTH.md`,
+  `RELEASE_NOTES_v1.0.0.md`, `START_PROJECT.md`, `BOOTSTRAP.md`, `INSTALL.md`,
+  `TEAM_QUICKSTART.md`, `TEAM_ONBOARDING_CHECKLIST.md`, `SUPPORT.md`,
+  `SECURITY.md`, `COMPATIBILITY.md`, `SUPPORTED_VERSIONS.md`,
+  `VERSION_POLICY.md`, `Makefile`, `PROJECT_CONFIG*.yaml`
+- **`VERSION` contains `1.0.0` — that is AgentOS's version. APIx has no release
+  and no tag.** `production_certification/` certifies **AgentOS**; APIx is not
+  production-certified and publishes no index.
+
+Each of those files carries a banner saying so. **APIx itself is `src/apix/`,
+`tests/`, `tools/analysis/`, `tools/collection/`, `docs/methodology/`,
+`data/`, `compliance/` and `source_registry/`.**
+
+## Repository layout
+
+Every row states what is actually on disk today. **`EMPTY` means the package
+exists as a namespace and contains no implementation** — it is a reserved slot,
+not working code.
+
+```
+src/apix/
+  schemas/       IMPLEMENTED  collection, enums, keys, observation, results,
+                              version_vector
+  ingestion/     IMPLEMENTED  store.py (SQLite snapshot store)
+  statistics/    deterministic, no ML imports, invariant-tested
+    elementary/  IMPLEMENTED  jevons, matching, admissibility, bands, dedup,
+                              outliers, sources
+    aggregation/ IMPLEMENTED  young_laspeyres, weights, within_route
+    index/       IMPLEMENTED  apix_l, chaining, linking, parent, publication
+    tpd/         EMPTY        SPECIFIED in methodology §M; estimator NOT written
+    uncertainty/ EMPTY        bootstrap SPECIFIED; estimator NOT written
+  analytics/     EMPTY        anomaly, forecasting, shock, decomposition — planned
+  ai/            EMPTY        explanation, parser diagnosis — planned
+  api/           EMPTY        FastAPI, SDMX serialisers — planned
+  experiments/   EMPTY        six controlled scenarios — planned
+dashboard-planned/  DESIGN ONLY, no code. The delivered dashboard is generated
+                    HTML at data/dashboard.html, below
+docs/            methodology, engineering, the dossier
+tests/           architecture boundary, property and invariant tests
+tools/analysis/  panel + dashboard generators, engine demo
+collection-input/  the screenshot -> observation audit trail (see its README:
+                   two files are load-bearing, the rest are retained provenance)
+```
+
+**The dashboard is generated, never hand-authored:**
+
+```
+data/collection/collection.sqlite3          the store (real observations)
+  -> tools/analysis/build_panel_json.py
+  -> data/panel.json                        the contract every renderer reads
+  -> tools/analysis/build_dashboard.py      -> data/dashboard.html
+  -> tools/analysis/panel_report.py         -> data/panel_report.txt
+
+tools/analysis/engine_demo.py               engine run on a SYNTHETIC fixture
+  -> data/engine-validation.html            separate file, never merged above
+```
+
+The dossier's section 13 tree is rooted at `apix/`, so those layers are the
+contents of the `apix` **package**. A `src/` prefix makes that literal and stops
+`statistics/` shadowing Python's standard-library module — see
+[ADR-0061](artifacts/decisions/ADR-0061-statistics-package-layout.md).
+
+## What prevents an invalid publication
+
+APIx publishes no index today, and that is enforced by code rather than by
+intention. Four guards, none of which may be weakened to obtain a number:
+
+| Guard | Where | What it refuses |
+|---|---|---|
+| **§C.1 locked** | [`index/chaining.py`](src/apix/statistics/index/chaining.py) | Any index value without a matched `t / t−7` pair. One collection wave ⇒ zero matched pairs ⇒ **no index** |
+| **AMB-8** | [`publish()`](src/apix/statistics/index/publication.py) takes `expected_cells_by_route` as a **required argument with no default** | Publication with an undeclared §I coverage denominator. The term "expected cells" is undefined in the frozen spec, and **no definition has been chosen** |
+| **AMB-9** | [`within_route_weights`](src/apix/statistics/aggregation/within_route.py) raises `WeightError` | Multi-carrier route weighting with no declared carrier shares. *(At one carrier the allocation is mathematically degenerate — see the [capability matrix](docs/capability-matrix.md).)* |
+| **§A.3 exact** | `APWBucket.from_lead_time` returns `None` | A quote whose lead time matches no frozen bucket. Lead times are **never rounded** into a bucket |
+
+Plus [`tests/test_architecture.py`](tests/test_architecture.py), which fails the
+build if anything under `src/apix/statistics/` imports `sklearn`, `lightgbm`,
+`xgboost`, `torch`, `anthropic` or `openai`. **AI/ML is not a dependency of the
+published statistic.**
 
 ## The problem
 
@@ -102,69 +197,6 @@ A national statistical instrument cannot rest on techniques that violate the
 terms of the sources it depends on. This is a design constraint, not a
 limitation to apologise for.
 
-## Repository layout
-
-Every row states what is actually on disk today. **`EMPTY` means the package
-exists as a namespace and contains no implementation** — it is a reserved slot,
-not working code.
-
-```
-src/apix/
-  schemas/       IMPLEMENTED  collection, enums, keys, observation, results,
-                              version_vector
-  ingestion/     IMPLEMENTED  store.py (SQLite snapshot store)
-  statistics/    deterministic, no ML imports, invariant-tested
-    elementary/  IMPLEMENTED  jevons, matching, admissibility, bands, dedup,
-                              outliers, sources
-    aggregation/ IMPLEMENTED  young_laspeyres, weights, within_route
-    index/       IMPLEMENTED  apix_l, chaining, linking, parent, publication
-    tpd/         EMPTY        SPECIFIED in methodology §M; estimator NOT written
-    uncertainty/ EMPTY        bootstrap SPECIFIED; estimator NOT written
-  analytics/     EMPTY        anomaly, forecasting, shock, decomposition — planned
-  ai/            EMPTY        explanation, parser diagnosis — planned
-  api/           EMPTY        FastAPI, SDMX serialisers — planned
-  experiments/   EMPTY        six controlled scenarios — planned
-dashboard/       README only  the delivered dashboard is generated HTML, below
-docs/            methodology, engineering, the dossier
-tests/           architecture boundary, property and invariant tests
-tools/analysis/  panel + dashboard generators, engine demo
-```
-
-**The dashboard is generated, never hand-authored:**
-
-```
-data/collection/collection.sqlite3          the store (real observations)
-  -> tools/analysis/build_panel_json.py
-  -> data/panel.json                        the contract every renderer reads
-  -> tools/analysis/build_dashboard.py      -> data/dashboard.html
-  -> tools/analysis/panel_report.py         -> data/panel_report.txt
-
-tools/analysis/engine_demo.py               engine run on a SYNTHETIC fixture
-  -> data/engine-validation.html            separate file, never merged above
-```
-
-The dossier's section 13 tree is rooted at `apix/`, so those layers are the
-contents of the `apix` **package**. A `src/` prefix makes that literal and stops
-`statistics/` shadowing Python's standard-library module — see
-[ADR-0061](artifacts/decisions/ADR-0061-statistics-package-layout.md).
-
-## What prevents an invalid publication
-
-APIx publishes no index today, and that is enforced by code rather than by
-intention. Four guards, none of which may be weakened to obtain a number:
-
-| Guard | Where | What it refuses |
-|---|---|---|
-| **§C.1 locked** | [`index/chaining.py`](src/apix/statistics/index/chaining.py) | Any index value without a matched `t / t−7` pair. One collection wave ⇒ zero matched pairs ⇒ **no index** |
-| **AMB-8** | [`publish()`](src/apix/statistics/index/publication.py) takes `expected_cells_by_route` as a **required argument with no default** | Publication with an undeclared §I coverage denominator. The term "expected cells" is undefined in the frozen spec, and **no definition has been chosen** |
-| **AMB-9** | [`within_route_weights`](src/apix/statistics/aggregation/within_route.py) raises `WeightError` | Multi-carrier route weighting with no declared carrier shares. *(At one carrier the allocation is mathematically degenerate — see the [capability matrix](docs/capability-matrix.md).)* |
-| **§A.3 exact** | `APWBucket.from_lead_time` returns `None` | A quote whose lead time matches no frozen bucket. Lead times are **never rounded** into a bucket |
-
-Plus [`tests/test_architecture.py`](tests/test_architecture.py), which fails the
-build if anything under `src/apix/statistics/` imports `sklearn`, `lightgbm`,
-`xgboost`, `torch`, `anthropic` or `openai`. **AI/ML is not a dependency of the
-published statistic.**
-
 ## Reproducing every published figure
 
 Nothing in `data/` is hand-written. All four artifacts regenerate **deterministically**
@@ -218,34 +250,6 @@ One source of truth per class of information. Everything else links here.
 | Observed data (the contract) | [data/panel.json](data/panel.json) |
 | Generated text report | [data/panel_report.txt](data/panel_report.txt) |
 | Who owns what | [docs/engineering/ownership-policy.md](docs/engineering/ownership-policy.md) |
-
-## AgentOS is development infrastructure, not APIx
-
-This repository is *built with* **AgentOS**, a vendored engineering/review
-framework. It is **not part of the APIx statistical product**, contributes
-nothing to any published number, and its version numbers and readiness reports
-describe **AgentOS, never APIx**.
-
-It is large and it is visible, so to be unambiguous — the following are **AgentOS**,
-not APIx:
-
-- **Trees:** `runtime/`, `agents/`, `standards/`, `workflows/`, `checklists/`,
-  `templates/`, `profiles/`, `validation/`, `integrations/`, `metrics/`,
-  `examples/`, `tools/scripts/`, `production_certification/`,
-  `production_validation/`, `.agentos/`
-- **Root files:** `AGENTOS.md`, `ARCHITECTURE.md`, `CHANGELOG.md`,
-  `DOCUMENTATION_INDEX.md`, `ENGINEERING_PRINCIPLES.md`, `REPOSITORY_HEALTH.md`,
-  `RELEASE_NOTES_v1.0.0.md`, `START_PROJECT.md`, `BOOTSTRAP.md`, `INSTALL.md`,
-  `TEAM_QUICKSTART.md`, `TEAM_ONBOARDING_CHECKLIST.md`, `SUPPORT.md`,
-  `SECURITY.md`, `COMPATIBILITY.md`, `SUPPORTED_VERSIONS.md`,
-  `VERSION_POLICY.md`, `Makefile`, `PROJECT_CONFIG*.yaml`
-- **`VERSION` contains `1.0.0` — that is AgentOS's version. APIx has no release
-  and no tag.** `production_certification/` certifies **AgentOS**; APIx is not
-  production-certified and publishes no index.
-
-Each of those files carries a banner saying so. **APIx itself is `src/apix/`,
-`tests/`, `tools/analysis/`, `tools/collection/`, `docs/methodology/`,
-`data/`, `compliance/` and `source_registry/`.**
 
 ## Getting started
 

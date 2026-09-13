@@ -99,7 +99,7 @@ for one another.
 | AI explanation layer | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
 | API (FastAPI) | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
 | SDMX serialisers | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
-| Next.js dashboard (`dashboard/`) | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
+| Next.js dashboard (`dashboard-planned/`) | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
 | AgentOS framework | ✅ | ✅ | ✅ CI | n/a | **DEV INFRASTRUCTURE — not part of the statistic** |
 
 `src/apix/statistics/tpd/`, `src/apix/statistics/uncertainty/`,
