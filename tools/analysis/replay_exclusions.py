@@ -112,7 +112,7 @@ FRAME_SOURCE_ID = "indigo-direct"
 ASSUMED_CHANGE_POLICY = ChangePolicy.FEE
 
 
-def _count(n: int) -> str:
+def spell_count(n: int) -> str:
     """Spell a small count in the public statement; "zero" reads harder than "0"."""
     return "zero" if n == 0 else str(n)
 
@@ -222,12 +222,13 @@ class ReplayResult:
             # The agreed public wording. Generated from the fields above rather
             # than typed, so the sentence cannot outlive the numbers in it.
             "statement": (
-                f"{self.agree} of {self.candidates} mechanically decidable exclusions "
-                "independently reproduce the recorded §A.3/§B.2 verdict; "
-                f"{self.not_testable} record lacks a readable departure time and is not "
-                f"mechanically testable. All {self.accepted_rechecked} accepted "
-                "observations pass the same relevant rule checks with "
-                f"{_count(len(self.wrongly_rejected))} false rejections."
+                f"{self.agree}/{self.candidates} mechanically decidable exclusions "
+                "reproduce the recorded §A.3/§B.2 verdict with "
+                f"{spell_count(self.disagree)} disagreements; {self.not_testable} record is not "
+                "mechanically testable because the required departure-time field is "
+                f"unavailable. All {self.accepted_rechecked} accepted observations pass the "
+                f"corresponding checks with {spell_count(len(self.wrongly_rejected))} false "
+                "rejections."
             ),
             "scope_note": (
                 f"{self.skipped_total} further recorded exclusions are collection-contract "

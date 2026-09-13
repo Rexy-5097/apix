@@ -26,8 +26,10 @@ It holds the **35 real observations** collected 2026-09-12 on DEL–BOM / IndiGo
 plus everything derived from them: the descriptive APW profile, the band profile,
 quality counts, provenance grading, exclusions, the index-feasibility status, the
 **exclusion replay** (`replay`) and the **real-data execution boundary**
-(`execution_boundary`). The last two are computed by running the frozen
-elementary functions over this same panel, read-only, at generation time.
+(`execution_boundary`). The last two are computed at generation time by running
+this same panel, read-only, through the frozen admissibility, banding, key
+construction, deduplication and source-precedence functions — not through the
+elementary layer as a whole, and not through anything below the Jevons step.
 
 `data_class: REAL_MARKET_OBSERVATION` · `synthetic_data_present: false`
 

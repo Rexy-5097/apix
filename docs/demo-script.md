@@ -76,12 +76,16 @@ screen is the same discipline that keeps them apart in the repository.
 > Every fare reconciles: base plus tax equals total, 35 of 35, in exact decimal.
 > 122 screenshots that did not become observations each carry a reason and an
 > id — and for the mechanical ones that is no longer our word for it. We replay
-> them through the frozen §A.3 and §B.2 code: **45 of 46 mechanically decidable
-> exclusions reproduce the recorded verdict, zero disagreements**, one record has
-> no readable departure time so no rule can decide it, and the same checks admit
-> all 35 accepted observations with **zero false rejections**. The other 76 are
-> selection-rule or unreadable-field records — the engine has no verdict on those
-> and we don't claim one.
+> them through the frozen §A.3 and §B.2 code: **45/46 mechanically decidable
+> exclusions reproduce the recorded §A.3/§B.2 verdict with zero disagreements**;
+> 1 record is not mechanically testable because the required departure-time field
+> is unavailable. **All 35 accepted observations pass the corresponding checks
+> with zero false rejections** — a rule that rejected the accepted panel too would
+> prove nothing.
+>
+> **That is 46 records, not 122.** The other 76 are collection-contract selection
+> or unreadable-field records. The engine has no verdict on those and we do not
+> claim one.
 >
 > Nine quotes fell outside our declared collection window — stored and flagged,
 > never discarded.
@@ -122,6 +126,14 @@ python tools/analysis/engine_demo.py
 
 > "So: the engine is finished and we can run it for you right now.
 > **What we will not do is run it on evidence that doesn't exist.**
+>
+> Here is exactly how far the real data gets — section 09 of the dashboard, and
+> it is generated, not written. **Real market observations pass through APIx's
+> admissibility, banding, key construction, deduplication and source-precedence
+> stages. The pipeline stops at the longitudinal Jevons step because the required
+> *t−7* observation does not yet exist.** Three of those five are degenerate on a
+> single wave, and we label them that way. Nothing below the Jevons step has seen
+> a real fare.
 >
 > The methodology is frozen. §C.1 says the index at time *t* is the index at
 > *t−7* times the Jevons relative. We hold one collection wave. One wave gives

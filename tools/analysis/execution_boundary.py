@@ -60,7 +60,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from replay_exclusions import replay  # noqa: E402
+from replay_exclusions import replay, spell_count  # noqa: E402
 
 from apix.schemas.enums import (  # noqa: E402
     Availability,
@@ -323,12 +323,17 @@ def build_boundary(panel: dict) -> dict:
             spec="A.3, B.2",
             state=EXERCISED,
             ran="replay through filter_admissible / APWBucket.from_lead_time / hour_band",
+            # The agreed public sentence, rendered as its three clauses so each
+            # sits on its own line. Counts stay derived; only the phrasing is
+            # fixed, and `spell_count` spells a zero so the page never reads as if a
+            # numeral had been typed in by hand.
             evidence=(
-                f"{rep.agree}/{rep.candidates} mechanically decidable exclusions "
-                f"reproduce the recorded verdict, {rep.disagree} disagreements",
-                f"{rep.not_testable} not mechanically testable (departure time unreadable)",
-                f"{len(rep.wrongly_rejected)} false rejections among the "
-                f"{rep.accepted_rechecked} accepted observations",
+                f"{rep.agree}/{rep.candidates} mechanically decidable exclusions reproduce "
+                f"the recorded §A.3/§B.2 verdict with {spell_count(rep.disagree)} disagreements",
+                f"{rep.not_testable} record is not mechanically testable because the required "
+                "departure-time field is unavailable",
+                f"All {rep.accepted_rechecked} accepted observations pass the corresponding "
+                f"checks with {spell_count(len(rep.wrongly_rejected))} false rejections",
             ),
             note=(
                 f"{rep.skipped_total} further exclusions are collection-contract selection "

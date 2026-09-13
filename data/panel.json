@@ -1588,7 +1588,7 @@
   "spec_a_reject_reasons": [
    "LEAD_TIME_MATCHES_NO_BUCKET"
   ],
-  "statement": "45 of 46 mechanically decidable exclusions independently reproduce the recorded \u00a7A.3/\u00a7B.2 verdict; 1 record lacks a readable departure time and is not mechanically testable. All 35 accepted observations pass the same relevant rule checks with zero false rejections.",
+  "statement": "45/46 mechanically decidable exclusions reproduce the recorded \u00a7A.3/\u00a7B.2 verdict with zero disagreements; 1 record is not mechanically testable because the required departure-time field is unavailable. All 35 accepted observations pass the corresponding checks with zero false rejections.",
   "scope_note": "76 further recorded exclusions are collection-contract selection or unreadable-field records. The engine has no verdict on them and none is claimed."
  },
  "execution_boundary": {
@@ -1660,9 +1660,9 @@
     "state": "EXERCISED",
     "ran": "replay through filter_admissible / APWBucket.from_lead_time / hour_band",
     "evidence": [
-     "45/46 mechanically decidable exclusions reproduce the recorded verdict, 0 disagreements",
-     "1 not mechanically testable (departure time unreadable)",
-     "0 false rejections among the 35 accepted observations"
+     "45/46 mechanically decidable exclusions reproduce the recorded \u00a7A.3/\u00a7B.2 verdict with zero disagreements",
+     "1 record is not mechanically testable because the required departure-time field is unavailable",
+     "All 35 accepted observations pass the corresponding checks with zero false rejections"
     ],
     "note": "76 further exclusions are collection-contract selection or unreadable-field records. The engine has no verdict on them."
    },

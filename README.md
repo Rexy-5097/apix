@@ -17,7 +17,7 @@ Division.
 > | | State |
 > |---|---|
 > | Real observations | **35** · 7/7 frozen APW buckets · DEL–BOM · IndiGo · collected 2026-09-12 |
-> | APIx-L engine | **implemented, tested** — verified end to end over 14 consecutive publication dates |
+> | APIx-L engine | **implemented, tested** — verified end to end over 14 consecutive publication dates **of a controlled synthetic test fixture**; no real longitudinal index calculation has been executed |
 > | APIx-L index value | **PENDING** — §C.1 needs matched `t / t−7`; one wave held. Unlocks 2026-09-19 |
 > | APIx-TPD | **specified (§M), NOT implemented** — no estimator exists |
 > | Uncertainty / CI | **NOT implemented** — no interval is reported anywhere |
