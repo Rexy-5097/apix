@@ -35,7 +35,7 @@
 
 # ─── Product surface — Basant-creator ───────────────────────────────────────
 /src/apix/api/                      @Basant-creator
-/dashboard/                         @Basant-creator
+/dashboard-planned/                 @Basant-creator
 
 # ─── Cross-domain contracts — joint ownership ───────────────────────────────
 # Canonical schemas are the contract between collection and computation.

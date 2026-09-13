@@ -1,10 +1,26 @@
-# dashboard/ — Next.js product surface
+# `dashboard-planned/` — the Next.js product surface, **not yet built**
+
+> ### ⚠️ This is not the APIx dashboard
+>
+> **The dashboard APIx actually delivers today is
+> [`data/dashboard.html`](../data/dashboard.html)** — generated from
+> [`data/panel.json`](../data/panel.json) by
+> `tools/analysis/build_dashboard.py`, and the surface used in the demo.
+>
+> This directory holds the **design** for a future Next.js product surface.
+> **No code here exists.** The directory was previously named `dashboard/`,
+> which put an empty folder next to a real generated dashboard and invited
+> exactly the wrong conclusion; it was renamed rather than deleted, because the
+> design below is a real decision record and the screens it specifies are what
+> the product is meant to become.
 
 **Owner:** [@Basant-creator](https://github.com/Basant-creator)
+**Status:** SPECIFIED-ONLY — see [`docs/capability-matrix.md`](../docs/capability-matrix.md)
 
 ## Not yet implemented
 
-Checkpoint 5. Next.js + TypeScript + Tailwind + ECharts.
+Checkpoint 5. Next.js + TypeScript + Tailwind + ECharts. Nothing in this
+directory is built, tested, or runnable.
 
 ## The five screens
 
