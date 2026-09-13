@@ -11,6 +11,10 @@ NOT ESTABLISHED  Any index value. Spec C.1 is LOCKED: I(c,t) = I(c,t-7) * J(c,t)
 ==============================================================================
 1. ADVANCE-PURCHASE PROFILE   (geometric mean of the 5 band fares, spec D.2)
 ==============================================================================
+*** DESCRIPTIVE APW PROFILE - NOT AN INDEX ***
+Each bucket is a separate cross-section on a DIFFERENT travel date.
+Differences between buckets are not temporal price movements, not inflation.
+
 APW    travel date   n     geo mean      min      max   spread   vs T+1
 ------------------------------------------------------------------------------
 T+1    2026-09-13    5        6,561    6,530    6,688     2.4%    1.000
@@ -25,13 +29,31 @@ production buckets (A.3): [1, 3, 7, 15, 30, 45, 60]
 observed                : [1, 3, 7, 15, 30, 45, 60]
 missing                 : NONE
 
+------------------------------------------------------------------------------
+LEAD TIME IS CONFOUNDED WITH TRAVEL DATE / DAY-OF-WEEK
+------------------------------------------------------------------------------
+  T+1->Sun  T+3->Tue  T+7->Sat  T+15->Sun  T+30->Mon  T+45->Tue  T+60->Wed
+  7 buckets span 5 distinct weekdays; repeated: {'Sun': 2, 'Tue': 2}
+  Advance-purchase buckets are not interchangeable time observations.
+  The APW profile does NOT isolate the effect of advance purchase, and is
+  not an inflation measure. This is why the matched t / t-7 design exists.
+
+------------------------------------------------------------------------------
+WITHIN-BUCKET DISPERSION
+------------------------------------------------------------------------------
+  Widest bucket: T+3 at 24.9% (next widest 10.8%)
+    min  6E 6107 dep 09:30     6,530   20260912-primary-indigo-direct-6E6107-20260915-Saver fare
+    max  6E 6218 dep 06:05     8,158   20260912-primary-indigo-direct-6E6218-20260915-Saver fare
+  The panel establishes the dispersion. It does NOT establish its cause.
+
 ==============================================================================
 2. DATA QUALITY
 ==============================================================================
   valid observations        35
-  expected cells            35   (7 APW x 5 bands)
-  coverage                  100.0%
-  missing cells             0
+  collection plan slots     35   (7 APW x 5 bands)
+  plan completion           100.0%   (slots filled, NOT coverage)
+  plan slots unfilled       0
+  statistical coverage      NOT ESTABLISHED   (AMB-8 open: 'expected cells' undefined)
   fully decomposed          35/35
   base + tax == total       35/35
   runs                      2

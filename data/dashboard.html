@@ -1,4 +1,4 @@
-<title>APIx Real-Time Airfare Price Index</title>
+<title>APIx Airfare Index Engine</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 :root{
@@ -104,38 +104,51 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <header>
   <div class="chips"><span class="chip warn">Prototype · observed panel</span><span class="chip">collected 2026-09-12</span><span class="chip">DEL-BOM</span><span class="chip">IndiGo 6E</span><span class="chip">Saver fare</span><span class="chip real">7/7 APW</span><span class="chip">methodology 2.1</span></div>
-  <h1>APIx — Real-Time Airfare Price Index</h1>
-  <p class="lede">A quality-adjusted airfare price index for India, built against MoSPI problem
-  statement 26056. This page shows the prototype's real empirical base and is deliberately
-  explicit about three different things: what has been <strong>observed</strong>, what is
-  <strong>computable now</strong>, and what becomes computable only after longitudinal
-  collection.</p>
+  <h1>APIx — Airfare Index Engine</h1>
+  <p class="lede">A frozen-specification airfare index engine with a real-market evidence
+  pipeline, built against MoSPI problem statement 26056. We have collected and audited the
+  complete seven-bucket advance-purchase panel for DEL–BOM under a fixed collection protocol.
+  The engine is implemented and tested, but we <strong>deliberately do not publish a market
+  index yet</strong>, because the longitudinal evidence the methodology requires does not
+  exist.</p>
 </header>
 
 <div class="status">
-  <div class="st yes"><span class="lab">Observed panel</span>
-    <span class="val">35 / 35 cells</span>
-    <span class="why">7/7 advance-purchase windows ·
+  <div class="st yes"><span class="lab">Observed</span>
+    <span class="val">35 real observations</span>
+    <span class="why">7/7 frozen APW buckets ·
     5 departure bands · DEL-BOM ·
-    IndiGo 6E</span></div>
-  <div class="st yes"><span class="lab">Index engine</span>
+    IndiGo 6E · collected 2026-09-12</span></div>
+  <div class="st yes"><span class="lab">Engine</span>
     <span class="val">Implemented &amp; tested</span>
-    <span class="why">Jevons elementary → Young / Modified Laspeyres, with TPD as a parallel
-    estimator. Invariant-tested; no ML in the index path.</span></div>
-  <div class="st no"><span class="lab">Current index value</span>
-    <span class="val">Pending 2nd wave</span>
-    <span class="why">§C.1 is locked: <span class="mono">I(c,t) = I(c,t−7)·J(c,t)</span>.
-    1 collection wave held, so 0 matched
-    pairs exist. Unlocks <strong>2026-09-19</strong>.</span></div>
+    <span class="why">APIx-L: Jevons elementary → Young / Modified Laspeyres, verified end to end
+    over 14 consecutive publication dates. No ML in the index path.
+    <strong>APIx-TPD is specified (§M) but not implemented.</strong></span></div>
+  <div class="st no"><span class="lab">Index</span>
+    <span class="val">PENDING</span>
+    <span class="why">Frozen methodology requires matched <span class="mono">t / t−7</span>
+    evidence: §C.1 <span class="mono">I(c,t) = I(c,t−7)·J(c,t)</span>.
+    1 collection wave held ⇒ 0 matched
+    pairs. Unlock <strong>2026-09-19</strong>.</span></div>
+</div>
+
+<div class="warn">
+  <strong>No APIx market index value appears anywhere on this page.</strong>
+  <span>The advance-purchase profile below is <strong>descriptive cross-sectional evidence. It is
+  NOT a longitudinal airfare price index</strong>, and no figure on this page should be read as
+  airfare inflation.</span>
 </div>
 
 <!-- 2 APW -->
 <section>
-  <div class="sechead"><span class="n">01</span><h2>Observed APW profile</h2></div>
+  <div class="sechead"><span class="n">01</span><h2>Descriptive APW profile — not an index</h2></div>
+  <div class="warn">
+    <strong>DESCRIPTIVE APW PROFILE — NOT AN INDEX.</strong>
+    <span>DESCRIPTIVE APW PROFILE - NOT AN INDEX. Each bucket is a separate cross-section on a different travel date. Differences between buckets are not temporal price movements and are not inflation.</span>
+  </div>
   <p class="lede">Geometric mean of the five band fares at each advance-purchase distance.
   The geometric mean is spec §D.2's elementary aggregator, used here so the arithmetic matches
-  the index that will later run on these same observations. <strong>This is a descriptive
-  cross-sectional result, not an index and not a causal estimate.</strong></p>
+  the index that will later run on these same observations.</p>
   <div class="chartbox"><svg viewBox="0 0 880 330" role="img"
      aria-label="Observed geometric-mean Saver fare by advance-purchase window">
   <g stroke="var(--rule)" stroke-width="1"><line x1="84" y1="282.0" x2="852" y2="282.0"/><line x1="84" y1="220.0" x2="852" y2="220.0"/><line x1="84" y1="158.0" x2="852" y2="158.0"/><line x1="84" y1="96.0" x2="852" y2="96.0"/><line x1="84" y1="34.0" x2="852" y2="34.0"/></g>
@@ -154,33 +167,85 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
   <div class="tscroll"><table>
     <thead><tr><th>APW</th><th>travel date</th><th>day</th><th class="r">n</th>
       <th class="r">geo mean ₹</th><th class="r">min</th><th class="r">max</th>
-      <th class="r">spread</th><th class="r">vs T+1</th></tr></thead>
+      <th class="r">spread</th><th class="r">ratio vs T+1</th></tr></thead>
     <tbody><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m r'>5</td><td class='m r'><strong>6,561</strong></td><td class='m r'>6,530</td><td class='m r'>6,688</td><td class='m r'>2.4%</td><td class='m r'>1.000</td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m r'>5</td><td class='m r'><strong>6,903</strong></td><td class='m r'>6,530</td><td class='m r'>8,158</td><td class='m r'>24.9%</td><td class='m r'>1.052</td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m r'>5</td><td class='m r'><strong>6,634</strong></td><td class='m r'>6,530</td><td class='m r'>6,898</td><td class='m r'>5.6%</td><td class='m r'>1.011</td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m r'>5</td><td class='m r'><strong>6,850</strong></td><td class='m r'>6,530</td><td class='m r'>7,160</td><td class='m r'>9.6%</td><td class='m r'>1.044</td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m r'>5</td><td class='m r'><strong>6,602</strong></td><td class='m r'>6,530</td><td class='m r'>6,898</td><td class='m r'>5.6%</td><td class='m r'>1.006</td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m r'>5</td><td class='m r'><strong>7,049</strong></td><td class='m r'>7,019</td><td class='m r'>7,169</td><td class='m r'>2.1%</td><td class='m r'>1.074</td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m r'>5</td><td class='m r'><strong>9,091</strong></td><td class='m r'>8,720</td><td class='m r'>9,665</td><td class='m r'>10.8%</td><td class='m r'>1.385</td></tr></tbody></table></div>
   <div class="tiles">
-    <div class="tile"><span class="k">T+1 → T+60</span>
-      <span class="v">+38.5%</span>
-      <span class="s">₹6,561 → ₹9,091</span></div>
-    <div class="tile"><span class="k">widest within-day</span>
+    <div class="tile"><span class="k">T+60 vs T+1 geo-mean</span>
+      <span class="v">+38.6%</span>
+      <span class="s">descriptive difference — not a price movement</span></div>
+    <div class="tile"><span class="k">widest within-bucket spread</span>
       <span class="v">24.9%</span>
-      <span class="s">across the 5 bands</span></div>
-    <div class="tile good"><span class="k">APW coverage</span>
+      <span class="s">T+3, across the 5 bands</span></div>
+    <div class="tile good"><span class="k">frozen APW buckets observed</span>
       <span class="v">7/7</span>
-      <span class="s">complete frozen vector</span></div>
+      <span class="s">complete §A.3 vector</span></div>
   </div>
   <div class="warn">
-    <strong>Read the +39% carefully — it is not an advance-purchase elasticity.</strong>
-    <span>Each APW sits on a <em>different travel date</em>, so date-specific and seasonal
-    effects are fully confounded with advance purchase. The T+60 observation
+    <strong>The +38.6% is not airfare inflation.</strong>
+    <span>The T+60 observed APW geo-mean is 38.6% higher than the
+    T+1 observed APW geo-mean; <strong>this is descriptive and not a time-series
+    price movement</strong>. Each bucket sits on a different travel date, so date-specific and
+    seasonal effects are fully confounded with advance purchase. The T+60 travel date
     (2026-11-11) falls days after Diwali; a return-travel peak is a
-    <strong>hypothesis this panel cannot test</strong>, not a finding. Separating the two needs
-    the same travel date observed at several lead times — which is what longitudinal collection
-    produces.</span>
+    <strong>hypothesis this panel cannot test</strong>, not a finding.</span>
   </div>
+</section>
+
+<!-- 2b confound -->
+<section>
+  <div class="sechead"><span class="n">02</span><h2>Lead time is confounded with travel date</h2></div>
+  <p class="lede">Advance-purchase buckets are not interchangeable time observations. In this panel lead time is confounded with travel date / day-of-week, so the APW profile is descriptive and is not an inflation measure.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>APW bucket</th><th class='r'>T+1</th><th class='r'>T+3</th><th class='r'>T+7</th><th class='r'>T+15</th><th class='r'>T+30</th><th class='r'>T+45</th><th class='r'>T+60</th></tr></thead>
+    <tbody><tr><td class="m">travel weekday</td>
+      <td class='m r'>Sun</td><td class='m r'>Tue</td><td class='m r'>Sat</td><td class='m r'>Sun</td><td class='m r'>Mon</td><td class='m r'>Tue</td><td class='m r'>Wed</td></tr></tbody>
+  </table></div>
+  <div class="tiles">
+    <div class="tile"><span class="k">buckets</span>
+      <span class="v">7</span><span class="s">advance-purchase windows</span></div>
+    <div class="tile bad"><span class="k">distinct weekdays</span>
+      <span class="v">5</span>
+      <span class="s">repeated: Sun x2, Tue x2</span></div>
+    <div class="tile bad"><span class="k">lead time isolated?</span>
+      <span class="v">NO</span><span class="s">confounded by construction</span></div>
+  </div>
+  <div class="warn">
+    <strong>This profile does not isolate the effect of advance purchase.</strong>
+    <span>Advance-purchase buckets are not interchangeable time observations. Separating lead
+    time from travel date needs the same cell observed at two collection dates seven days apart
+    — which is exactly what the matched <span class="mono">t / t−7</span> design does, and
+    exactly what one collection wave cannot provide.</span>
+  </div>
+</section>
+
+<!-- 2c dispersion -->
+<section>
+  <div class="sechead"><span class="n">03</span><h2>Within-bucket dispersion</h2></div>
+  <p class="lede">T+3 has the highest observed within-bucket fare dispersion
+  (24.9%), against 10.8% for the next widest
+  bucket. <strong>The current panel establishes the dispersion; it does not establish its
+  cause.</strong> No anomaly-detection definition is in force, so this is reported as observed
+  dispersion and not as an anomaly.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>role</th><th>flight</th><th>dep</th><th class="r">band</th>
+      <th class="r">fare ₹</th><th>observation id</th></tr></thead>
+    <tbody>
+      <tr><td class="m">minimum</td><td class="m">6E 6107</td>
+        <td class="m">09:30</td>
+        <td class="m r">3</td>
+        <td class="m r"><strong>6,530</strong></td>
+        <td class="m">20260912-primary-indigo-direct-6E6107-20260915-Saver fare</td></tr>
+      <tr><td class="m">maximum</td><td class="m">6E 6218</td>
+        <td class="m">06:05</td>
+        <td class="m r">2</td>
+        <td class="m r"><strong>8,158</strong></td>
+        <td class="m">20260912-primary-indigo-direct-6E6218-20260915-Saver fare</td></tr>
+    </tbody></table></div>
 </section>
 
 <!-- 3 bands -->
 <section>
-  <div class="sechead"><span class="n">02</span><h2>Departure-band structure</h2></div>
+  <div class="sechead"><span class="n">04</span><h2>Departure-band structure</h2></div>
   <p class="lede">§B.2 anchors 3-hour bands at 00:00 IST. Bands [2, 3, 4, 5, 6] span the
   commercial day and are the contracted set; one flight per band, always the earliest, never
   chosen by price.</p>
@@ -192,7 +257,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 4 observations -->
 <section>
-  <div class="sechead"><span class="n">03</span><h2>Flight-level observations</h2></div>
+  <div class="sechead"><span class="n">05</span><h2>Flight-level observations</h2></div>
   <p class="lede">Every row is a real quote read off IndiGo's own website and verified against
   its screenshot. <span class="mono">seen</span> is the capture time; the last column is the
   evidence grade.</p>
@@ -205,17 +270,20 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 5 quality -->
 <section>
-  <div class="sechead"><span class="n">04</span><h2>Data quality</h2></div>
+  <div class="sechead"><span class="n">06</span><h2>Data quality</h2></div>
   <div class="tiles">
     <div class="tile good"><span class="k">valid observations</span>
       <span class="v">35</span><span class="s">real market quotes</span></div>
-    <div class="tile"><span class="k">expected cells</span>
-      <span class="v">35</span>
-      <span class="s">7 APW × 5 bands</span></div>
-    <div class="tile good"><span class="k">coverage</span>
-      <span class="v">100.0%</span><span class="s">no gaps</span></div>
-    <div class="tile good"><span class="k">missing cells</span>
+    <div class="tile"><span class="k">collection plan</span>
+      <span class="v">35 / 35</span>
+      <span class="s">7 frozen APW buckets x 5 bands</span></div>
+    <div class="tile good"><span class="k">plan completion</span>
+      <span class="v">100.0%</span>
+      <span class="s">slots filled — not coverage</span></div>
+    <div class="tile good"><span class="k">plan slots unfilled</span>
       <span class="v">0</span><span class="s">none</span></div>
+    <div class="tile bad"><span class="k">statistical coverage</span>
+      <span class="v">n/a</span><span class="s">NOT ESTABLISHED — AMB-8 open</span></div>
     <div class="tile good"><span class="k">reconciled</span>
       <span class="v">35/35</span>
       <span class="s">base + tax = total</span></div>
@@ -223,6 +291,15 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
       <span class="v">6</span><span class="s">SHA-256 addressed</span></div>
     <div class="tile bad"><span class="k">§A.5 window flags</span>
       <span class="v">9</span><span class="s">stored + flagged</span></div>
+  </div>
+  <div class="warn">
+    <strong>100.0% is collection-plan completion, not statistical
+    coverage.</strong>
+    <span>It says the collector filled every slot the Day-1 contract asked for
+    (7 frozen APW buckets x 5 bands). It says <em>nothing</em> about spec §I's
+    <span class="mono">min_route_coverage</span>, whose denominator — "expected cells" — is
+    undefined. That is <strong>AMB-8, still open</strong>: no denominator has been chosen, so no
+    statistical coverage figure is computed here. AMB-8 OPEN: spec I gates on '60% of expected cells' and nothing defines an expected cell. No denominator has been chosen, so no statistical coverage figure is computed.</span>
   </div>
   <div class="warn">
     <strong>The session breached its own declared window, and that is recorded rather than
@@ -238,7 +315,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 6 provenance -->
 <section>
-  <div class="sechead"><span class="n">05</span><h2>Provenance &amp; evidence</h2></div>
+  <div class="sechead"><span class="n">07</span><h2>Provenance &amp; evidence</h2></div>
   <p class="lede">Provenance is <strong>not uniform across the panel</strong>, and the data model
   records that as a derived fact rather than a label someone remembered to apply. An observation
   is <span class="mono">PRIMARY_HASHED</span> only if its run actually has a content-addressed
@@ -260,7 +337,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- exclusion audit -->
 <section>
-  <div class="sechead"><span class="n">06</span><h2>Exclusion audit — 122 screenshots</h2></div>
+  <div class="sechead"><span class="n">08</span><h2>Exclusion audit — 122 screenshots</h2></div>
   <p class="lede">Nothing was deleted. Every screenshot that did not become an observation carries
   a reason, and the ids are listed so any one can be traced back.</p>
   <div class="rows"><div class='row'><span class='cnt'>67</span><span class='txt'>NOT_EARLIEST_IN_BAND (contract selects earliest)<details><summary>67 screenshot ids</summary><div class='det-body'>s002, s003, s005, s006, s008, s009, s011, s012, s013, s017, s018, s020, s022, s023, s025, s026, s027, s033, s035, s036, s037, s040, s041, s044, s045, s046, s048, s049, s050, s056, s058, s059, s061, s062, s064, s067, s070, s072, s073, s076, s078, s079, s081, s082, s086, s088, s089, s092, s094, s095, s099, s100, s103, s104, s105, s106, s107, s109, s110, s111, s112, s113, s114, s120, s122, s123, s124</div></details></span></div><div class='row'><span class='cnt'>24</span><span class='txt'>APW_MATCHES_NO_BUCKET (T+68, spec A.3 exact match)<details><summary>24 screenshot ids</summary><div class='det-body'>s129, s130, s131, s132, s133, s134, s135, s136, s137, s138, s139, s140, s141, s142, s143, s144, s145, s146, s147, s148, s149, s150, s151, s152</div></details></span></div><div class='row'><span class='cnt'>16</span><span class='txt'>OUTSIDE_CONTRACTED_BANDS (band 7)<details><summary>16 screenshot ids</summary><div class='det-body'>s014, s015, s016, s030, s031, s032, s053, s055, s068, s069, s080, s097, s101, s116, s126, s127</div></details></span></div><div class='row'><span class='cnt'>8</span><span class='txt'>DEP_TIME_NOT_READABLE (not selected; did not affect any selection)<details><summary>8 screenshot ids</summary><div class='det-body'>s029, s052, s054, s066, s071, s085, s091, s096</div></details></span></div><div class='row'><span class='cnt'>6</span><span class='txt'>OUTSIDE_CONTRACTED_BANDS (band 1)<details><summary>6 screenshot ids</summary><div class='det-body'>s038, s042, s083, s098, s117, s118</div></details></span></div><div class='row'><span class='cnt'>1</span><span class='txt'>INSUFFICIENT_EVIDENCE (flight row scrolled off; no flight no. or times)<details><summary>1 screenshot ids</summary><div class='det-body'>s128</div></details></span></div></div>
@@ -270,7 +347,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 7 methodology -->
 <section>
-  <div class="sechead"><span class="n">07</span><h2>Statistical methodology</h2></div>
+  <div class="sechead"><span class="n">09</span><h2>Statistical methodology</h2></div>
   <div class="flow">
     <span class="step now">raw observation</span><span class="arr">→</span>
     <span class="step now">admissibility §A.6</span><span class="arr">→</span>
@@ -291,26 +368,37 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
     <div class="row"><span class="cnt">§F</span><span class="txt"><strong>Young / Modified
       Laspeyres.</strong> Weighted aggregation above the elementary level. Route weights come
       from DGCA city-pair passenger volumes.</span></div>
-    <div class="row"><span class="cnt">§M</span><span class="txt"><strong>APIx-TPD.</strong> A
-      quote-level Time Product Dummy hedonic regression, run as a <em>parallel</em> estimator and
-      never chained into APIx-L. The gap between the two is a deliverable in itself.</span></div>
-    <div class="row"><span class="cnt">§N</span><span class="txt"><strong>Bootstrap intervals.</strong>
-      Computed only where statistically estimable. With one wave there is no sampling
-      distribution over relatives, so none is reported.</span></div>
+    <div class="row"><span class="cnt">§M</span><span class="txt"><strong>APIx-TPD —
+      SPECIFIED, NOT IMPLEMENTED.</strong> A quote-level Time Product Dummy hedonic regression,
+      designed as a <em>parallel</em> estimator never chained into APIx-L. The specification
+      exists; <strong>the estimator is not implemented</strong>
+      (<span class="mono">src/apix/statistics/tpd/</span> is an empty package). The design intent
+      — publishing the gap between the two estimators — is a future deliverable, not a present
+      one.</span></div>
+    <div class="row"><span class="cnt">§N</span><span class="txt"><strong>Uncertainty —
+      NOT IMPLEMENTED.</strong> No bootstrap or confidence-interval estimator exists
+      (<span class="mono">src/apix/statistics/uncertainty/</span> is an empty package), and
+      <strong>no confidence interval is reported anywhere in APIx</strong>. Beyond the missing
+      code, the current collection design does not record the admissible-flight universe per
+      band, so it does not yet carry the sampling-design information a conventional uncertainty
+      estimator would need. Dispersion is reported instead, which assumes nothing.</span></div>
   </div>
 </section>
 
 <!-- 8 index engine -->
 <section>
-  <div class="sechead"><span class="n">08</span><h2>Index engine status</h2></div>
+  <div class="sechead"><span class="n">10</span><h2>Index engine status</h2></div>
   <div class="tiles">
-    <div class="tile good"><span class="k">engine</span><span class="v">READY</span>
+    <div class="tile good"><span class="k">APIx-L engine</span><span class="v">READY</span>
       <span class="s">implemented + invariant-tested</span></div>
     <div class="tile bad"><span class="k">APIx-L value</span><span class="v">PENDING</span>
       <span class="s">needs a 2nd collection wave</span></div>
-    <div class="tile bad"><span class="k">APIx-TPD</span><span class="v">PENDING</span>
-      <span class="s">35 quotes of
-      1,500 required</span></div>
+    <div class="tile bad"><span class="k">APIx-TPD</span><span class="v">NOT IMPLEMENTED</span>
+      <span class="s">specified §M; estimator absent. Panel is also
+      35 quotes of 1,500 required</span></div>
+    <div class="tile bad"><span class="k">uncertainty / CI</span>
+      <span class="v">NOT IMPLEMENTED</span>
+      <span class="s">no estimator; no CI reported anywhere</span></div>
     <div class="tile hold"><span class="k">unlocks on</span>
       <span class="v" style="font-size:17px">2026-09-19</span>
       <span class="s">exactly t−7 from the held wave</span></div>
@@ -326,7 +414,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 9 benchmark -->
 <section>
-  <div class="sechead"><span class="n">09</span><h2>Official reference — MoSPI</h2></div>
+  <div class="sechead"><span class="n">11</span><h2>Official reference — MoSPI</h2></div>
   <p class="lede">Pulled first-hand from the Dataset Link named in the problem statement:
   <span class="mono">MoSPI eSankhyiki api.mospi.gov.in/api/cpi/getItemIndex</span>, item <em>Air Fare (normal): Economy Class(adult)</em>.
   Role: <span class="mono">VALIDATION_BENCHMARK_ONLY</span> —
@@ -349,7 +437,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 10 scale -->
 <section>
-  <div class="sechead"><span class="n">10</span><h2>Scale-up architecture</h2></div>
+  <div class="sechead"><span class="n">12</span><h2>Scale-up architecture</h2></div>
   <p class="lede">DEL–BOM and IndiGo are <strong>current sample values, not architecture</strong>.
   The statistics layer never hard-codes a route or carrier; the cell key is
   <span class="mono">route × carrier × day_of_week × APW × fare_class × channel</span>, and the
@@ -368,7 +456,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 11 limitations -->
 <section>
-  <div class="sechead"><span class="n">11</span><h2>Limitations — what is not established</h2></div>
+  <div class="sechead"><span class="n">13</span><h2>Limitations — what is not established</h2></div>
   <div class="tscroll"><table>
     <thead><tr><th>claim</th><th>status</th><th>what it would take</th></tr></thead>
     <tbody>
@@ -390,7 +478,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- 12 roadmap -->
 <section>
-  <div class="sechead"><span class="n">12</span><h2>Validation roadmap</h2></div>
+  <div class="sechead"><span class="n">14</span><h2>Validation roadmap</h2></div>
   <p class="lede">The 30-day back-test the problem statement asks for is <strong>not performed
   and not simulated</strong>. This is the route to it.</p>
   <div class="flow">
@@ -420,7 +508,7 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
 
 <!-- FAQ -->
 <section>
-  <div class="sechead"><span class="n">13</span><h2>Anticipated questions</h2></div>
+  <div class="sechead"><span class="n">15</span><h2>Anticipated questions</h2></div>
   <div class="faq">
     <div class="qa"><span class="q">Why don't you show an index value?</span>
       <span class="a">Because the locked longitudinal specification requires matched observations

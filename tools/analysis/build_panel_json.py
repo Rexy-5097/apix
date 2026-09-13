@@ -99,31 +99,89 @@ def build() -> dict:
         )
 
     # ── APW profile ───────────────────────────────────────────────────────
-    by_apw: dict[int, list[float]] = defaultdict(list)
-    dates: dict[int, str] = {}
-    dows: dict[int, str] = {}
+    # DESCRIPTIVE ONLY. Each bucket sits on a different travel date, so these
+    # are seven cross-sections, not a time series. `rel_to_first` is a ratio of
+    # two such cross-sections and is NOT a price relative in the spec D.2 sense.
+    rows_by_apw: dict[int, list[dict]] = defaultdict(list)
     for r in rows:
-        by_apw[r["apw"]].append(r["total"])
-        dates[r["apw"]] = r["travel_date"]
-        dows[r["apw"]] = r["day_of_week"]
-    base_g = geomean(by_apw[min(by_apw)]) if by_apw else 1.0
+        rows_by_apw[r["apw"]].append(r)
+
+    def cheapest(rs: list[dict]) -> dict:
+        return min(rs, key=lambda r: r["total"])
+
+    def dearest(rs: list[dict]) -> dict:
+        return max(rs, key=lambda r: r["total"])
+
+    def cite(r: dict) -> dict:
+        """The audit trail behind a min/max — so a spread traces to real rows."""
+        return {
+            "observation_id": r["observation_id"],
+            "flight": r["flight"],
+            "dep": r["dep"],
+            "band": r["band"],
+            "total": r["total"],
+        }
+
+    base_g = geomean([r["total"] for r in rows_by_apw[min(rows_by_apw)]]) if rows_by_apw else 1.0
     apw_profile = []
-    for a in sorted(by_apw):
-        f = by_apw[a]
+    for a in sorted(rows_by_apw):
+        rs = rows_by_apw[a]
+        f = [r["total"] for r in rs]
         g = geomean(f)
         apw_profile.append(
             {
                 "apw": a,
-                "travel_date": dates[a],
-                "day_of_week": dows[a],
+                "travel_date": rs[0]["travel_date"],
+                "day_of_week": rs[0]["day_of_week"],
                 "n": len(f),
                 "geomean": round(g, 2),
                 "min": min(f),
                 "max": max(f),
                 "spread_pct": round(100 * (max(f) / min(f) - 1), 1),
+                "min_obs": cite(cheapest(rs)),
+                "max_obs": cite(dearest(rs)),
                 "rel_to_first": round(g / base_g, 4),
             }
         )
+
+    # ── dispersion — which bucket is widest, and what drives it ───────────
+    widest = max(apw_profile, key=lambda a: a["spread_pct"]) if apw_profile else None
+    dispersion = {
+        "widest_apw": widest["apw"] if widest else None,
+        "widest_spread_pct": widest["spread_pct"] if widest else None,
+        "widest_min_obs": widest["min_obs"] if widest else None,
+        "widest_max_obs": widest["max_obs"] if widest else None,
+        "others_max_spread_pct": (
+            max((a["spread_pct"] for a in apw_profile if a is not widest), default=None)
+            if widest
+            else None
+        ),
+        # The panel establishes the dispersion. It does not establish a cause,
+        # and there is no anomaly-detection definition in force that would let
+        # this be called an anomaly.
+        "cause_established": False,
+        "statement": (
+            "Observed within-bucket dispersion. The panel establishes the "
+            "dispersion; it does not establish its cause."
+        ),
+    }
+
+    # ── lead time is confounded with travel date / weekday ────────────────
+    weekday_by_apw = {a["apw"]: a["day_of_week"] for a in apw_profile}
+    dow_counts: dict[str, int] = defaultdict(int)
+    for d in weekday_by_apw.values():
+        dow_counts[d] += 1
+    confound = {
+        "weekday_by_apw": weekday_by_apw,
+        "distinct_weekdays": len(dow_counts),
+        "repeated_weekdays": {d: n for d, n in sorted(dow_counts.items()) if n > 1},
+        "lead_time_confounded": len(dow_counts) < len(weekday_by_apw),
+        "statement": (
+            "Advance-purchase buckets are not interchangeable time observations. "
+            "In this panel lead time is confounded with travel date / day-of-week, "
+            "so the APW profile is descriptive and is not an inflation measure."
+        ),
+    }
 
     # ── band profile ──────────────────────────────────────────────────────
     by_band: dict[int, list[float]] = defaultdict(list)
@@ -141,17 +199,33 @@ def build() -> dict:
     bg = [x["geomean"] for x in band_profile]
 
     # ── quality ───────────────────────────────────────────────────────────
-    expected = len(PRODUCTION_APW) * len(CONTRACT_BANDS)
-    observed_apw = sorted(by_apw)
+    # **This is collection-plan completion, NOT statistical coverage.**
+    #
+    # `plan_slots` is what the Day-1 collection contract asked for: 7 frozen APW
+    # buckets x 5 contract bands. Filling all of it says the collector did what
+    # it was told. It says nothing about spec I's `min_route_coverage`, whose
+    # denominator -- "expected cells" -- is undefined. That is AMB-8, still open.
+    # Calling this "coverage" would borrow a statistical meaning the number
+    # cannot carry, so the field names, the report and the dashboard all avoid
+    # the word. Do not reintroduce it here.
+    plan_slots = len(PRODUCTION_APW) * len(CONTRACT_BANDS)
+    observed_apw = sorted(rows_by_apw)
     ev = defaultdict(int)
     for r in rows:
         ev[r["evidence"]] += 1
 
     quality = {
-        "expected_cells": expected,
+        "plan_slots": plan_slots,
         "valid_observations": len(rows),
-        "coverage_pct": round(100 * len(rows) / expected, 1),
-        "missing_cells": expected - len(rows),
+        "plan_completion_pct": round(100 * len(rows) / plan_slots, 1),
+        "plan_slots_unfilled": plan_slots - len(rows),
+        "plan_basis": f"{len(PRODUCTION_APW)} frozen APW buckets x {len(CONTRACT_BANDS)} bands",
+        "statistical_coverage": "NOT_ESTABLISHED",
+        "statistical_coverage_blocker": (
+            "AMB-8 OPEN: spec I gates on '60% of expected cells' and nothing "
+            "defines an expected cell. No denominator has been chosen, so no "
+            "statistical coverage figure is computed."
+        ),
         "reconciled": sum(1 for r in rows if r["reconciles"]),
         "decomposed": sum(1 for r in rows if r["base"] is not None),
         "apw_expected": list(PRODUCTION_APW),
@@ -264,6 +338,14 @@ def build() -> dict:
         "runs": run_meta,
         "observations": rows,
         "apw_profile": apw_profile,
+        "apw_profile_class": "DESCRIPTIVE_CROSS_SECTION",
+        "apw_profile_disclaimer": (
+            "DESCRIPTIVE APW PROFILE - NOT AN INDEX. Each bucket is a separate "
+            "cross-section on a different travel date. Differences between "
+            "buckets are not temporal price movements and are not inflation."
+        ),
+        "dispersion": dispersion,
+        "confound": confound,
         "band_profile": band_profile,
         "band_spread_pct": round(100 * (max(bg) / min(bg) - 1), 1) if bg else None,
         "quality": quality,
@@ -288,9 +370,10 @@ def main() -> None:
     q = panel["quality"]
     i = panel["index_status"]
     print(
-        f"observations      {q['valid_observations']}/{q['expected_cells']} "
-        f"({q['coverage_pct']}% coverage)"
+        f"observations      {q['valid_observations']}/{q['plan_slots']} "
+        f"({q['plan_completion_pct']}% of collection plan)"
     )
+    print(f"stat. coverage    {q['statistical_coverage']}  (AMB-8 open)")
     print(f"APW               {q['apw_observed']} | missing {q['apw_missing'] or 'none'}")
     print(f"reconciled        {q['reconciled']}/{q['decomposed']}")
     print(f"evidence          {q['evidence_counts']}")

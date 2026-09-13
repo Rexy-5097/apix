@@ -62,6 +62,13 @@ observations by parallel paths that are **never chained together**.
 
 **The gap between the two series is the deliverable.**
 
+> **Status note (2026-09-13) — this section states DESIGN INTENT, not present
+> capability.** The divergence cannot be computed today: APIx-L publishes no
+> value (spec C.1 needs a matched `t / t-7` pair and only one collection wave is
+> held), and APIx-TPD has no estimator (`src/apix/statistics/tpd/` is empty).
+> The vision below is retained deliberately as the design target. Do not cite it
+> as a current deliverable.
+
 ## 4. The architectural commitment
 
 ```

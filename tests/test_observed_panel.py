@@ -30,7 +30,8 @@ import pytest
 
 from apix.schemas.enums import APWBucket
 
-PANEL = Path(__file__).resolve().parents[1] / "data" / "panel.json"
+DATA = Path(__file__).resolve().parents[1] / "data"
+PANEL = DATA / "panel.json"
 COLLECTION_DATE = date(2026, 9, 12)
 
 #: Frozen Day-1 contract. Bands are spec B.2, anchored at 00:00 IST.
@@ -300,13 +301,59 @@ def test_no_cell_is_missing_from_the_seven_by_five_grid(rows: list[dict]) -> Non
     assert not missing, f"missing cells: {missing}"
 
 
-def test_reported_coverage_agrees_with_the_rows(panel: dict, rows: list[dict]) -> None:
+def test_reported_plan_completion_agrees_with_the_rows(panel: dict, rows: list[dict]) -> None:
     q = panel["quality"]
     assert q["valid_observations"] == len(rows)
-    assert q["expected_cells"] == len(EXPECTED_APW_DATES) * len(CONTRACT_BANDS)
-    assert q["coverage_pct"] == 100.0
-    assert q["missing_cells"] == 0
+    assert q["plan_slots"] == len(EXPECTED_APW_DATES) * len(CONTRACT_BANDS)
+    assert q["plan_completion_pct"] == 100.0
+    assert q["plan_slots_unfilled"] == 0
     assert q["apw_missing"] == []
+
+
+def test_statistical_coverage_is_never_claimed(panel: dict) -> None:
+    """35/35 is collection-plan completion, not spec I coverage.
+
+    Spec I gates a route at 60% of *expected cells* and AMB-8 records that
+    nothing defines an expected cell. Reporting 100% "coverage" would borrow a
+    statistical meaning this number cannot carry, and would read as the §I gate
+    being satisfied when no denominator has been chosen.
+    """
+    q = panel["quality"]
+    assert q["statistical_coverage"] == "NOT_ESTABLISHED"
+    assert "AMB-8" in q["statistical_coverage_blocker"]
+    # The optimistic field name must not come back under any spelling.
+    assert "coverage_pct" not in q
+    assert "expected_cells" not in q
+    assert "missing_cells" not in q
+
+
+def test_no_renderer_calls_plan_completion_coverage() -> None:
+    """Regression guard for the exact phrasing that had to be removed.
+
+    The dashboard once showed a green tile reading `coverage 100% / no gaps`.
+    That is the claim AMB-8 forbids, so the word is reserved: anywhere
+    "coverage" appears in a rendered artifact it must be qualified as APW
+    buckets, as NOT ESTABLISHED, or as the spec's own `min_route_coverage`.
+    """
+    import re
+
+    for name in ("dashboard.html", "panel_report.txt"):
+        # Normalise first: rendered prose wraps across lines, and a line break
+        # mid-sentence would otherwise look like an unqualified use.
+        text = " ".join((DATA / name).read_text(encoding="utf-8").split())
+        for match in re.finditer(r".{0,80}coverage.{0,80}", text, re.IGNORECASE):
+            line = match.group(0)
+            allowed = (
+                "APW coverage" in line
+                or "statistical coverage" in line.lower()
+                or "min_route_coverage" in line
+                or "not coverage" in line.lower()
+                or "Coverage denominator" in line
+                or "AMB-8" in line
+            )
+            assert allowed, f"unqualified 'coverage' in {name}: {line!r}"
+        assert "100% coverage" not in text
+        assert "100.0% coverage" not in text
 
 
 # ── 12-14. Why the index cannot run, asserted so it cannot be forgotten ──────
@@ -337,6 +384,163 @@ def test_tpd_threshold_is_not_met_and_is_not_lowered(panel: dict) -> None:
     assert i["tpd_min_quotes_window"] == 1500
     assert i["tpd_quotes_available"] == EXPECTED_N
     assert i["tpd_computable"] is False
+
+
+# ── The APW profile must never read as an index ──────────────────────────────
+
+
+def test_apw_profile_is_declared_descriptive_not_an_index(panel: dict) -> None:
+    assert panel["apw_profile_class"] == "DESCRIPTIVE_CROSS_SECTION"
+    d = panel["apw_profile_disclaimer"].upper()
+    assert "NOT AN INDEX" in d
+
+
+def test_renderers_label_the_profile_as_not_an_index() -> None:
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8").upper()
+    report = (DATA / "panel_report.txt").read_text(encoding="utf-8").upper()
+    for text in (dash, report):
+        assert "NOT AN INDEX" in text
+
+
+def test_the_38_percent_is_never_called_inflation() -> None:
+    """The T+1 -> T+60 difference is a ratio of two cross-sections."""
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8")
+    low = dash.lower()
+    for phrase in ("fares increased", "fares rose", "airfare inflation of", "inflation rate of"):
+        assert phrase not in low, f"dashboard implies a price movement: {phrase!r}"
+    assert "not airfare inflation" in low or "not a time-series" in low
+
+
+# ── Lead time is confounded, and that must be visible ────────────────────────
+
+
+def test_confound_between_lead_time_and_weekday_is_recorded(panel: dict) -> None:
+    c = panel["confound"]
+    assert c["lead_time_confounded"] is True
+    assert c["distinct_weekdays"] < len(c["weekday_by_apw"])
+    assert c["repeated_weekdays"], "at least one weekday must repeat for the confound to bind"
+
+
+def test_confound_weekdays_agree_with_the_observed_rows(
+    panel: dict, rows: list[dict]
+) -> None:
+    """Derived from the rows, so the disclosure cannot drift from the data."""
+    from datetime import date as _date
+
+    for apw, dow in panel["confound"]["weekday_by_apw"].items():
+        travel = {r["travel_date"] for r in rows if r["apw"] == int(apw)}
+        assert len(travel) == 1
+        assert _date.fromisoformat(travel.pop()).strftime("%a") == dow
+
+
+def test_both_renderers_disclose_the_confound() -> None:
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8").lower()
+    report = (DATA / "panel_report.txt").read_text(encoding="utf-8").lower()
+    for text in (dash, report):
+        assert "confounded" in text
+
+
+# ── Dispersion is observed, never called an anomaly ──────────────────────────
+
+
+def test_dispersion_traces_to_real_observation_ids(panel: dict, rows: list[dict]) -> None:
+    """A spread nobody can audit is a claim, not a measurement."""
+    d = panel["dispersion"]
+    ids = {r["observation_id"] for r in rows}
+    for side in ("widest_min_obs", "widest_max_obs"):
+        assert d[side]["observation_id"] in ids
+        row = next(r for r in rows if r["observation_id"] == d[side]["observation_id"])
+        assert row["total"] == d[side]["total"]
+        assert row["flight"] == d[side]["flight"]
+
+
+def test_widest_dispersion_bucket_is_actually_the_widest(panel: dict) -> None:
+    spreads = {a["apw"]: a["spread_pct"] for a in panel["apw_profile"]}
+    assert panel["dispersion"]["widest_apw"] == max(spreads, key=lambda k: spreads[k])
+    assert panel["dispersion"]["widest_spread_pct"] == max(spreads.values())
+
+
+def test_dispersion_claims_no_cause(panel: dict) -> None:
+    """No anomaly-detection definition is in force, so 'anomaly' is unearned."""
+    assert panel["dispersion"]["cause_established"] is False
+    dash = " ".join((DATA / "dashboard.html").read_text(encoding="utf-8").split()).lower()
+    assert "does not establish its cause" in dash
+    # The dispersion section must *disclaim* the word rather than avoid it:
+    # "anomaly" implies a detection rule, and none is in force.
+    section = dash.split("within-bucket dispersion")[1].split("<section")[0]
+    assert "no anomaly-detection definition is in force" in section
+    assert "not as an anomaly" in section
+
+
+# ── TPD and uncertainty: specified is not implemented ────────────────────────
+
+
+def test_tpd_and_uncertainty_packages_are_genuinely_empty() -> None:
+    """The documentation says these are empty. Assert it, so it stays true."""
+    src = Path(__file__).resolve().parents[1] / "src" / "apix" / "statistics"
+    for pkg in ("tpd", "uncertainty"):
+        modules = [p for p in (src / pkg).glob("*.py") if p.name != "__init__.py"]
+        assert not modules, f"{pkg}/ now has code; update the docs that call it EMPTY"
+        assert (src / pkg / "__init__.py").read_text(encoding="utf-8").strip() == ""
+
+
+def test_dashboard_states_tpd_is_specified_but_not_implemented() -> None:
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8")
+    assert "NOT IMPLEMENTED" in dash
+    assert "not implemented" in dash.lower()
+    assert "1,500" in dash or "1500" in dash
+
+
+def test_no_confidence_interval_is_reported_anywhere() -> None:
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8").lower()
+    report = (DATA / "panel_report.txt").read_text(encoding="utf-8").lower()
+    for text in (dash, report):
+        for phrase in ("95% ci", "confidence interval of", "± ", "std. error", "standard error"):
+            assert phrase not in text, f"an interval leaked into a renderer: {phrase!r}"
+
+
+# ── The synthetic fixture must never touch the real panel ────────────────────
+
+
+def test_real_panel_declares_itself_real_and_synthetic_free(panel: dict) -> None:
+    assert panel["data_class"] == "REAL_MARKET_OBSERVATION"
+    assert panel["synthetic_data_present"] is False
+
+
+def test_dashboard_carries_no_synthetic_fixture_content() -> None:
+    """The engine demo lives in its own file. If its banner ever appears in the
+    real-market dashboard, the boundary has been crossed."""
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8")
+    assert "SYNTHETIC FIXTURE" not in dash.upper()
+
+
+def test_engine_validation_page_is_separate_and_carries_no_currency() -> None:
+    page = DATA / "engine-validation.html"
+    if not page.exists():
+        pytest.skip("engine-validation.html not generated in this checkout")
+    html = page.read_text(encoding="utf-8")
+    assert "₹" not in html, "a currency figure in the synthetic page could read as a fare"
+    assert html.upper().count("SYNTHETIC FIXTURE - NOT A MARKET MEASUREMENT") >= 3
+    assert "base 100" in html
+    assert "test_pipeline_14_day" in html
+
+
+# ── The index stays PENDING on every surface ─────────────────────────────────
+
+
+def test_every_renderer_says_the_index_is_pending() -> None:
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8")
+    assert "PENDING" in dash
+    assert "2026-09-19" in dash
+    report = (DATA / "panel_report.txt").read_text(encoding="utf-8")
+    assert "NOT ESTABLISHED" in report
+
+
+def test_amb_8_and_amb_9_stay_visible(panel: dict) -> None:
+    dash = (DATA / "dashboard.html").read_text(encoding="utf-8")
+    assert "AMB-8" in dash
+    assert "AMB-9" in dash
+    assert panel["quality"]["statistical_coverage"] == "NOT_ESTABLISHED"
 
 
 # ── 15-16. Version vector and reproducibility ────────────────────────────────
@@ -404,8 +608,8 @@ def test_dashboard_headline_figures_come_from_the_contract(panel: dict, dashboar
     q, idx = panel["quality"], panel["index_status"]
     for label, value in [
         ("valid observations", str(q["valid_observations"])),
-        ("expected cells", str(q["expected_cells"])),
-        ("coverage", f"{q['coverage_pct']}%"),
+        ("plan slots", str(q["plan_slots"])),
+        ("plan completion", f"{q['plan_completion_pct']}%"),
         ("reconciled", f"{q['reconciled']}/{q['decomposed']}"),
         ("primary hashed", str(q["evidence_counts"]["PRIMARY_HASHED"])),
         ("secondary chat image", str(q["evidence_counts"]["SECONDARY_CHAT_IMAGE"])),

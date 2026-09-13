@@ -36,7 +36,9 @@ parallel paths that are **never chained together**:
   rolling window, spliced forward. A quality-adjusted estimate under a stated
   model, not a detector of what is "really" happening.
 
-The gap between them is the deliverable.
+The gap between them is the **design intent**, and it cannot be produced today:
+APIx-L has no published value (it needs a second collection wave) and APIx-TPD
+has no estimator. Do not describe the divergence as an existing deliverable.
 
 The primary user is a statistical analyst deciding whether the series is
 adoptable. Anything that makes the system more useful to a consumer and less
@@ -85,14 +87,15 @@ src/apix/
   statistics/    deterministic, no ML imports, invariant-tested
     elementary/    jevons.py, matching.py (tier ladder)
     aggregation/   young_laspeyres.py, weights.py
-    tpd/           specification.py, estimator.py, splice.py
-    uncertainty/   bootstrap.py
-    index/         apix.py, publication.py, vintages.py
-  analytics/     anomaly, forecasting, shock, decomposition
-  ai/            explanation, parser diagnosis, schema mapping
-  api/           FastAPI, SDMX serialisers
-  experiments/   the six controlled scenarios, ablations
-dashboard/       Next.js
+    tpd/           EMPTY - specified in methodology section M; NOT implemented
+    uncertainty/   EMPTY - bootstrap specified; NOT implemented
+    index/         apix_l.py, chaining.py, linking.py, parent.py, publication.py
+  analytics/     EMPTY - anomaly, forecasting, shock, decomposition (planned)
+  ai/            EMPTY - explanation, parser diagnosis, schema mapping (planned)
+  api/           EMPTY - FastAPI, SDMX serialisers (planned)
+  experiments/   EMPTY - the six controlled scenarios, ablations (planned)
+dashboard/       README only; the delivered dashboard is generated HTML under
+                 data/, built by tools/analysis/build_dashboard.py
 docs/            methodology, engineering, dossier
 tests/           incl. test_architecture.py, property tests
 ```
@@ -181,9 +184,25 @@ techniques.
 
 ## Current phase
 
-Task 0 — bootstrap. See `context/state.md`.
+Hackathon prototype, 15 September 2026. See `context/state.md`.
 
-**No APIx feature work has started.** Scraping, adapters, parsing, matching,
-Jevons, Young/Modified Laspeyres, TPD, bootstrap, forecasting, anomaly
-detection, dashboard and API business logic are all out of scope until the
-bootstrap checkpoint is reviewed.
+**Implemented and tested:** schemas, the SQLite ingestion store, the full
+elementary layer (Jevons, matching, admissibility, bands, dedup, outliers,
+sources), aggregation (Young/Modified Laspeyres, weights, within-route) and the
+index layer (apix_l, chaining, linking, parent, publication). The engine is
+verified end to end over 14 consecutive publication dates.
+
+**Real data:** 35 audited observations, DEL-BOM / IndiGo, one collection wave
+(2026-09-12), covering all 7 frozen APW buckets.
+
+**NOT implemented:** TPD estimator, bootstrap/uncertainty, analytics, ai, api,
+experiments. These packages exist and are empty.
+
+**NOT published:** any APIx market index value. Spec C.1 requires matched
+`t / t-7` evidence and only one wave is held; the first matched pair is possible
+on 2026-09-19. Do not present the advance-purchase profile as an index, and do
+not describe the panel as nationally representative (1 route, 1 carrier).
+
+**Open and blocking:** AMB-8 (no definition of "expected cells", so no
+statistical coverage figure) and AMB-9 (no carrier term in the within-route
+weight formula). Neither may be resolved by choosing a plausible value.

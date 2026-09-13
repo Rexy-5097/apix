@@ -10,11 +10,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Date** | 2026-09-10 |
-| **Phase** | Checkpoint 2E — v2.1 freeze and the AMB-7 publication layer |
-| **Health** | 🟡 AMBER — Checkpoints 0, 1A, 2, 2C merged. `methodology_version 2.1` is FROZEN and in force. **AMB-8 and AMB-9 block the production pipeline** and cannot be closed in code |
+| **Date** | 2026-09-13 |
+| **Phase** | Hackathon prototype for 15 September 2026 — real panel collected, engine verified, index deliberately unpublished |
+| **Health** | 🟡 AMBER — `methodology_version 2.1` is FROZEN and in force. **AMB-8 and AMB-9 block the production pipeline** and cannot be closed in code |
 | **Methodology** | `2.1` — [`apix_formula_spec_v2_1.md`](../docs/methodology/apix_formula_spec_v2_1.md), frozen 2026-09-10 ([ADR-0063](../artifacts/decisions/ADR-0063-freeze-methodology-v2-1.md)) |
-| **Next Milestone** | Owner rulings on AMB-8 and AMB-9, then the production pipeline |
+| **Real data** | **35 observations**, DEL–BOM / IndiGo, one wave (2026-09-12), all 7 frozen APW buckets. 30 PRIMARY_HASHED + 5 SECONDARY_CHAT_IMAGE |
+| **Index value** | **NOT PUBLISHED.** §C.1 needs matched `t / t−7`; one wave held ⇒ 0 matched pairs. Earliest unlock **2026-09-19** |
+| **TPD / uncertainty** | **Specified, NOT implemented.** Both packages are empty |
+| **Next Milestone** | Second collection wave on 2026-09-19 → first genuine matched pair. Then owner rulings on AMB-8/AMB-9 before any production pipeline |
 | **AgentOS profile** | `flagship` — 9 standards, 11 agents, 8 quality gates |
 | **AgentOS grade** | 93/100 (upstream baseline; see below) |
 
@@ -116,13 +119,20 @@ Eight open empirical questions are tracked in `docs/methodology/apix_formula_spe
 
 ## Next Actions
 
-1. Review the bootstrap PR — slazyverse, Basant-creator
-2. Merge once CI is green and review is complete — Rexy-5097
-3. Tag `checkpoint-0` on `main` after merge — Rexy-5097
-4. Confirm branch protection is in force; record what GitHub actually allowed — Rexy-5097
-5. Begin Checkpoint 1: freeze `docs/methodology/apix_formula_spec_v1.md` — Rexy-5097
+1. **Hackathon demo, 15 September** — run [`docs/demo-script.md`](../docs/demo-script.md).
+   Real panel on screen; engine demonstrated live on the synthetic fixture; index
+   stays PENDING.
+2. **Second collection wave, 19 September** — slazyverse. Identical frame: DEL–BOM,
+   IndiGo, Saver, bands 2–6, same window. **Additionally capture the
+   admissible-flight count per band**, which the first wave did not record.
+3. Load wave 2 through the existing manual bridge, build the matched set for
+   12 Sep ↔ 19 Sep, and compute the **first genuine Jevons relative** — Rexy-5097.
+4. Owner rulings on **AMB-8** and **AMB-9** before any production pipeline or any
+   route/carrier expansion — Rexy-5097.
+5. Only then: TPD estimator and the uncertainty estimator, as separate workstreams.
 
-**Task 1 does not begin until the bootstrap checkpoint is reviewed.**
+**No index value is published before step 3 completes.** The engine refuses by
+construction, and that refusal is not to be worked around.
 
 ---
 
@@ -135,4 +145,4 @@ regression. CI enforces no-regression below 93 rather than an unreachable 100.
 
 ---
 
-*Updated: Task 0 bootstrap · 2026-09-08*
+*Updated: hackathon prototype · 2026-09-13*
