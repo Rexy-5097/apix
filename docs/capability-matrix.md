@@ -20,8 +20,14 @@ status levels are used, and they are **not** interchangeable:
 
 ## The sentence that matters most
 
-> **Real observations reach the elementary layer and stop at the longitudinal
-> step.**
+> **Real market observations pass through APIx's admissibility, banding, key
+> construction, deduplication and source-precedence stages. The pipeline stops at
+> the longitudinal Jevons step because the required t−7 observation does not yet
+> exist.**
+
+Those five named stages — and only those — are **REAL-DATA EXERCISED**. The
+layer is not exercised as a whole, and no stage below the Jevons step is reached
+by real data at all.
 
 Until 2026-09-13 this section said real observations did not enter
 `src/apix/statistics/` at all. That is no longer true, and the correction is
@@ -216,7 +222,7 @@ See [`OPEN-AMBIGUITIES-checkpoint-2.md`](methodology/OPEN-AMBIGUITIES-checkpoint
 | Real observations | 35 · 7/7 frozen APW buckets · 5/5 bands · 35/35 reconciled |
 | Provenance | 30 `PRIMARY_HASHED` + 5 `SECONDARY_CHAT_IMAGE` |
 | Exclusions | 122, each with a reason and an id |
-| Exclusion replay | 45/46 mechanically decidable exclusions reproduce the recorded §A.3/§B.2 verdict · 0 disagreements · 0 false rejections among the 35 accepted |
+| Exclusion replay | 45/46 mechanically decidable exclusions reproduce the recorded §A.3/§B.2 verdict with zero disagreements; 1 record is not mechanically testable because the required departure-time field is unavailable. All 35 accepted observations pass the corresponding checks with zero false rejections. |
 | Statistical coverage | **NOT ESTABLISHED** (AMB-8) |
 | Published index | **NONE** |
 

@@ -370,8 +370,9 @@ def build(p: dict) -> str:
     IndiGo {esc(" ".join(frame["carriers"]))} · collected {esc(p["collection_date"])}</span></div>
   <div class="st yes"><span class="lab">Engine</span>
     <span class="val">Implemented &amp; tested</span>
-    <span class="why">APIx-L: Jevons elementary → Young / Modified Laspeyres, verified end to end
-    over 14 consecutive publication dates. No ML in the index path.
+    <span class="why">APIx-L: Jevons elementary → Young / Modified Laspeyres, verified end to
+    end over 14 consecutive publication dates <strong>of a controlled synthetic test fixture</strong>.
+    No real longitudinal index calculation has been executed. No ML in the index path.
     <strong>APIx-TPD is specified (§M) but not implemented.</strong></span></div>
   <div class="st no"><span class="lab">Index</span>
     <span class="val">PENDING</span>
@@ -591,8 +592,9 @@ def build(p: dict) -> str:
 <section>
   <div class="sechead"><span class="n">09</span><h2>Real-data execution boundary</h2></div>
   <p class="lede">How far the <strong>real</strong> observations actually travel through the
-  frozen code — reconstructed from this contract and run through the elementary layer, stage by
-  stage. <strong>{esc(bnd["claim"])}</strong></p>
+  frozen code — reconstructed from this contract and run stage by stage through the frozen
+  functions named below. <strong>{esc(bnd["claim"])}</strong> Only the named stages are
+  exercised; the elementary layer is <em>not</em> exercised as a whole.</p>
   <div class="legend">{boundary_legend(bnd["states"])}</div>
   <div class="bnd">{boundary_rows(bnd)}</div>
   <p class="note">{esc(bnd["caveat"])}</p>

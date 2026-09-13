@@ -194,10 +194,21 @@ Hackathon prototype, 15 September 2026. See `context/state.md`.
 elementary layer (Jevons, matching, admissibility, bands, dedup, outliers,
 sources), aggregation (Young/Modified Laspeyres, weights, within-route) and the
 index layer (apix_l, chaining, linking, parent, publication). The engine is
-verified end to end over 14 consecutive publication dates.
+verified end to end over 14 consecutive publication dates **of a controlled
+synthetic test fixture** (`tests/test_pipeline_14_day.py`). No real longitudinal index
+calculation has been executed: real data stops at the Jevons step.
 
 **Real data:** 35 audited observations, DEL-BOM / IndiGo, one collection wave
 (2026-09-12), covering all 7 frozen APW buckets.
+
+**How far real data travels — the only claim permitted here.** Real market
+observations pass through APIx's admissibility, banding, key construction,
+deduplication and source-precedence stages. The pipeline stops at the
+longitudinal Jevons step because the required `t-7` observation does not yet
+exist. Those five stages are **REAL-DATA EXERCISED**; matched `t / t-7`, the
+Jevons relative, advance-cell, the weekly chain and higher aggregation are
+**PENDING**; publication is **BLOCKED**. Do not write that the elementary
+statistics layer, Jevons, or the index engine is validated on real data.
 
 **NOT implemented:** TPD estimator, bootstrap/uncertainty, analytics, ai, api,
 experiments. These packages exist and are empty.

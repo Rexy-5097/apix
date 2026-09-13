@@ -324,9 +324,10 @@ def build_boundary(panel: dict) -> dict:
             state=EXERCISED,
             ran="replay through filter_admissible / APWBucket.from_lead_time / hour_band",
             evidence=(
-                f"{rep.agree}/{rep.candidates} mechanically decidable exclusions "
-                f"reproduce the recorded verdict, {rep.disagree} disagreements",
-                f"{rep.not_testable} not mechanically testable (departure time unreadable)",
+                f"{rep.agree}/{rep.candidates} mechanically decidable exclusions reproduce "
+                f"the recorded §A.3/§B.2 verdict with {rep.disagree} disagreements",
+                f"{rep.not_testable} record is not mechanically testable because the required "
+                "departure-time field is unavailable",
                 f"{len(rep.wrongly_rejected)} false rejections among the "
                 f"{rep.accepted_rechecked} accepted observations",
             ),

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -393,10 +394,10 @@ def test_the_boundary_spells_out_that_exercised_is_not_validation(boundary: dict
 def test_the_replay_statement_is_the_agreed_wording(result) -> None:
     """The exact sentence the project is allowed to make about the exclusion audit."""
     assert result.as_dict()["statement"] == (
-        "45 of 46 mechanically decidable exclusions independently reproduce the "
-        "recorded §A.3/§B.2 verdict; 1 record lacks a readable departure time "
-        "and is not mechanically testable. All 35 accepted observations pass the "
-        "same relevant rule checks with zero false rejections."
+        "45/46 mechanically decidable exclusions reproduce the recorded "
+        "§A.3/§B.2 verdict with zero disagreements; 1 record is not mechanically "
+        "testable because the required departure-time field is unavailable. All 35 "
+        "accepted observations pass the corresponding checks with zero false rejections."
     )
 
 
@@ -426,6 +427,59 @@ def test_within_band_dispersion_is_never_confused_with_the_t3_cross_band_spread(
     # The T+3 figure itself is unchanged by this pass.
     assert widest == 24.9
     assert f"{widest}%" in dashboard
+
+
+#: Surfaces that carry the agreed public claims in prose. Markdown wraps lines
+#: and HTML interleaves tags, so the comparison is whitespace-normalised.
+CLAIM_SURFACES = (
+    "README.md",
+    "docs/capability-matrix.md",
+    "docs/claim-evidence-matrix.md",
+    "docs/demo-script.md",
+    "data/dashboard.html",
+)
+
+
+def _normalised(path: Path) -> str:
+    """Collapse whitespace and strip the markup that wrapping introduces."""
+    text = path.read_text(encoding="utf-8")
+    for noise in ("*", ">", "</strong", "<strong", "<em", "</em", "`"):
+        text = text.replace(noise, " ")
+    # The docs write the lag with U+2212 MINUS SIGN; this source is held to ASCII,
+    # so the character is named rather than typed (ruff RUF001/RUF003).
+    return re.sub(r"\s+", " ", text.replace(chr(0x2212), "-"))
+
+
+@pytest.mark.parametrize("surface", CLAIM_SURFACES)
+def test_every_claim_surface_carries_the_agreed_boundary_wording(surface: str) -> None:
+    """The one sentence APIx is allowed to make about how far real data travels.
+
+    Pinned on every surface that states it, because the failure mode this whole
+    pass exists to prevent is a paraphrase drifting into "the elementary
+    statistics layer is validated on real data".
+    """
+    assert re.sub(r"\s+", " ", BOUNDARY_CLAIM) in _normalised(ROOT / surface)
+
+
+#: Claims the evidence does not support, in any form, on any surface.
+PROHIBITED_CLAIMS = (
+    "elementary statistics layer validated on real data",
+    "elementary statistics layer is validated",
+    "jevons validated on real data",
+    "index engine validated on real market data",
+    "real longitudinal index calculation executed",
+    "122 exclusions were validated",
+    "all exclusions were replayed",
+    "all exclusions were machine-checked",
+    "rejection pipeline is fully validated",
+)
+
+
+@pytest.mark.parametrize("surface", CLAIM_SURFACES)
+def test_no_claim_surface_makes_a_prohibited_claim(surface: str) -> None:
+    flat = _normalised(ROOT / surface).lower()
+    found = [c for c in PROHIBITED_CLAIMS if c in flat]
+    assert not found, f"{surface} makes an unsupported claim: {found}"
 
 
 def test_the_dashboard_renders_every_stage_with_its_derived_state(panel: dict) -> None:

@@ -71,10 +71,51 @@ each travel date in the calendar. Never accept a defaulted date.
 > **Open discrepancy, carried deliberately.** The Day-1 runs recorded
 > `frame_id = DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30@primary`, but the panel
 > holds T+1/3/7/15/30/45/60 and **no T+21**. The `frame_id` therefore does not
-> describe the wave it labels. Day-1 `runs` are a protected record and were not
-> edited. **The 19 Sep run must declare the frame it actually collects**, and
-> only the buckets present in *both* waves can form a matched pair — so
-> collecting fewer than seven silently discards cells.
+> describe the wave it labels. Day-1 `runs` are a protected record and **were not
+> edited**; the historical provenance stands as collected, and the discrepancy is
+> disclosed rather than rewritten. What follows binds the *next* wave only.
+
+### 1.2 PREFLIGHT GATE — run this before opening the browser
+
+> ## 🛑 STOP
+>
+> **The declared APW vector must equal exactly `{1, 3, 7, 15, 30, 45, 60}`.**
+>
+> Not a superset. Not a subset. Not "close enough". **If it differs by a single
+> bucket, collection does not start** — fix the declared frame first.
+
+This is a hard gate and not a reminder, because a mismatch is silent: collection
+succeeds, the wave loads, the panel builds, and only the *matched set* comes out
+short — by which point a day of real market data has been spent on cells that can
+never pair. Day 1 is the proof that this happens.
+
+Run this before collection. It reads the frozen vector from `APWBucket`, so the
+two cannot drift apart, and it **exits non-zero** on any mismatch:
+
+```bash
+DECLARED="1,3,7,15,30,45,60" python -c "
+import os, sys
+sys.path.insert(0, 'src')
+from apix.schemas.enums import APWBucket
+frozen = tuple(b.value for b in APWBucket)
+declared = tuple(int(x) for x in os.environ['DECLARED'].split(','))
+if declared != frozen:
+    sys.exit(f'PREFLIGHT FAIL: declared {declared} != frozen {frozen}. DO NOT COLLECT.')
+print(f'PREFLIGHT OK: declared frame == frozen APW vector {frozen}')
+"
+```
+
+Set `DECLARED` from the `frame_id` you are about to record on the run — not from
+this document, or the check is circular and proves nothing.
+
+**A non-zero exit is a stop, not a warning.** There is no override, and no
+variant of the procedure that proceeds past a failed preflight. The correct
+response is to correct the declared frame and run it again.
+
+Only buckets present in **both** waves can form a matched pair, so collecting
+fewer than seven silently discards cells — and declaring a bucket that is not
+collected produces a `frame_id` that misdescribes its own wave, which is the
+exact defect Day 1 carries.
 
 ---
 
