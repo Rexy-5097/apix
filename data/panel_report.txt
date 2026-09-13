@@ -1,0 +1,174 @@
+==============================================================================
+APIx - OBSERVED PANEL   (text rendering of the dashboard, generated from the store)
+==============================================================================
+Route DEL-BOM | Carrier IndiGo 6E | Saver fare | 1 adult | one-way | non-stop
+Collected 2026-09-12 | methodology 2.1 | DATA CLASS: REAL MARKET OBSERVATION
+
+ESTABLISHED      The complete advance-purchase vector: all 7 frozen A.3 buckets.
+NOT ESTABLISHED  Any index value. Spec C.1 is LOCKED: I(c,t) = I(c,t-7) * J(c,t).
+                 One collection date => matched set M(c,t) is empty => no relative.
+
+==============================================================================
+1. ADVANCE-PURCHASE PROFILE   (geometric mean of the 5 band fares, spec D.2)
+==============================================================================
+APW    travel date   n     geo mean      min      max   spread   vs T+1
+------------------------------------------------------------------------------
+T+1    2026-09-13    5        6,561    6,530    6,688     2.4%    1.000
+T+3    2026-09-15    5        6,903    6,530    8,158    24.9%    1.052
+T+7    2026-09-19    5        6,634    6,530    6,898     5.6%    1.011
+T+15   2026-09-27    5        6,850    6,530    7,160     9.6%    1.044
+T+30   2026-10-12    5        6,602    6,530    6,898     5.6%    1.006
+T+45   2026-10-27    5        7,049    7,019    7,169     2.1%    1.074
+T+60   2026-11-11    5        9,091    8,720    9,665    10.8%    1.386
+
+production buckets (A.3): [1, 3, 7, 15, 30, 45, 60]
+observed                : [1, 3, 7, 15, 30, 45, 60]
+missing                 : NONE
+
+==============================================================================
+2. DATA QUALITY
+==============================================================================
+  valid observations        35
+  expected cells            35   (7 APW x 5 bands)
+  coverage                  100.0%
+  missing cells             0
+  fully decomposed          35/35
+  base + tax == total       35/35
+  runs                      2
+  artifacts (SHA-256)       6
+  spec A.5 window flags     9   (stored + flagged, never discarded)
+
+  run run-20260912-primary
+      window declared 21:00-22:00 | collector Basant (manual, browser, Windows) - APIx 2J real collection
+      notes: declared window primary 21:00-22:00; actual 20:54-22:10 (start -6 min, end +10 min)
+  run run-20260912-primary-t45
+      window declared 21:00-22:00 | collector Basant (manual, browser) - T+45 gap-fill, capture time unverified
+      notes: PROVENANCE: supplied as chat images, not files. No raw artifact hashed; capture times nominal. Collection date 2026-09-12 CONFIRMED by collector -> lead time 45, admissible under A.3.; declared window primary 21:00-22:00; actual 21:30-21:34 (start +30 min, end -26 min) | RECLASSIFIED to 2026-09-12 on collector confirmation; lead time 45, admissible under A.3
+
+==============================================================================
+3. THE 35 OBSERVATIONS
+==============================================================================
+APW   travel date  bd  flight    dep      min     base  tax+fees    TOTAL  seen   evidence
+--------------------------------------------------------------------------------------------
+T+1   2026-09-13   2   6E 6218   06:05   135    5,065     1,465    6,530  20:54   SHA-256
+T+1   2026-09-13   3   6E 6107   09:30   145    5,065     1,465    6,530  20:56   SHA-256
+T+1   2026-09-13   4   6E 6676   12:00   135    5,215     1,473    6,688  21:02   SHA-256
+T+1   2026-09-13   5   6E 864    15:30   135    5,065     1,465    6,530  20:57   SHA-256
+T+1   2026-09-13   6   6E 329    18:00   135    5,065     1,465    6,530  20:59   SHA-256
+T+3   2026-09-15   2   6E 6218   06:05   135    6,615     1,543    8,158  21:08   SHA-256
+T+3   2026-09-15   3   6E 6107   09:30   145    5,065     1,465    6,530  21:03   SHA-256
+T+3   2026-09-15   4   6E 6676   12:00   135    5,065     1,465    6,530  21:04   SHA-256
+T+3   2026-09-15   5   6E 864    15:30   135    5,065     1,465    6,530  21:05   SHA-256
+T+3   2026-09-15   6   6E 329    18:00   135    5,415     1,483    6,898  21:07   SHA-256
+T+7   2026-09-19   2   6E 6218   06:05   135    5,065     1,465    6,530  21:10   SHA-256
+T+7   2026-09-19   3   6E 6107   09:30   145    5,065     1,465    6,530  21:11   SHA-256
+T+7   2026-09-19   4   6E 6676   12:00   135    5,215     1,473    6,688  21:13   SHA-256
+T+7   2026-09-19   5   6E 864    15:30   135    5,065     1,465    6,530  21:12   SHA-256
+T+7   2026-09-19   6   6E 329    18:00   135    5,415     1,483    6,898  21:14   SHA-256
+T+15  2026-09-27   2   6E 6218   06:05   135    5,065     1,465    6,530  21:18   SHA-256
+T+15  2026-09-27   3   6E 6107   09:30   145    5,065     1,465    6,530  21:18   SHA-256
+T+15  2026-09-27   4   6E 6676   12:00   135    5,665     1,495    7,160  21:20   SHA-256
+T+15  2026-09-27   5   6E 864    15:30   135    5,415     1,483    6,898  21:20   SHA-256
+T+15  2026-09-27   6   6E 329    18:00   135    5,665     1,495    7,160  21:21   SHA-256
+T+30  2026-10-12   2   6E 6218   06:05   135    5,415     1,483    6,898  21:46   SHA-256
+T+30  2026-10-12   3   6E 6107   09:30   145    5,065     1,465    6,530  21:39   SHA-256
+T+30  2026-10-12   4   6E 6676   12:00   130    5,065     1,465    6,530  21:40   SHA-256
+T+30  2026-10-12   5   6E 864    15:30   135    5,065     1,465    6,530  21:41   SHA-256
+T+30  2026-10-12   6   6E 329    18:00   135    5,065     1,465    6,530  21:43   SHA-256
+T+45  2026-10-27   2   6E 6218   06:05   145    5,530     1,489    7,019  21:30   nominal
+T+45  2026-10-27   3   6E 6107   09:30   145    5,530     1,489    7,019  21:31   nominal
+T+45  2026-10-27   4   6E 6676   12:30   145    5,530     1,489    7,019  21:32   nominal
+T+45  2026-10-27   5   6E 864    15:30   145    5,530     1,489    7,019  21:33   nominal
+T+45  2026-10-27   6   6E 329    18:30   145    5,673     1,496    7,169  21:34   nominal
+T+60  2026-11-11   2   6E 6218   06:05   145    7,600     1,592    9,192  22:09   SHA-256
+T+60  2026-11-11   3   6E 6107   09:30   145    7,150     1,570    8,720  22:05   SHA-256
+T+60  2026-11-11   4   6E 324    13:15   145    8,050     1,615    9,665  22:10   SHA-256
+T+60  2026-11-11   5   6E 864    15:30   145    7,600     1,592    9,192  22:10   SHA-256
+T+60  2026-11-11   6   6E 354    19:15   145    7,150     1,570    8,720  22:08   SHA-256
+
+  evidence  SHA-256 = bound to a hash-addressed screenshot in the store
+            nominal = supplied as chat image; no bytes hashed, capture time is a
+                      placeholder. Collection date confirmed by the collector.
+
+==============================================================================
+4. DEPARTURE-BAND STRUCTURE   (spec B.2, 3-hour bands anchored at 00:00 IST)
+==============================================================================
+band  window          n     geo mean
+----------------------------------------
+2     06:00-08:59     7        7,208
+3     09:00-11:59     7        6,876
+4     12:00-14:59     7        7,119
+5     15:00-17:59     7        6,982
+6     18:00-20:59     7        7,098
+
+  spread across bands: 4.8%  (pooled across APW, so confounded by the T+60 level)
+
+==============================================================================
+5. EXCLUSION AUDIT   (nothing deleted; every excluded shot carries a reason)
+==============================================================================
+    67  NOT_EARLIEST_IN_BAND (contract selects earliest)
+    24  APW_MATCHES_NO_BUCKET (T+68, spec A.3 exact match)
+    16  OUTSIDE_CONTRACTED_BANDS (band 7)
+     8  DEP_TIME_NOT_READABLE (not selected; did not affect any selection)
+     6  OUTSIDE_CONTRACTED_BANDS (band 1)
+     1  INSUFFICIENT_EVIDENCE (flight row scrolled off; no flight no. or times)
+------------------------------------------------------------------------------
+   122  total excluded from the 12-Sep file corpus (152 screenshots)
+
+  The 27-Oct (T+45) batch arrived separately as 24 chat images: 5 selected,
+  14 not-earliest-in-band, 5 outside bands 2-6.
+
+==============================================================================
+6. OFFICIAL BENCHMARK - MoSPI eSankhyiki
+==============================================================================
+  source  MoSPI eSankhyiki api.mospi.gov.in/api/cpi/getItemIndex
+  item    Air Fare (normal): Economy Class(adult)
+  role    VALIDATION_BENCHMARK_ONLY   is_apix_input=False
+  unit    index (2012=100) | monthly | All India
+
+  period              base   index      y/y
+-------------------------------------------
+  2014-December      2010   133.9        -
+  2014-December      2012   103.0        -
+  2015-December      2012    77.1  -25.15%
+  2016-December      2012    88.0   14.14%
+  2017-December      2012    75.7  -13.98%
+  2018-December      2012    79.5    5.02%
+  2019-December      2012    71.9   -9.56%
+  2020-December      2012   164.2  128.37%
+  2021-December      2012   204.2   24.36%
+  2022-December      2012   241.7   18.36%
+  2023-December      2012   196.2  -18.82%
+  2024-December      2012   203.1    3.52%
+  2025-December      2012   206.3    1.58%
+
+  base 2010: 1 point — no growth rate computable
+  base 2012: 103.0 -> 206.3 over 11 years = 2.003x = 6.52%/yr geometric
+
+  Growth is computed WITHIN a base year only. MoSPI publishes Dec 2014 under
+  both base 2010 and base 2012 during the rebasing overlap; dividing one by
+  the other is a units error, not a rate of change.
+
+  CANNOT validate this panel: a monthly All-India index number has no route,
+  carrier, flight or rupee fare. No overlapping unit exists. Carried as the
+  external reference the index will eventually be validated against.
+
+==============================================================================
+7. WHAT IS NOT ESTABLISHED
+==============================================================================
+  APIx-L index value            NOT COMPUTABLE   a 2nd collection date exactly 7 days later (C.1)
+  APIx-TPD estimate             NOT COMPUTABLE   min_quotes_window=1,500; panel has 35
+  30-day back-test              NOT PERFORMED    daily fare history we do not have
+  National representativeness   NO               1 route of 2,186; 1 carrier of 5
+  Route weights (G)             NOT EXERCISED    >=2 routes + DGCA city-pair volumes
+  Carrier allocation            OPEN - AMB-9     owner ruling; moot at one carrier
+  Coverage denominator          OPEN - AMB-8     owner ruling on expected cells
+  Intraday effect (OQ-1)        DEFERRED         paired 09:00/21:00 runs not collected
+  Fare 4-way split (A.4)        OPEN - AMB-12    IndiGo shows one aggregated Taxes & Fees line
+  Collection pipeline           DEMONSTRATED     on real data, with hashed evidence
+  Advance-purchase measurement  DEMONSTRATED     all 7 frozen APW buckets
+
+==============================================================================
+Generated from data/collection/collection.sqlite3 + data/*.json.
+If this disagrees with the dashboard, the store is correct.
+==============================================================================

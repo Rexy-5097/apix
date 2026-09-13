@@ -65,7 +65,11 @@ def main() -> None:
             continue
         hits = [r for r in payload["data"] if r.get("item") == ITEM]
         for h in hits:
-            key = f"{h['year']}-{h['month']}"
+            # Key on the base year too. MoSPI publishes the same month under
+            # more than one base during a rebasing overlap — Dec 2014 exists on
+            # base 2010 AND base 2012 — and collapsing them keeps whichever
+            # arrived last, which then gets divided by a different base's index.
+            key = f"{h['year']}-{h['month']}-base{h['baseyear']}"
             series[key] = {
                 "year": h["year"],
                 "month": h["month"],
@@ -83,18 +87,24 @@ def main() -> None:
         print("no airfare records retrieved")
         return
 
-    vals = sorted(series.values(), key=lambda r: r["year"])
-    first, last = vals[0], vals[-1]
-    growth = last["index"] / first["index"]
-    years = last["year"] - first["year"]
-    print(
-        f"\nofficial airfare CPI, {first['month']} {first['year']}"
-        f" -> {last['month']} {last['year']}"
-    )
-    print(
-        f"  {first['index']} -> {last['index']}  ({growth:.3f}x over {years} years, "
-        f"{100 * (growth ** (1 / years) - 1):.2f}%/yr geometric)"
-    )
+    # Growth is only meaningful WITHIN one base year. Dividing a base-2012 index
+    # by a base-2010 one is not a rate of change, it is a units error.
+    by_base: dict[str, list] = {}
+    for r in series.values():
+        by_base.setdefault(r["baseyear"], []).append(r)
+    for base in sorted(by_base):
+        vals = sorted(by_base[base], key=lambda r: r["year"])
+        if len(vals) < 2:
+            print(f"\nbase {base}: {len(vals)} point — no growth rate computable")
+            continue
+        first, last = vals[0], vals[-1]
+        growth = last["index"] / first["index"]
+        years = last["year"] - first["year"]
+        print(f"\nbase {base}: {first['month']} {first['year']} -> {last['month']} {last['year']}")
+        print(
+            f"  {first['index']} -> {last['index']}  ({growth:.3f}x over {years} years, "
+            f"{100 * (growth ** (1 / years) - 1):.2f}%/yr geometric)"
+        )
 
     OUT.write_text(
         json.dumps(

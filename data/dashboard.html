@@ -1,0 +1,479 @@
+<title>APIx Real-Time Airfare Price Index</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#F1F4F7; --card:#FFFFFF; --sunk:#E6EBF0; --rule:#D4DCE4; --rule-2:#B9C5D0;
+  --ink:#0D131A; --ink-2:#3B4854; --ink-3:#6B7A88;
+  --amber:#A9680F; --amber-soft:#FAEFDB;
+  --ok:#1F6B46; --ok-soft:#E0EFE7;
+  --no:#9E2F27; --no-soft:#F7E3E1;
+  --hold:#44548A; --hold-soft:#E4E9F4;
+  --shadow:0 1px 2px rgba(13,19,26,.05), 0 8px 20px -12px rgba(13,19,26,.18);
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  --disp:"Barlow Condensed","IBM Plex Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0C1219; --card:#141C25; --sunk:#1B2530; --rule:#253039; --rule-2:#36444F;
+  --ink:#E9EEF3; --ink-2:#AFBDC9; --ink-3:#7C8B99;
+  --amber:#EFA93F; --amber-soft:#2A2214;
+  --ok:#63D09A; --ok-soft:#13271E;
+  --no:#F0887C; --no-soft:#2B1816;
+  --hold:#9AAFE6; --hold-soft:#191F31;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 24px -14px rgba(0,0,0,.7);
+}}
+:root[data-theme="dark"]{
+  --paper:#0C1219; --card:#141C25; --sunk:#1B2530; --rule:#253039; --rule-2:#36444F;
+  --ink:#E9EEF3; --ink-2:#AFBDC9; --ink-3:#7C8B99;
+  --amber:#EFA93F; --amber-soft:#2A2214;
+  --ok:#63D09A; --ok-soft:#13271E;
+  --no:#F0887C; --no-soft:#2B1816;
+  --hold:#9AAFE6; --hold-soft:#191F31;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 24px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding:30px 20px 80px;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--disp);margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,5.4vw,48px);font-weight:700;line-height:1;text-transform:uppercase;letter-spacing:.01em}
+h2{font-size:22px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+h3{font-size:15px;font-weight:600}
+p{margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+header{border-bottom:2px solid var(--ink);padding-bottom:18px;display:flex;flex-direction:column;gap:11px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--rule-2);background:var(--card);color:var(--ink-2)}
+.chip.real{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
+.chip.warn{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.st{background:var(--card);padding:16px 17px;display:flex;flex-direction:column;gap:5px}
+.st .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
+.st.yes .lab{color:var(--ok)} .st.no .lab{color:var(--no)} .st.hold .lab{color:var(--hold)}
+.st .val{font-family:var(--disp);font-size:25px;font-weight:600;line-height:1.05}
+.st .why{font-size:12.5px;color:var(--ink-2)}
+section{display:flex;flex-direction:column;gap:13px}
+.sechead{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--rule);padding-bottom:6px}
+.sechead .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.08em}
+.lede{color:var(--ink-2);max-width:76ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.tile{background:var(--card);padding:13px 14px;display:flex;flex-direction:column;gap:3px}
+.tile .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.tile .v{font-family:var(--mono);font-size:23px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile .s{font-size:11.5px;color:var(--ink-3)}
+.tile.good .v{color:var(--ok)} .tile.bad .v{color:var(--no)} .tile.hold .v{color:var(--hold)}
+.chartbox{background:var(--card);border:1px solid var(--rule);box-shadow:var(--shadow);padding:18px 16px 10px;overflow-x:auto}
+svg{display:block;max-width:100%;height:auto}
+.tscroll{overflow-x:auto;border:1px solid var(--rule);background:var(--card);max-height:560px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--sunk);font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:8px 10px;white-space:nowrap;border-bottom:1px solid var(--rule);position:sticky;top:0}
+td{padding:7px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.m{font-family:var(--mono);font-variant-numeric:tabular-nums}
+td.r{text-align:right}
+.pill{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;padding:1px 6px;border:1px solid;white-space:nowrap}
+.p-ok{color:var(--ok);background:var(--ok-soft);border-color:var(--ok)}
+.p-no{color:var(--no);background:var(--no-soft);border-color:var(--no)}
+.p-hold{color:var(--hold);background:var(--hold-soft);border-color:var(--hold)}
+.rows{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.row{background:var(--card);padding:11px 14px;display:flex;gap:13px;align-items:flex-start}
+.row .cnt{font-family:var(--mono);font-size:15px;font-weight:600;min-width:34px;text-align:right;color:var(--amber)}
+.row .txt{font-size:13.5px}
+.note{font-size:13px;color:var(--ink-2);display:flex;gap:8px;align-items:flex-start}
+.note::before{content:"\2192";color:var(--amber);font-family:var(--mono);flex-shrink:0}
+.warn{border-left:3px solid var(--no);background:var(--no-soft);padding:13px 15px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.warn strong{color:var(--no)}
+details{background:var(--card);border:1px solid var(--rule)}
+summary{padding:10px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+summary:hover{color:var(--amber)}
+details[open] summary{border-bottom:1px solid var(--rule)}
+.det-body{padding:12px 14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);word-break:break-word}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--mono);font-size:11.5px}
+.flow .step{padding:6px 11px;border:1px solid var(--rule-2);background:var(--card)}
+.flow .step.now{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
+.flow .step.next{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
+.flow .arr{color:var(--ink-3)}
+.faq{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.qa{background:var(--card);padding:13px 15px;display:flex;flex-direction:column;gap:5px}
+.qa .q{font-weight:600;font-size:13.5px}
+.qa .a{font-size:13px;color:var(--ink-2)}
+footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:var(--ink-3);display:flex;flex-direction:column;gap:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="chips"><span class="chip warn">Prototype · observed panel</span><span class="chip">collected 2026-09-12</span><span class="chip">DEL-BOM</span><span class="chip">IndiGo 6E</span><span class="chip">Saver fare</span><span class="chip real">7/7 APW</span><span class="chip">methodology 2.1</span></div>
+  <h1>APIx — Real-Time Airfare Price Index</h1>
+  <p class="lede">A quality-adjusted airfare price index for India, built against MoSPI problem
+  statement 26056. This page shows the prototype's real empirical base and is deliberately
+  explicit about three different things: what has been <strong>observed</strong>, what is
+  <strong>computable now</strong>, and what becomes computable only after longitudinal
+  collection.</p>
+</header>
+
+<div class="status">
+  <div class="st yes"><span class="lab">Observed panel</span>
+    <span class="val">35 / 35 cells</span>
+    <span class="why">7/7 advance-purchase windows ·
+    5 departure bands · DEL-BOM ·
+    IndiGo 6E</span></div>
+  <div class="st yes"><span class="lab">Index engine</span>
+    <span class="val">Implemented &amp; tested</span>
+    <span class="why">Jevons elementary → Young / Modified Laspeyres, with TPD as a parallel
+    estimator. Invariant-tested; no ML in the index path.</span></div>
+  <div class="st no"><span class="lab">Current index value</span>
+    <span class="val">Pending 2nd wave</span>
+    <span class="why">§C.1 is locked: <span class="mono">I(c,t) = I(c,t−7)·J(c,t)</span>.
+    1 collection wave held, so 0 matched
+    pairs exist. Unlocks <strong>2026-09-19</strong>.</span></div>
+</div>
+
+<!-- 2 APW -->
+<section>
+  <div class="sechead"><span class="n">01</span><h2>Observed APW profile</h2></div>
+  <p class="lede">Geometric mean of the five band fares at each advance-purchase distance.
+  The geometric mean is spec §D.2's elementary aggregator, used here so the arithmetic matches
+  the index that will later run on these same observations. <strong>This is a descriptive
+  cross-sectional result, not an index and not a causal estimate.</strong></p>
+  <div class="chartbox"><svg viewBox="0 0 880 330" role="img"
+     aria-label="Observed geometric-mean Saver fare by advance-purchase window">
+  <g stroke="var(--rule)" stroke-width="1"><line x1="84" y1="282.0" x2="852" y2="282.0"/><line x1="84" y1="220.0" x2="852" y2="220.0"/><line x1="84" y1="158.0" x2="852" y2="158.0"/><line x1="84" y1="96.0" x2="852" y2="96.0"/><line x1="84" y1="34.0" x2="852" y2="34.0"/></g>
+  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink-3)"
+     text-anchor="end"><text x="75" y="286.0">5,929</text><text x="75" y="224.0">6,878</text><text x="75" y="162.0">7,826</text><text x="75" y="100.0">8,775</text><text x="75" y="38.0">9,723</text></g>
+  <polyline fill="none" stroke="var(--amber)" stroke-width="2.5" points="84.0,240.7 212.0,218.4 340.0,235.9 468.0,221.8 596.0,238.0 724.0,208.8 852.0,75.3"/>
+  <g fill="var(--amber)"><circle cx="84.0" cy="240.7" r="5"/><circle cx="212.0" cy="218.4" r="5"/><circle cx="340.0" cy="235.9" r="5"/><circle cx="468.0" cy="221.8" r="5"/><circle cx="596.0" cy="238.0" r="5"/><circle cx="724.0" cy="208.8" r="5"/><circle cx="852.0" cy="75.3" r="5"/></g>
+  <g font-family="IBM Plex Mono, monospace" font-size="11.5" font-weight="600"
+     fill="var(--ink)" text-anchor="middle"><text x="84.0" y="227.7">6,561</text><text x="212.0" y="205.4">6,903</text><text x="340.0" y="222.9">6,634</text><text x="468.0" y="208.8">6,850</text><text x="596.0" y="225.0">6,602</text><text x="724.0" y="195.8">7,049</text><text x="852.0" y="62.3">9,091</text></g>
+  <line x1="84" y1="282" x2="852" y2="282" stroke="var(--rule-2)" stroke-width="1.5"/>
+  <g font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink-2)"
+     text-anchor="middle"><text x="84.0" y="302">T+1</text><text x="212.0" y="302">T+3</text><text x="340.0" y="302">T+7</text><text x="468.0" y="302">T+15</text><text x="596.0" y="302">T+30</text><text x="724.0" y="302">T+45</text><text x="852.0" y="302">T+60</text></g>
+  <g font-family="IBM Plex Sans, sans-serif" font-size="10" fill="var(--ink-3)"
+     text-anchor="middle"><text x="84.0" y="316">13/09 Sun</text><text x="212.0" y="316">15/09 Tue</text><text x="340.0" y="316">19/09 Sat</text><text x="468.0" y="316">27/09 Sun</text><text x="596.0" y="316">12/10 Mon</text><text x="724.0" y="316">27/10 Tue</text><text x="852.0" y="316">11/11 Wed</text></g>
+</svg></div>
+  <div class="tscroll"><table>
+    <thead><tr><th>APW</th><th>travel date</th><th>day</th><th class="r">n</th>
+      <th class="r">geo mean ₹</th><th class="r">min</th><th class="r">max</th>
+      <th class="r">spread</th><th class="r">vs T+1</th></tr></thead>
+    <tbody><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m r'>5</td><td class='m r'><strong>6,561</strong></td><td class='m r'>6,530</td><td class='m r'>6,688</td><td class='m r'>2.4%</td><td class='m r'>1.000</td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m r'>5</td><td class='m r'><strong>6,903</strong></td><td class='m r'>6,530</td><td class='m r'>8,158</td><td class='m r'>24.9%</td><td class='m r'>1.052</td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m r'>5</td><td class='m r'><strong>6,634</strong></td><td class='m r'>6,530</td><td class='m r'>6,898</td><td class='m r'>5.6%</td><td class='m r'>1.011</td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m r'>5</td><td class='m r'><strong>6,850</strong></td><td class='m r'>6,530</td><td class='m r'>7,160</td><td class='m r'>9.6%</td><td class='m r'>1.044</td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m r'>5</td><td class='m r'><strong>6,602</strong></td><td class='m r'>6,530</td><td class='m r'>6,898</td><td class='m r'>5.6%</td><td class='m r'>1.006</td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m r'>5</td><td class='m r'><strong>7,049</strong></td><td class='m r'>7,019</td><td class='m r'>7,169</td><td class='m r'>2.1%</td><td class='m r'>1.074</td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m r'>5</td><td class='m r'><strong>9,091</strong></td><td class='m r'>8,720</td><td class='m r'>9,665</td><td class='m r'>10.8%</td><td class='m r'>1.385</td></tr></tbody></table></div>
+  <div class="tiles">
+    <div class="tile"><span class="k">T+1 → T+60</span>
+      <span class="v">+38.5%</span>
+      <span class="s">₹6,561 → ₹9,091</span></div>
+    <div class="tile"><span class="k">widest within-day</span>
+      <span class="v">24.9%</span>
+      <span class="s">across the 5 bands</span></div>
+    <div class="tile good"><span class="k">APW coverage</span>
+      <span class="v">7/7</span>
+      <span class="s">complete frozen vector</span></div>
+  </div>
+  <div class="warn">
+    <strong>Read the +39% carefully — it is not an advance-purchase elasticity.</strong>
+    <span>Each APW sits on a <em>different travel date</em>, so date-specific and seasonal
+    effects are fully confounded with advance purchase. The T+60 observation
+    (2026-11-11) falls days after Diwali; a return-travel peak is a
+    <strong>hypothesis this panel cannot test</strong>, not a finding. Separating the two needs
+    the same travel date observed at several lead times — which is what longitudinal collection
+    produces.</span>
+  </div>
+</section>
+
+<!-- 3 bands -->
+<section>
+  <div class="sechead"><span class="n">02</span><h2>Departure-band structure</h2></div>
+  <p class="lede">§B.2 anchors 3-hour bands at 00:00 IST. Bands [2, 3, 4, 5, 6] span the
+  commercial day and are the contracted set; one flight per band, always the earliest, never
+  chosen by price.</p>
+  <div class="tiles"><div class='tile'><span class='k'>band 2 · 06:00-08:59</span><span class='v'>7,208</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 3 · 09:00-11:59</span><span class='v'>6,876</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 4 · 12:00-14:59</span><span class='v'>7,119</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 5 · 15:00-17:59</span><span class='v'>6,982</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 6 · 18:00-20:59</span><span class='v'>7,098</span><span class='s'>n = 7</span></div></div>
+  <p class="note">Spread across bands is 4.8% — small next to the
+  +39% advance-purchase step, and pooled across APW, so it is confounded by the
+  T+60 level. Not a finding on its own.</p>
+</section>
+
+<!-- 4 observations -->
+<section>
+  <div class="sechead"><span class="n">03</span><h2>Flight-level observations</h2></div>
+  <p class="lede">Every row is a real quote read off IndiGo's own website and verified against
+  its screenshot. <span class="mono">seen</span> is the capture time; the last column is the
+  evidence grade.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>APW</th><th>travel date</th><th>day</th><th>bd</th><th>flight</th><th>dep</th>
+      <th class="r">min</th><th class="r">base ₹</th><th class="r">tax+fees ₹</th>
+      <th class="r">total ₹</th><th>seen</th><th>evidence</th></tr></thead>
+    <tbody><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:54</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:56</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,215</td><td class='m r'>1,473</td><td class='m r'><strong>6,688</strong></td><td class='m'>21:02</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:57</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:59</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>6,615</td><td class='m r'>1,543</td><td class='m r'><strong>8,158</strong></td><td class='m'>21:08</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:03</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:04</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:05</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:07</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:10</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:11</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,215</td><td class='m r'>1,473</td><td class='m r'><strong>6,688</strong></td><td class='m'>21:13</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:12</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:14</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:18</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:18</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,665</td><td class='m r'>1,495</td><td class='m r'><strong>7,160</strong></td><td class='m'>21:20</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:20</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,665</td><td class='m r'>1,495</td><td class='m r'><strong>7,160</strong></td><td class='m'>21:21</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:46</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:39</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>130</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:40</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:41</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:43</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:30</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:31</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:30</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:32</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:33</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:30</td><td class='m r'>145</td><td class='m r'>5,673</td><td class='m r'>1,496</td><td class='m r'><strong>7,169</strong></td><td class='m'>21:34</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>145</td><td class='m r'>7,600</td><td class='m r'>1,592</td><td class='m r'><strong>9,192</strong></td><td class='m'>22:09</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>7,150</td><td class='m r'>1,570</td><td class='m r'><strong>8,720</strong></td><td class='m'>22:05</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>4</td><td class='m'>6E 324</td><td class='m'>13:15</td><td class='m r'>145</td><td class='m r'>8,050</td><td class='m r'>1,615</td><td class='m r'><strong>9,665</strong></td><td class='m'>22:10</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>145</td><td class='m r'>7,600</td><td class='m r'>1,592</td><td class='m r'><strong>9,192</strong></td><td class='m'>22:10</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>6</td><td class='m'>6E 354</td><td class='m'>19:15</td><td class='m r'>145</td><td class='m r'>7,150</td><td class='m r'>1,570</td><td class='m r'><strong>8,720</strong></td><td class='m'>22:08</td><td><span class='pill p-ok'>HASHED</span></td></tr></tbody></table></div>
+</section>
+
+<!-- 5 quality -->
+<section>
+  <div class="sechead"><span class="n">04</span><h2>Data quality</h2></div>
+  <div class="tiles">
+    <div class="tile good"><span class="k">valid observations</span>
+      <span class="v">35</span><span class="s">real market quotes</span></div>
+    <div class="tile"><span class="k">expected cells</span>
+      <span class="v">35</span>
+      <span class="s">7 APW × 5 bands</span></div>
+    <div class="tile good"><span class="k">coverage</span>
+      <span class="v">100.0%</span><span class="s">no gaps</span></div>
+    <div class="tile good"><span class="k">missing cells</span>
+      <span class="v">0</span><span class="s">none</span></div>
+    <div class="tile good"><span class="k">reconciled</span>
+      <span class="v">35/35</span>
+      <span class="s">base + tax = total</span></div>
+    <div class="tile"><span class="k">artifacts</span>
+      <span class="v">6</span><span class="s">SHA-256 addressed</span></div>
+    <div class="tile bad"><span class="k">§A.5 window flags</span>
+      <span class="v">9</span><span class="s">stored + flagged</span></div>
+  </div>
+  <div class="warn">
+    <strong>The session breached its own declared window, and that is recorded rather than
+    smoothed.</strong>
+    <span>9 quotes fall outside the declared 21:00–22:00 IST window. Under §A.5
+    they are <em>stored and flagged, never discarded</em>, so the loader exits 2 — not a clean
+    bill. Widening the recorded window to cover them would have made the breach disappear, which
+    is why it was not done.</span>
+    <details><summary>see the 9 flags</summary>
+      <div class="det-body">observation 20260912-primary-indigo-direct-6E6218-20260913-Saver fare at 2026-09-12 20:54:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E6107-20260913-Saver fare at 2026-09-12 20:56:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E864-20260913-Saver fare at 2026-09-12 20:57:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E329-20260913-Saver fare at 2026-09-12 20:59:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E6218-20261111-Saver fare at 2026-09-12 22:09:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E6107-20261111-Saver fare at 2026-09-12 22:05:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E324-20261111-Saver fare at 2026-09-12 22:10:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E864-20261111-Saver fare at 2026-09-12 22:10:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E354-20261111-Saver fare at 2026-09-12 22:08:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard)</div></details>
+  </div>
+</section>
+
+<!-- 6 provenance -->
+<section>
+  <div class="sechead"><span class="n">05</span><h2>Provenance &amp; evidence</h2></div>
+  <p class="lede">Provenance is <strong>not uniform across the panel</strong>, and the data model
+  records that as a derived fact rather than a label someone remembered to apply. An observation
+  is <span class="mono">PRIMARY_HASHED</span> only if its run actually has a content-addressed
+  artifact bound to it.</p>
+  <div class="tiles">
+    <div class="tile good"><span class="k">PRIMARY_HASHED</span>
+      <span class="v">30</span>
+      <span class="s">bound to a SHA-256 screenshot</span></div>
+    <div class="tile hold"><span class="k">SECONDARY_CHAT_IMAGE</span>
+      <span class="v">5</span>
+      <span class="s">no bytes hashed; nominal capture time</span></div>
+  </div>
+  <p class="note">The T+45 batch arrived as chat images rather than files, so no bytes could be
+  hashed and its capture times are <strong>placeholders, not measurements</strong>. The collection
+  date was confirmed by the collector. Those five rows are marked <span class="mono">CHAT IMG</span>
+  in the table above and are counted separately here.</p>
+  <div class="rows"><div class='row'><span class='cnt'>30</span><span class='txt'><strong>run-20260912-primary</strong> · <span class='pill p-ok'>PRIMARY_HASHED</span><br><span class='mono' style='font-size:11.5px'>methodology 2.1 · basket 2026-Q3 · parser manual-1.0 · protocol acquisition-protocol-2G<br>frame DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30@primary<br>window declared 21:00-22:00</span><br><span style='font-size:12.5px;color:var(--ink-3)'>declared window primary 21:00-22:00; actual 20:54-22:10 (start -6 min, end +10 min)</span></span></div><div class='row'><span class='cnt'>5</span><span class='txt'><strong>run-20260912-primary-t45</strong> · <span class='pill p-hold'>SECONDARY_CHAT_IMAGE</span><br><span class='mono' style='font-size:11.5px'>methodology 2.1 · basket 2026-Q3 · parser manual-1.0 · protocol acquisition-protocol-2G<br>frame DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30@primary<br>window declared 21:00-22:00</span><br><span style='font-size:12.5px;color:var(--ink-3)'>PROVENANCE: supplied as chat images, not files. No raw artifact hashed; capture times nominal. Collection date 2026-09-12 CONFIRMED by collector -&gt; lead time 45, admissible under A.3.; declared window primary 21:00-22:00; actual 21:30-21:34 (start +30 min, end -26 min) | RECLASSIFIED to 2026-09-12 on collector confirmation; lead time 45, admissible under A.3</span></span></div></div>
+</section>
+
+<!-- exclusion audit -->
+<section>
+  <div class="sechead"><span class="n">06</span><h2>Exclusion audit — 122 screenshots</h2></div>
+  <p class="lede">Nothing was deleted. Every screenshot that did not become an observation carries
+  a reason, and the ids are listed so any one can be traced back.</p>
+  <div class="rows"><div class='row'><span class='cnt'>67</span><span class='txt'>NOT_EARLIEST_IN_BAND (contract selects earliest)<details><summary>67 screenshot ids</summary><div class='det-body'>s002, s003, s005, s006, s008, s009, s011, s012, s013, s017, s018, s020, s022, s023, s025, s026, s027, s033, s035, s036, s037, s040, s041, s044, s045, s046, s048, s049, s050, s056, s058, s059, s061, s062, s064, s067, s070, s072, s073, s076, s078, s079, s081, s082, s086, s088, s089, s092, s094, s095, s099, s100, s103, s104, s105, s106, s107, s109, s110, s111, s112, s113, s114, s120, s122, s123, s124</div></details></span></div><div class='row'><span class='cnt'>24</span><span class='txt'>APW_MATCHES_NO_BUCKET (T+68, spec A.3 exact match)<details><summary>24 screenshot ids</summary><div class='det-body'>s129, s130, s131, s132, s133, s134, s135, s136, s137, s138, s139, s140, s141, s142, s143, s144, s145, s146, s147, s148, s149, s150, s151, s152</div></details></span></div><div class='row'><span class='cnt'>16</span><span class='txt'>OUTSIDE_CONTRACTED_BANDS (band 7)<details><summary>16 screenshot ids</summary><div class='det-body'>s014, s015, s016, s030, s031, s032, s053, s055, s068, s069, s080, s097, s101, s116, s126, s127</div></details></span></div><div class='row'><span class='cnt'>8</span><span class='txt'>DEP_TIME_NOT_READABLE (not selected; did not affect any selection)<details><summary>8 screenshot ids</summary><div class='det-body'>s029, s052, s054, s066, s071, s085, s091, s096</div></details></span></div><div class='row'><span class='cnt'>6</span><span class='txt'>OUTSIDE_CONTRACTED_BANDS (band 1)<details><summary>6 screenshot ids</summary><div class='det-body'>s038, s042, s083, s098, s117, s118</div></details></span></div><div class='row'><span class='cnt'>1</span><span class='txt'>INSUFFICIENT_EVIDENCE (flight row scrolled off; no flight no. or times)<details><summary>1 screenshot ids</summary><div class='det-body'>s128</div></details></span></div></div>
+  <p class="note">Counts cover the 12-Sep file corpus. The T+45 batch arrived separately as 24
+  chat images: 5 selected, 14 not-earliest-in-band, 5 outside the contracted bands.</p>
+</section>
+
+<!-- 7 methodology -->
+<section>
+  <div class="sechead"><span class="n">07</span><h2>Statistical methodology</h2></div>
+  <div class="flow">
+    <span class="step now">raw observation</span><span class="arr">→</span>
+    <span class="step now">admissibility §A.6</span><span class="arr">→</span>
+    <span class="step now">dedup §D.4</span><span class="arr">→</span>
+    <span class="step now">clean panel</span><span class="arr">→</span>
+    <span class="step next">Jevons §D.2</span><span class="arr">→</span>
+    <span class="step next">Young / Mod. Laspeyres §F</span><span class="arr">→</span>
+    <span class="step next">APIx</span>
+  </div>
+  <p class="lede"><strong>Green steps run on today's data. Amber steps are implemented and
+  invariant-tested but have no input yet</strong>, because every one of them consumes a price
+  <em>relative</em>, and a relative needs two collection waves.</p>
+  <div class="rows">
+    <div class="row"><span class="cnt">§D.2</span><span class="txt"><strong>Jevons elementary
+      aggregation.</strong> Geometric mean of matched price relatives within a cell, computed in
+      logs — the log form is normative, not a numerical convenience. Matches MoSPI's own
+      elementary aggregator for CPI.</span></div>
+    <div class="row"><span class="cnt">§F</span><span class="txt"><strong>Young / Modified
+      Laspeyres.</strong> Weighted aggregation above the elementary level. Route weights come
+      from DGCA city-pair passenger volumes.</span></div>
+    <div class="row"><span class="cnt">§M</span><span class="txt"><strong>APIx-TPD.</strong> A
+      quote-level Time Product Dummy hedonic regression, run as a <em>parallel</em> estimator and
+      never chained into APIx-L. The gap between the two is a deliverable in itself.</span></div>
+    <div class="row"><span class="cnt">§N</span><span class="txt"><strong>Bootstrap intervals.</strong>
+      Computed only where statistically estimable. With one wave there is no sampling
+      distribution over relatives, so none is reported.</span></div>
+  </div>
+</section>
+
+<!-- 8 index engine -->
+<section>
+  <div class="sechead"><span class="n">08</span><h2>Index engine status</h2></div>
+  <div class="tiles">
+    <div class="tile good"><span class="k">engine</span><span class="v">READY</span>
+      <span class="s">implemented + invariant-tested</span></div>
+    <div class="tile bad"><span class="k">APIx-L value</span><span class="v">PENDING</span>
+      <span class="s">needs a 2nd collection wave</span></div>
+    <div class="tile bad"><span class="k">APIx-TPD</span><span class="v">PENDING</span>
+      <span class="s">35 quotes of
+      1,500 required</span></div>
+    <div class="tile hold"><span class="k">unlocks on</span>
+      <span class="v" style="font-size:17px">2026-09-19</span>
+      <span class="s">exactly t−7 from the held wave</span></div>
+  </div>
+  <div class="warn">
+    <strong>The absent index value is a property of the methodology, not a software failure.</strong>
+    <span>spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t). Have 1 collection wave(s); no t-7 counterpart exists. Producing a number anyway would require either changing the
+    frozen formula or treating APW buckets as if they were time-series observations. Both are
+    refused: the APW buckets are seven <em>different products</em> observed at one instant, not one
+    product observed seven times.</span>
+  </div>
+</section>
+
+<!-- 9 benchmark -->
+<section>
+  <div class="sechead"><span class="n">09</span><h2>Official reference — MoSPI</h2></div>
+  <p class="lede">Pulled first-hand from the Dataset Link named in the problem statement:
+  <span class="mono">MoSPI eSankhyiki api.mospi.gov.in/api/cpi/getItemIndex</span>, item <em>Air Fare (normal): Economy Class(adult)</em>.
+  Role: <span class="mono">VALIDATION_BENCHMARK_ONLY</span> —
+  <span class="mono">is_apix_input = False</span>.</p>
+  <div class="tiles"><div class='tile'><span class='k'>base 2010 · per year</span><span class='v'>n/a</span><span class='s'>1 point — no rate computable</span></div><div class='tile'><span class='k'>base 2012 · per year</span><span class='v'>+6.52%</span><span class='s'>103.0 → 206.3 over 11 yrs</span></div></div>
+  <div class="tscroll" style="max-height:330px"><table>
+    <thead><tr><th>period</th><th>base</th><th class="r">index</th><th class="r">y/y</th></tr></thead>
+    <tbody><tr><td class='m'>2014-Dec</td><td class='m'>2010</td><td class='m r'>133.9</td><td class='m r'>&mdash;</td></tr><tr><td class='m'>2014-Dec</td><td class='m'>2012</td><td class='m r'>103.0</td><td class='m r'>&mdash;</td></tr><tr><td class='m'>2015-Dec</td><td class='m'>2012</td><td class='m r'>77.1</td><td class='m r'>-25.15%</td></tr><tr><td class='m'>2016-Dec</td><td class='m'>2012</td><td class='m r'>88.0</td><td class='m r'>14.14%</td></tr><tr><td class='m'>2017-Dec</td><td class='m'>2012</td><td class='m r'>75.7</td><td class='m r'>-13.98%</td></tr><tr><td class='m'>2018-Dec</td><td class='m'>2012</td><td class='m r'>79.5</td><td class='m r'>5.02%</td></tr><tr><td class='m'>2019-Dec</td><td class='m'>2012</td><td class='m r'>71.9</td><td class='m r'>-9.56%</td></tr><tr><td class='m'>2020-Dec</td><td class='m'>2012</td><td class='m r'>164.2</td><td class='m r'>128.37%</td></tr><tr><td class='m'>2021-Dec</td><td class='m'>2012</td><td class='m r'>204.2</td><td class='m r'>24.36%</td></tr><tr><td class='m'>2022-Dec</td><td class='m'>2012</td><td class='m r'>241.7</td><td class='m r'>18.36%</td></tr><tr><td class='m'>2023-Dec</td><td class='m'>2012</td><td class='m r'>196.2</td><td class='m r'>-18.82%</td></tr><tr><td class='m'>2024-Dec</td><td class='m'>2012</td><td class='m r'>203.1</td><td class='m r'>3.52%</td></tr><tr><td class='m'>2025-Dec</td><td class='m'>2012</td><td class='m r'>206.3</td><td class='m r'>1.58%</td></tr></tbody></table></div>
+  <div class="warn">
+    <strong>This reference cannot validate the current panel, and claiming otherwise would be the
+    easiest overstatement in the project.</strong>
+    <span>It is a <em>monthly, All-India index number</em> with no route, no carrier, no flight and
+    no rupee fare. The panel is <em>one day, one route, one carrier, in rupees</em>. No overlapping
+    unit exists, so no comparison is meaningful yet. Growth is computed <strong>within a base year
+    only</strong> — MoSPI publishes Dec 2014 under both base 2010 and base 2012 during the
+    rebasing overlap, and dividing one by the other is a units error rather than a rate of
+    change.</span>
+  </div>
+</section>
+
+<!-- 10 scale -->
+<section>
+  <div class="sechead"><span class="n">10</span><h2>Scale-up architecture</h2></div>
+  <p class="lede">DEL–BOM and IndiGo are <strong>current sample values, not architecture</strong>.
+  The statistics layer never hard-codes a route or carrier; the cell key is
+  <span class="mono">route × carrier × day_of_week × APW × fare_class × channel</span>, and the
+  panel expands along every one of those axes without a schema change.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>axis</th><th>today</th><th>target</th><th>what it unlocks</th></tr></thead>
+    <tbody>
+      <tr><td>collection waves</td><td class="m">1</td><td class="m">30+ daily</td><td>the index itself — weekly Jevons links</td></tr>
+      <tr><td>routes</td><td class="m">1</td><td class="m">8–10 top DGCA pairs</td><td>route weights, §F aggregation</td></tr>
+      <tr><td>carriers</td><td class="m">1</td><td class="m">5 PS-named</td><td>carrier allocation (AMB-9)</td></tr>
+      <tr><td>sources</td><td class="m">1 airline-direct</td><td class="m">+ OTA, + NDC/licensed feed</td><td>source precedence §D.8, independence §B.6</td></tr>
+      <tr><td>APW</td><td class="m">7</td><td class="m">7</td><td class="m">already complete</td></tr>
+      <tr><td>quotes / window</td><td class="m">35</td><td class="m">1,500</td><td>APIx-TPD hedonic estimator</td></tr>
+    </tbody></table></div>
+</section>
+
+<!-- 11 limitations -->
+<section>
+  <div class="sechead"><span class="n">11</span><h2>Limitations — what is not established</h2></div>
+  <div class="tscroll"><table>
+    <thead><tr><th>claim</th><th>status</th><th>what it would take</th></tr></thead>
+    <tbody>
+      <tr><td>APIx-L index value</td><td><span class="pill p-no">NOT COMPUTABLE</span></td><td>a 2nd collection wave exactly 7 days later (§C.1)</td></tr>
+      <tr><td>APIx-TPD estimate</td><td><span class="pill p-no">NOT COMPUTABLE</span></td><td class="m">min_quotes_window = 1,500; panel has 35</td></tr>
+      <tr><td>30-day back-test</td><td><span class="pill p-no">NOT PERFORMED</span></td><td>daily fare history that does not exist and cannot be reconstructed</td></tr>
+      <tr><td>Advance-purchase elasticity</td><td><span class="pill p-no">NOT ESTIMATED</span></td><td>travel-date effects separated from lead time</td></tr>
+      <tr><td>National representativeness</td><td><span class="pill p-no">NO</span></td><td>1 route of 2,186 city pairs; 1 carrier of 5</td></tr>
+      <tr><td>Route weights (§G)</td><td><span class="pill p-hold">NOT EXERCISED</span></td><td>≥2 routes + DGCA city-pair volumes</td></tr>
+      <tr><td>Carrier allocation</td><td><span class="pill p-hold">OPEN — AMB-9</span></td><td>owner ruling; moot at one carrier</td></tr>
+      <tr><td>Coverage denominator</td><td><span class="pill p-hold">OPEN — AMB-8</span></td><td>owner ruling on expected cells</td></tr>
+      <tr><td>Intraday effect (OQ-1)</td><td><span class="pill p-hold">DEFERRED</span></td><td>paired 09:00 / 21:00 runs — not collected</td></tr>
+      <tr><td>Fare 4-way split (§A.4)</td><td><span class="pill p-hold">OPEN — AMB-12</span></td><td>IndiGo renders one aggregated "Taxes &amp; Fees" line at this step</td></tr>
+      <tr><td>Collection → store → analysis pipeline</td><td><span class="pill p-ok">DEMONSTRATED</span></td><td>— on real data, with hashed evidence</td></tr>
+      <tr><td>Advance-purchase measurement</td><td><span class="pill p-ok">DEMONSTRATED</span></td><td>— all 7 frozen APW buckets</td></tr>
+      <tr><td>Index engine</td><td><span class="pill p-ok">IMPLEMENTED + TESTED</span></td><td>— awaiting input, not implementation</td></tr>
+    </tbody></table></div>
+</section>
+
+<!-- 12 roadmap -->
+<section>
+  <div class="sechead"><span class="n">12</span><h2>Validation roadmap</h2></div>
+  <p class="lede">The 30-day back-test the problem statement asks for is <strong>not performed
+  and not simulated</strong>. This is the route to it.</p>
+  <div class="flow">
+    <span class="step next">wave 2 · 2026-09-19</span><span class="arr">→</span>
+    <span class="step">first Jevons relative</span><span class="arr">→</span>
+    <span class="step">30-day rolling panel</span><span class="arr">→</span>
+    <span class="step">APIx daily series</span><span class="arr">→</span>
+    <span class="step">aggregate to monthly</span><span class="arr">→</span>
+    <span class="step">compare vs MoSPI</span>
+  </div>
+  <div class="rows">
+    <div class="row"><span class="cnt">1</span><span class="txt"><strong>Second wave, 2026-09-19.</strong>
+      The same five flights, the same window. Produces the first genuine matched pair and the
+      first real Jevons relative. ~30 minutes of collection.</span></div>
+    <div class="row"><span class="cnt">2</span><span class="txt"><strong>30 consecutive days.</strong>
+      Builds the rolling panel. A missed day costs <em>two</em> weekly links, because the index
+      compares t against t−7.</span></div>
+    <div class="row"><span class="cnt">3</span><span class="txt"><strong>Validation metrics.</strong>
+      MAE, RMSE, correlation, directional agreement, turning-point agreement, bootstrap
+      intervals — each reported with its <em>n</em>, and against the monthly MoSPI reference only
+      once the APIx series is itself aggregated to monthly.</span></div>
+    <div class="row"><span class="cnt">4</span><span class="txt"><strong>Expand the frame.</strong>
+      Routes and carriers along the axes in §10, which is what makes the weights layer and the
+      carrier allocation live questions rather than theoretical ones.</span></div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section>
+  <div class="sechead"><span class="n">13</span><h2>Anticipated questions</h2></div>
+  <div class="faq">
+    <div class="qa"><span class="q">Why don't you show an index value?</span>
+      <span class="a">Because the locked longitudinal specification requires matched observations
+      at t and t−7. One collection wave cannot produce a legitimate time-series relative, and
+      changing the formula to manufacture one is the single thing the frozen methodology
+      forbids.</span></div>
+    <div class="qa"><span class="q">Then what have you actually demonstrated?</span>
+      <span class="a">A complete real-data path: compliant collection, extraction verified against
+      source evidence, canonicalisation, deduplication, admissibility, hash-addressed provenance
+      and an auditable exclusion trail — plus an index engine that is implemented and
+      invariant-tested and is waiting on input, not on code.</span></div>
+    <div class="qa"><span class="q">Why only IndiGo and DEL–BOM?</span>
+      <span class="a">Compliance, not convenience. Of 14 sources audited, IndiGo is the only one
+      carrying an affirmative, quoted permission for the collection mode used. DEL–BOM is India's
+      densest domestic pair. The architecture is route- and carrier-agnostic throughout.</span></div>
+    <div class="qa"><span class="q">Why not just use MoSPI's published airfare index?</span>
+      <span class="a">It is a monthly All-India reference index, not route-level raw fare
+      observations. It is the validation target, and it is exactly what this project exists to
+      complement at higher frequency and finer granularity.</span></div>
+    <div class="qa"><span class="q">Why Saver rather than the cheapest visible fare?</span>
+      <span class="a">The frozen contract standardises the fare family so a hand-baggage-only
+      Lite fare is never pooled with a checked-baggage product. Canonical fare class is derived
+      from entitlements, never from the marketing label.</span></div>
+    <div class="qa"><span class="q">Why exclude later, cheaper flights in the same band?</span>
+      <span class="a">The protocol takes the earliest qualifying flight in each departure band.
+      Selecting by price would make the index measure its own selection rule, and no downstream
+      test could detect or undo that.</span></div>
+    <div class="qa"><span class="q">Why is T+60 so much higher?</span>
+      <span class="a">It is an observed cross-sectional difference, not a causal estimate. Each
+      APW sits on a different travel date, so seasonality and date effects are confounded with
+      lead time. The post-Diwali hypothesis is plausible and untested.</span></div>
+    <div class="qa"><span class="q">What happens after the hackathon?</span>
+      <span class="a">Run the same collection longitudinally from 2026-09-19,
+      expand routes and carriers, bring in DGCA weights, then perform the 30-day validation and
+      begin regular index computation.</span></div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Provenance.</strong> 35 observations across
+  2 run(s) · 6 content-addressed artifacts ·
+  122 screenshots excluded with a recorded reason ·
+  <span class="mono">verify()</span> internally consistent.</p>
+  <p><strong>Versions.</strong> methodology 2.1 ·
+  basket 2026-Q3 ·
+  parser manual-1.0 ·
+  collector manual ·
+  protocol acquisition-protocol-2G ·
+  source precedence spike-single-source-v1</p>
+  <p><strong>Data classes are never mixed.</strong> Every fare on this page is
+  <span class="mono">REAL_MARKET_OBSERVATION</span>; the MoSPI series is an official reference.
+  <span class="mono">synthetic_data_present = False</span>.</p>
+  <p>Generated from <span class="mono">data/collection/collection.sqlite3</span> via
+  <span class="mono">data/panel.json</span> — no figure on this page is typed by hand.</p>
+</footer>
+</div>

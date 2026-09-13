@@ -65,6 +65,13 @@ extend-exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
+[tool.ruff.lint.per-file-ignores]
+# build_dashboard.py is an HTML template that happens to live in a .py file.
+# Its long lines are markup, not code, and breaking them would make the emitted
+# HTML harder to read than the Python. Its "ambiguous" characters -- the arrow,
+# the em dash, the rupee sign -- are the intended output, not typos.
+"tools/analysis/build_dashboard.py" = ["E501", "RUF001"]
+
 [tool.mypy]
 python_version = "3.12"
 warn_unused_configs = true
