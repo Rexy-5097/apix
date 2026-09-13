@@ -47,6 +47,7 @@ from replay_exclusions import (  # noqa: E402
     load_candidates,
     load_panel,
     replay,
+    spell_count,
 )
 
 from apix.schemas.enums import ChangePolicy  # noqa: E402
@@ -353,11 +354,18 @@ def test_the_boundary_states_are_derived_from_the_panel_not_hardcoded(panel: dic
 
 
 def test_the_replay_figures_in_the_boundary_match_the_replay_itself(boundary: dict, result) -> None:
-    """One number, one source. The boundary may not restate the replay differently."""
+    """One number, one source. The boundary may not restate the replay differently.
+
+    The counts are compared through ``spell_count``, the same speller the
+    rendered text uses, so the assertion stays tied to the replay result rather
+    than to a word typed in here.
+    """
     stage = next(s for s in boundary["stages"] if s["key"] == "exclusion_replay")
     joined = " ".join(stage["evidence"])
     assert f"{result.agree}/{result.candidates}" in joined
-    assert f"{result.disagree} disagreements" in joined
+    assert f"{spell_count(result.disagree)} disagreements" in joined
+    assert f"All {result.accepted_rechecked} accepted observations" in joined
+    assert f"{spell_count(len(result.wrongly_rejected))} false rejections" in joined
 
 
 # ── 7. semantic audit — EXERCISED must never read as VALIDATED ──────────────

@@ -112,7 +112,7 @@ FRAME_SOURCE_ID = "indigo-direct"
 ASSUMED_CHANGE_POLICY = ChangePolicy.FEE
 
 
-def _count(n: int) -> str:
+def spell_count(n: int) -> str:
     """Spell a small count in the public statement; "zero" reads harder than "0"."""
     return "zero" if n == 0 else str(n)
 
@@ -224,10 +224,10 @@ class ReplayResult:
             "statement": (
                 f"{self.agree}/{self.candidates} mechanically decidable exclusions "
                 "reproduce the recorded §A.3/§B.2 verdict with "
-                f"{_count(self.disagree)} disagreements; {self.not_testable} record is not "
+                f"{spell_count(self.disagree)} disagreements; {self.not_testable} record is not "
                 "mechanically testable because the required departure-time field is "
                 f"unavailable. All {self.accepted_rechecked} accepted observations pass the "
-                f"corresponding checks with {_count(len(self.wrongly_rejected))} false "
+                f"corresponding checks with {spell_count(len(self.wrongly_rejected))} false "
                 "rejections."
             ),
             "scope_note": (

@@ -1660,9 +1660,9 @@
     "state": "EXERCISED",
     "ran": "replay through filter_admissible / APWBucket.from_lead_time / hour_band",
     "evidence": [
-     "45/46 mechanically decidable exclusions reproduce the recorded \u00a7A.3/\u00a7B.2 verdict with 0 disagreements",
+     "45/46 mechanically decidable exclusions reproduce the recorded \u00a7A.3/\u00a7B.2 verdict with zero disagreements",
      "1 record is not mechanically testable because the required departure-time field is unavailable",
-     "0 false rejections among the 35 accepted observations"
+     "All 35 accepted observations pass the corresponding checks with zero false rejections"
     ],
     "note": "76 further exclusions are collection-contract selection or unreadable-field records. The engine has no verdict on them."
    },
