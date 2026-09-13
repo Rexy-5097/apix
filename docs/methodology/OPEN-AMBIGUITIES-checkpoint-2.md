@@ -426,11 +426,33 @@ AMB-1 §5 rejected Candidate D partly because it *"requires carrier-share weight
 of unproven availability"* — the unavailability was known and never written down
 as an open item.
 
+### The single-carrier case is degenerate — and that is not a resolution
+
+The observed panel (2026-09-12, DEL–BOM) holds **one carrier**. At one carrier
+the allocation is **mathematically degenerate**: under §G.5's sum-to-one
+constraint the sole carrier on a route receives that route's entire weight for
+*any* allocation rule, uniform or measured. No choice is exercised, so the
+unmeasured bias described above — weighting a 60%-share carrier identically to a
+3%-share one — **cannot arise**, because there is no second carrier to mis-weight.
+
+What this does and does not license, stated precisely so the two are never
+confused:
+
+| | |
+|---|---|
+| **Licensed** | Computing and demonstrating the **single-carrier** case. The degeneracy is a derivation, not an assumption. |
+| **NOT licensed** | Any multi-carrier route. That remains **BLOCKED** pending the owner's ruling. |
+| **NOT licensed** | Treating the degeneracy as evidence that uniform allocation is correct in general. It is evidence about *n = 1*, and about nothing else. |
+
+**AMB-9 remains OPEN and BLOCKING.** The degeneracy narrows where the block
+bites; it does not lift it, and it authorises no default.
+
 ### Interim control
 
 `within_route_weights` implements §G.3 exactly and **raises `WeightError`** on a
 route carrying more than one carrier with no declared `carrier_shares`. There is
-no default and no fallback. Two ways to satisfy it, both explicit: declare
+no default and no fallback. **The guard is unchanged by the degeneracy above** —
+it fires on the second carrier regardless of how the first was weighted. Two ways to satisfy it, both explicit: declare
 measured shares recorded in `weight_version`, or declare uniform shares *as a
 stated v1 choice with a published sensitivity band* — the pattern §G.4 already
 uses for `alpha` under OQ-7. **That is the owner's ruling to write down.**

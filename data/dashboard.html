@@ -147,8 +147,15 @@ footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:va
     <span>DESCRIPTIVE APW PROFILE - NOT AN INDEX. Each bucket is a separate cross-section on a different travel date. Differences between buckets are not temporal price movements and are not inflation.</span>
   </div>
   <p class="lede">Geometric mean of the five band fares at each advance-purchase distance.
-  The geometric mean is spec §D.2's elementary aggregator, used here so the arithmetic matches
-  the index that will later run on these same observations.</p>
+  These are computed with the <strong>same geometric-mean form §D.2 uses</strong>
+  (<span class="mono">exp(mean(ln p))</span>), so the arithmetic is the same family the index will
+  use on these observations later. <strong>They are not §D.2 relatives, and the index engine did
+  not produce them:</strong> §D.2 aggregates <em>price relatives</em> across a matched pair of
+  collection dates, which needs two waves. These are levels from a single wave, summarised by
+  <span class="mono">tools/analysis/build_panel_json.py</span>. No real observation has yet
+  entered <span class="mono">src/apix/statistics/</span> — see the
+  <a href="https://github.com/Rexy-5097/apix/blob/main/docs/capability-matrix.md">capability
+  matrix</a>.</p>
   <div class="chartbox"><svg viewBox="0 0 880 330" role="img"
      aria-label="Observed geometric-mean Saver fare by advance-purchase window">
   <g stroke="var(--rule)" stroke-width="1"><line x1="84" y1="282.0" x2="852" y2="282.0"/><line x1="84" y1="220.0" x2="852" y2="220.0"/><line x1="84" y1="158.0" x2="852" y2="158.0"/><line x1="84" y1="96.0" x2="852" y2="96.0"/><line x1="84" y1="34.0" x2="852" y2="34.0"/></g>

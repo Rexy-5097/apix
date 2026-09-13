@@ -389,6 +389,33 @@ def test_tpd_threshold_is_not_met_and_is_not_lowered(panel: dict) -> None:
 # ── The APW profile must never read as an index ──────────────────────────────
 
 
+def test_panel_geomean_matches_the_spec_d2_log_form(panel: dict, rows: list[dict]) -> None:
+    """The dashboard's geomeans must agree with the engine's aggregator form.
+
+    `build_panel_json.geomean` is a separate implementation from
+    `apix.statistics.elementary.jevons`, because a D.2 relative needs a matched
+    pair and one wave has none. That separation is legitimate, but it means
+    nothing would catch the two drifting into different arithmetic. This asserts
+    the agreement on the real panel instead of trusting a comment.
+
+    The bridge: the geometric mean of levels equals `exp(mean(ln p))`, and
+    `jevons_relative` is `exp(mean(ln p_t - ln p_t7))`. Feeding it
+    `ln(p) - ln(1)` makes the two identical by construction, so any change to
+    the engine's reduction shows up here.
+    """
+    import math
+
+    from apix.statistics.elementary.jevons import jevons_relative
+
+    for entry in panel["apw_profile"]:
+        fares = [r["total"] for r in rows if r["apw"] == entry["apw"]]
+        assert len(fares) == entry["n"]
+        via_engine = jevons_relative([math.log(f) - math.log(1.0) for f in sorted(fares)])
+        assert round(via_engine, 2) == entry["geomean"], (
+            f"T+{entry['apw']}: dashboard {entry['geomean']} vs engine form {via_engine}"
+        )
+
+
 def test_apw_profile_is_declared_descriptive_not_an_index(panel: dict) -> None:
     assert panel["apw_profile_class"] == "DESCRIPTIVE_CROSS_SECTION"
     d = panel["apw_profile_disclaimer"].upper()

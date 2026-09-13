@@ -1,5 +1,15 @@
 # Engineering Principles
 
+> ### ⚠️ This file documents **AgentOS**, not APIx
+>
+> [AgentOS](AGENTOS.md) is the vendored development/review framework this repository is
+> *built with*. It is **not part of the APIx statistical product** and produces none of
+> APIx's published numbers. Its version numbers, release notes and readiness statements
+> describe **AgentOS**, never APIx.
+>
+> **For APIx — the airfare price index — see [README.md](README.md) and
+> [docs/capability-matrix.md](docs/capability-matrix.md).**
+
 > **Layer:** Infrastructure | **Version:** 0.1.0 | **Status:** Authoritative
 > This document is the philosophical foundation of AgentOS.
 > All agents, workflows, standards, and checklists derive from these principles.
