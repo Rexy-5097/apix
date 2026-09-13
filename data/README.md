@@ -24,7 +24,10 @@ dataset of the panel.
 
 It holds the **35 real observations** collected 2026-09-12 on DEL–BOM / IndiGo,
 plus everything derived from them: the descriptive APW profile, the band profile,
-quality counts, provenance grading, exclusions and the index-feasibility status.
+quality counts, provenance grading, exclusions, the index-feasibility status, the
+**exclusion replay** (`replay`) and the **real-data execution boundary**
+(`execution_boundary`). The last two are computed by running the frozen
+elementary functions over this same panel, read-only, at generation time.
 
 `data_class: REAL_MARKET_OBSERVATION` · `synthetic_data_present: false`
 
@@ -37,7 +40,10 @@ and could therefore drift from it silently.
 Both are rendered **from `panel.json`**; `panel_report.txt` additionally
 recomputes from the store, so the two act as a cross-check on each other. Neither
 is an independent source. Do not cite a number from them without tracing it to
-`panel.json` — see [`docs/capability-matrix.md`](../docs/capability-matrix.md).
+`panel.json` — see [`docs/capability-matrix.md`](../docs/capability-matrix.md) for how
+far real data travels through the frozen code, and
+[`docs/claim-evidence-matrix.md`](../docs/claim-evidence-matrix.md) for what backs each
+figure.
 
 **No APIx market index value appears in either.** The index is `PENDING`:
 methodology §C.1 requires a matched `t / t−7` pair and only one collection wave

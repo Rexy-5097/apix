@@ -186,7 +186,10 @@ techniques.
 
 **Authoritative capability answer: [`docs/capability-matrix.md`](docs/capability-matrix.md).**
 Read it before claiming any component works. It distinguishes real-data
-validated from fixture-only, specified-only and blocked.
+**exercised** from fixture-only, specified-only and blocked — and "exercised"
+means the frozen code path ran on the real panel, never that the statistical
+property is validated. For claim-by-claim evidence see
+[`docs/claim-evidence-matrix.md`](docs/claim-evidence-matrix.md).
 
 
 Hackathon prototype, 15 September 2026. See `context/state.md`.

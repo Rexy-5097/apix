@@ -99,8 +99,12 @@ td.r{text-align:right}
 .row{background:var(--card);padding:11px 14px;display:flex;gap:13px;align-items:flex-start}
 .row .cnt{font-family:var(--mono);font-size:15px;font-weight:600;min-width:34px;text-align:right;color:var(--amber)}
 .row .txt{font-size:13.5px}
-.note{font-size:13px;color:var(--ink-2);display:flex;gap:8px;align-items:flex-start}
-.note::before{content:"\\2192";color:var(--amber);font-family:var(--mono);flex-shrink:0}
+/* Deliberately NOT a flex container. `display:flex` makes every inline <strong>,
+   <em> and text node inside a note its own flex item, which shreds the sentence
+   into columns — visible on the T+45 provenance note since #13. The arrow is
+   absolutely positioned instead, so the text flows as prose. */
+.note{font-size:13px;color:var(--ink-2);position:relative;padding-left:17px}
+.note::before{content:"\\2192";color:var(--amber);font-family:var(--mono);position:absolute;left:0;top:0}
 .warn{border-left:3px solid var(--no);background:var(--no-soft);padding:13px 15px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
 .warn strong{color:var(--no)}
 details{background:var(--card);border:1px solid var(--rule)}
@@ -113,6 +117,23 @@ details[open] summary{border-bottom:1px solid var(--rule)}
 .flow .step.now{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
 .flow .step.next{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
 .flow .arr{color:var(--ink-3)}
+.bnd{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.bs{background:var(--card);padding:12px 15px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 16px}
+.bs .nm{grid-column:1;grid-row:1;font-weight:600;font-size:13.5px}
+.bs .sp{grid-column:1;grid-row:2;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.06em;word-break:break-word}
+.bs .stt{grid-column:2;grid-row:1/span 4;align-self:start;justify-self:end;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;padding:3px 9px;border:1px solid var(--rule-2);white-space:nowrap}
+.bs .stt.ex{border-color:var(--hold);background:var(--hold-soft);color:var(--hold);font-weight:600}
+.bs .stt.dg{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
+.bs .stt.pd{border-color:var(--rule-2);background:var(--sunk);color:var(--ink-3)}
+.bs .stt.bl{border-color:var(--no);background:var(--no-soft);color:var(--no);font-weight:600}
+.bs ul{grid-column:1;grid-row:3;margin:5px 0 0;padding-left:16px;font-size:12.5px;color:var(--ink-2)}
+.bs ul li{margin-bottom:2px}
+.bs .bn{grid-column:1;grid-row:4;margin-top:5px;font-size:12.5px;color:var(--ink-3)}
+.bs.stop{border-left:3px solid var(--amber)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.lg{background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.lg .lk{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;font-weight:600}
+.lg .lv{font-size:12.5px;color:var(--ink-2)}
 .faq{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule)}
 .qa{background:var(--card);padding:13px 15px;display:flex;flex-direction:column;gap:5px}
 .qa .q{font-weight:600;font-size:13.5px}
@@ -128,6 +149,37 @@ def esc(s: object) -> str:
 
 def rupee(v: float) -> str:
     return f"{v:,.0f}"
+
+
+#: State -> CSS class. EXERCISED is deliberately NOT the success colour: it means
+#: the code ran on real data, which is a weaker statement than "validated".
+BOUNDARY_CLASS = {"EXERCISED": "ex", "DEGENERATE": "dg", "PENDING": "pd", "BLOCKED": "bl"}
+
+
+def boundary_rows(boundary: dict) -> str:
+    """Render the execution boundary. Every state and figure is read, not written."""
+    out = []
+    for stage in boundary["stages"]:
+        cls = BOUNDARY_CLASS[stage["state"]]
+        # The first stage real data does not reach is where the pipeline stops.
+        stop = " stop" if stage["key"] == "matched_set" else ""
+        bullets = "".join(f"<li>{esc(e)}</li>" for e in stage["evidence"])
+        out.append(
+            f'<div class="bs{stop}"><span class="nm">{esc(stage["name"])}</span>'
+            f'<span class="stt {cls}">{stage["state"]}</span>'
+            f'<span class="sp">spec {esc(stage["spec"])}'
+            + (f" &middot; {esc(stage['ran'])}" if stage["ran"] else "")
+            + f"</span><ul>{bullets}</ul>"
+            f'<span class="bn">{esc(stage["note"])}</span></div>'
+        )
+    return "".join(out)
+
+
+def boundary_legend(states: dict) -> str:
+    return "".join(
+        f'<div class="lg"><span class="lk">{esc(k)}</span><span class="lv">{esc(v)}</span></div>'
+        for k, v in states.items()
+    )
 
 
 def apw_chart(profile: list[dict]) -> str:
@@ -191,6 +243,8 @@ def build(p: dict) -> str:
     ev = q["evidence_counts"]
     run_versions = p["runs"][0] if p["runs"] else {}
     disp = p["dispersion"]
+    bnd = p["execution_boundary"]
+    widest_bucket = next(a for a in prof if a["apw"] == disp["widest_apw"])
     # JSON object keys are strings; restore the integer APW ordering.
     weekday_by_apw = {
         int(k): v
@@ -533,9 +587,27 @@ def build(p: dict) -> str:
   chat images: 5 selected, 14 not-earliest-in-band, 5 outside the contracted bands.</p>
 </section>
 
+<!-- real-data execution boundary -->
+<section>
+  <div class="sechead"><span class="n">09</span><h2>Real-data execution boundary</h2></div>
+  <p class="lede">How far the <strong>real</strong> observations actually travel through the
+  frozen code — reconstructed from this contract and run through the elementary layer, stage by
+  stage. <strong>{esc(bnd["claim"])}</strong></p>
+  <div class="legend">{boundary_legend(bnd["states"])}</div>
+  <div class="bnd">{boundary_rows(bnd)}</div>
+  <p class="note">{esc(bnd["caveat"])}</p>
+  <p class="note">Within-<em>band</em> dispersion (above) is degenerate at n=1 and is
+  <strong>not</strong> the {disp["widest_spread_pct"]}% figure in section 03. That one is a
+  within-<em>bucket</em>, <strong>cross-band</strong> spread across
+  {widest_bucket["n"]} flights on a single travel date.
+  Two different quantities; neither substitutes for the other.</p>
+  <p class="note">Reconstructed from <span class="mono">{esc(bnd["reconstructed_from"])}</span>.
+  {esc(bnd["reconstruction_check"])}.</p>
+</section>
+
 <!-- 7 methodology -->
 <section>
-  <div class="sechead"><span class="n">09</span><h2>Statistical methodology</h2></div>
+  <div class="sechead"><span class="n">10</span><h2>Statistical methodology</h2></div>
   <div class="flow">
     <span class="step now">raw observation</span><span class="arr">→</span>
     <span class="step now">admissibility §A.6</span><span class="arr">→</span>
@@ -547,7 +619,10 @@ def build(p: dict) -> str:
   </div>
   <p class="lede"><strong>Green steps run on today's data. Amber steps are implemented and
   invariant-tested but have no input yet</strong>, because every one of them consumes a price
-  <em>relative</em>, and a relative needs two collection waves.</p>
+  <em>relative</em>, and a relative needs two collection waves. <strong>Green here means
+  &ldquo;runs on today's data&rdquo;, which is the same thing section 09 calls EXERCISED — not
+  &ldquo;validated&rdquo;.</strong> Three of those stages are degenerate on a single wave; section
+  09 names which.</p>
   <div class="rows">
     <div class="row"><span class="cnt">§D.2</span><span class="txt"><strong>Jevons elementary
       aggregation.</strong> Geometric mean of matched price relatives within a cell, computed in
@@ -577,7 +652,7 @@ def build(p: dict) -> str:
 
 <!-- 8 index engine -->
 <section>
-  <div class="sechead"><span class="n">10</span><h2>Index engine status</h2></div>
+  <div class="sechead"><span class="n">11</span><h2>Index engine status</h2></div>
   <div class="tiles">
     <div class="tile good"><span class="k">APIx-L engine</span><span class="v">READY</span>
       <span class="s">implemented + invariant-tested</span></div>
@@ -604,7 +679,7 @@ def build(p: dict) -> str:
 
 <!-- 9 benchmark -->
 <section>
-  <div class="sechead"><span class="n">11</span><h2>Official reference — MoSPI</h2></div>
+  <div class="sechead"><span class="n">12</span><h2>Official reference — MoSPI</h2></div>
   <p class="lede">Pulled first-hand from the Dataset Link named in the problem statement:
   <span class="mono">{esc(bench["source"])}</span>, item <em>{esc(bench["item"])}</em>.
   Role: <span class="mono">{esc(bench["role"])}</span> —
@@ -627,7 +702,7 @@ def build(p: dict) -> str:
 
 <!-- 10 scale -->
 <section>
-  <div class="sechead"><span class="n">12</span><h2>Scale-up architecture</h2></div>
+  <div class="sechead"><span class="n">13</span><h2>Scale-up architecture</h2></div>
   <p class="lede">DEL–BOM and IndiGo are <strong>current sample values, not architecture</strong>.
   The statistics layer never hard-codes a route or carrier; the cell key is
   <span class="mono">route × carrier × day_of_week × APW × fare_class × channel</span>, and the
@@ -646,7 +721,7 @@ def build(p: dict) -> str:
 
 <!-- 11 limitations -->
 <section>
-  <div class="sechead"><span class="n">13</span><h2>Limitations — what is not established</h2></div>
+  <div class="sechead"><span class="n">14</span><h2>Limitations — what is not established</h2></div>
   <div class="tscroll"><table>
     <thead><tr><th>claim</th><th>status</th><th>what it would take</th></tr></thead>
     <tbody>
@@ -668,7 +743,7 @@ def build(p: dict) -> str:
 
 <!-- 12 roadmap -->
 <section>
-  <div class="sechead"><span class="n">14</span><h2>Validation roadmap</h2></div>
+  <div class="sechead"><span class="n">15</span><h2>Validation roadmap</h2></div>
   <p class="lede">The 30-day back-test the problem statement asks for is <strong>not performed
   and not simulated</strong>. This is the route to it.</p>
   <div class="flow">
@@ -698,7 +773,7 @@ def build(p: dict) -> str:
 
 <!-- FAQ -->
 <section>
-  <div class="sechead"><span class="n">15</span><h2>Anticipated questions</h2></div>
+  <div class="sechead"><span class="n">16</span><h2>Anticipated questions</h2></div>
   <div class="faq">
     <div class="qa"><span class="q">Why don't you show an index value?</span>
       <span class="a">Because the locked longitudinal specification requires matched observations

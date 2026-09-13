@@ -75,8 +75,16 @@ screen is the same discipline that keeps them apart in the repository.
 >
 > Every fare reconciles: base plus tax equals total, 35 of 35, in exact decimal.
 > 122 screenshots that did not become observations each carry a reason and an
-> id. Nine quotes fell outside our declared collection window — stored and
-> flagged, never discarded.
+> id — and for the mechanical ones that is no longer our word for it. We replay
+> them through the frozen §A.3 and §B.2 code: **45 of 46 mechanically decidable
+> exclusions reproduce the recorded verdict, zero disagreements**, one record has
+> no readable departure time so no rule can decide it, and the same checks admit
+> all 35 accepted observations with **zero false rejections**. The other 76 are
+> selection-rule or unreadable-field records — the engine has no verdict on those
+> and we don't claim one.
+>
+> Nine quotes fell outside our declared collection window — stored and flagged,
+> never discarded.
 >
 > Provenance is not uniform: 30 observations are bound to SHA-256 hashed
 > screenshots. Five — the T+45 bucket — arrived as chat images, so no bytes

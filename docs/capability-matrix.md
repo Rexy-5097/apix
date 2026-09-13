@@ -11,7 +11,7 @@ status levels are used, and they are **not** interchangeable:
 
 | Level | Means |
 |---|---|
-| **REAL-DATA VALIDATED** | Real collected market observations have passed through this code |
+| **REAL-DATA EXERCISED** | Real collected market observations have passed through this code. **Passing through is not validation** — see the execution boundary below |
 | **FIXTURE-ONLY** | Implemented and invariant-tested, but **only ever executed on synthetic test fixtures** |
 | **SPECIFIED-ONLY** | The methodology defines it. **No implementation exists.** |
 | **BLOCKED** | Implementation deliberately refuses, pending a decision that cannot be made in code |
@@ -20,22 +20,32 @@ status levels are used, and they are **not** interchangeable:
 
 ## The sentence that matters most
 
-> **Real observations currently do NOT enter `src/apix/statistics/`.**
+> **Real observations reach the elementary layer and stop at the longitudinal
+> step.**
 
-The 35 collected observations reach `apix.ingestion.store` and
-`apix.schemas`, and are then read by the analysis tools in `tools/analysis/`,
-which compute **descriptive** statistics. They have never been passed to the
-matching, Jevons, chaining, aggregation or publication code.
+Until 2026-09-13 this section said real observations did not enter
+`src/apix/statistics/` at all. That is no longer true, and the correction is
+narrow enough to be worth stating exactly:
 
-This is not an oversight. Spec **§C.1** is locked at
-`I(c,t) = I(c,t−7) · J(c,t)`, so the elementary layer cannot even be invoked
-without two collection waves seven days apart. One wave exists (2026-09-12). The
-second is planned for **2026-09-19**, and that is the date the statistics layer
-first sees real data.
+- **What now runs on the 35 real observations.** `filter_admissible` (§A.6),
+  `hour_band` (§B.2.2), `cell_key_for` / `parent_key_for` / `item_key_for`,
+  `duplicate_key` / `deduplicate` (§D.4) and `SourcePrecedence.rank` (§D.8.1).
+- **What still does not.** `build_matched_set`, `compute_jevons`,
+  `advance_cell`, the aggregation layer and `publish`. §C.1 is locked at
+  `I(c,t) = I(c,t−7) · J(c,t)`, and one collection wave gives zero matched
+  pairs.
+- **How they run.** `tools/analysis/execution_boundary.py` reconstructs the
+  canonical observations **from `data/panel.json`** and calls the frozen
+  functions read-only. The *production* loader,
+  `tools/collection/load_manual.py`, still imports nothing from
+  `apix.statistics` — so this is a harness, not a pipeline change.
+- **What it does not license.** Three of those stages are **DEGENERATE**: band
+  price and within-band dispersion at n=1, and source precedence at one source.
+  They execute and return defined answers that establish nothing.
 
-Verifiable: `tools/analysis/build_panel_json.py` imports exactly
-`apix.ingestion.store` and `apix.schemas.enums` — nothing from
-`apix.statistics`.
+The authority on this question is
+[the execution boundary](#real-data-execution-boundary), which is generated
+from the contract rather than written here.
 
 **"The engine is complete" means every algorithm exists and passes its
 invariant tests. It does NOT mean the production pipeline can publish a real
@@ -46,23 +56,26 @@ for one another.
 
 ## Matrix
 
-| Component | Specified | Implemented | Tested | Real-data validated | **Status** |
+| Component | Specified | Implemented | Tested | Real data reaches it | **Status** |
 |---|:---:|:---:|:---:|:---:|---|
-| Canonical observation model | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| Ingestion store (SQLite) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| Collection bridge (manual loader) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| Evidence / provenance grading | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| APW bucket assignment (§A.3) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| Departure-band assignment (§B.2) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| Fare-class derivation (§B.4) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| Panel generation → `panel.json` | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| Dashboard + text report renderers | ✅ | ✅ | ✅ | ✅ | **REAL-DATA VALIDATED** |
-| MoSPI benchmark ingestion | ✅ | ✅ | ✅ | ✅ *(reference only)* | **REAL-DATA VALIDATED** |
-| Matching / tier ladder (§D.1) | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
+| Canonical observation model | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Ingestion store (SQLite) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Collection bridge (manual loader) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Evidence / provenance grading | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| APW bucket assignment (§A.3) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Departure-band assignment (§B.2) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Band price / within-band dispersion (§B.2.3) | ✅ | ✅ | ✅ | ⚠️ | **REAL-DATA EXERCISED — DEGENERATE** *(n=1 in every cell-band group)* |
+| Fare-class derivation (§B.4) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Panel generation → `panel.json` | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Dashboard + text report renderers | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| MoSPI benchmark ingestion | ✅ | ✅ | ✅ | ✅ *(reference only)* | **REAL-DATA EXERCISED** |
+| Cell / parent / item keys (§B.2.1) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Admissibility filter (§A.6) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Matched set / tier ladder (§D.1) | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
 | Jevons elementary relative (§D.2) | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
-| Deduplication (§D.4) | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
+| Deduplication (§D.4) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** *(0 duplicates observed; tie-break not exercised)* |
 | Outlier / MAD rule | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
-| Source precedence (§D.8) | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
+| Source precedence (§D.8) | ✅ | ✅ | ✅ | ⚠️ | **REAL-DATA EXERCISED — DEGENERATE** *(`rank` only; 1 source, `select` unreachable)* |
 | Advance-cell / weekly chain (§E) | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
 | Carry / freshness / suppression | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
 | Parent fallback (§E.4, §E.6) | ✅ | ✅ | ✅ | ❌ | **FIXTURE-ONLY** |
@@ -91,33 +104,51 @@ that stops being true without the documentation being updated.
 
 ---
 
-## Pipeline trace — where real data stops
+## Real-data execution boundary
+
+Generated, not written here: `data/panel.json` → `execution_boundary`, rendered
+as section 09 of [`data/dashboard.html`](../data/dashboard.html) and printed by
+`python tools/analysis/execution_boundary.py`. Regenerate it rather than editing
+the states below.
 
 ```
-  canonical observations   ✅ REAL      35 observations, 2026-09-12
+  REAL MARKET OBSERVATIONS   35, collected 2026-09-12
            ↓
-  ingestion store          ✅ REAL      SQLite, 6 SHA-256 artifacts
+  canonical observation            EXERCISED    §A.2, §B.4
            ↓
-  panel generation         ✅ REAL      data/panel.json
+  admissibility                    EXERCISED    §A.3, §A.6
            ↓
-─────────────────── real data stops here ────────────────────
+  hour / band derivation           EXERCISED    §B.2.2
            ↓
-  matching (§D.1)          ⬜ fixture   needs a t−7 wave
+  cell / parent / item keys        EXERCISED    §B.2.1, §E.4
            ↓
-  Jevons relative (§D.2)   ⬜ fixture   needs a matched set
+  exclusion replay                 EXERCISED    45/46 decidable, 1 not testable
            ↓
-  advance-cell (§E.2)      ⬜ fixture   needs a relative
+  band price                       DEGENERATE   n=1 in every cell-band group
+  within-band dispersion           DEGENERATE   n=1 — returns 0.0 by definition
+  source precedence                DEGENERATE   1 source; select() unreachable
+  deduplication                    EXERCISED    0 duplicates observed
            ↓
-  weekly chain (§C.1)      ⬜ fixture   LOCKED: I(c,t) = I(c,t−7)·J(c,t)
+──────────────── real data stops here: §C.1 needs a t−7 wave ────────────────
            ↓
-  route aggregation        ⬜ fixture   AMB-9 beyond one carrier
+  matched t / t−7                  PENDING      0 matched pairs from 1 wave
            ↓
-  Young/Mod. Laspeyres     ⬜ fixture
+  Jevons relative (§D.2)           PENDING
            ↓
-  publication guard        ⬜ fixture   AMB-8: expected_cells undefined
+  advance-cell / weekly chain      PENDING      LOCKED: I(c,t) = I(c,t−7)·J(c,t)
            ↓
-  PUBLISHED INDEX          ❌ NONE      no APIx market index exists
+  higher aggregation               PENDING      AMB-9 beyond one carrier
+           ↓
+  publication                      BLOCKED      AMB-8: expected_cells undefined
+           ↓
+  PUBLISHED INDEX                  NONE         no APIx market index exists
 ```
+
+**EXERCISED** — the frozen code path ran against the real panel. It does **not**
+follow that the statistical property is meaningfully validated.
+**DEGENERATE** — the code executes, but the single-wave / single-source panel
+supplies too little variation for the property to be established.
+**PENDING** — the frozen methodology requires evidence that does not exist yet.
 
 | Stage | Implementation | Test |
 |---|---|---|
@@ -125,6 +156,8 @@ that stops being true without the documentation being updated.
 | Store | `src/apix/ingestion/store.py` | `tests/test_collection_store.py` |
 | Loader | `tools/collection/load_manual.py` | `tests/test_manual_loader.py` |
 | Panel | `tools/analysis/build_panel_json.py` | `tests/test_observed_panel.py` |
+| Exclusion replay | `tools/analysis/replay_exclusions.py` | `tests/test_execution_boundary.py` |
+| Execution boundary | `tools/analysis/execution_boundary.py` | `tests/test_execution_boundary.py` |
 | Matching | `src/apix/statistics/elementary/matching.py` | `tests/test_pipeline_14_day.py` |
 | Jevons | `src/apix/statistics/elementary/jevons.py` | `tests/test_golden_values.py` |
 | Chaining | `src/apix/statistics/index/chaining.py` | `tests/test_pipeline_14_day.py` |
@@ -183,6 +216,7 @@ See [`OPEN-AMBIGUITIES-checkpoint-2.md`](methodology/OPEN-AMBIGUITIES-checkpoint
 | Real observations | 35 · 7/7 frozen APW buckets · 5/5 bands · 35/35 reconciled |
 | Provenance | 30 `PRIMARY_HASHED` + 5 `SECONDARY_CHAT_IMAGE` |
 | Exclusions | 122, each with a reason and an id |
+| Exclusion replay | 45/46 mechanically decidable exclusions reproduce the recorded §A.3/§B.2 verdict · 0 disagreements · 0 false rejections among the 35 accepted |
 | Statistical coverage | **NOT ESTABLISHED** (AMB-8) |
 | Published index | **NONE** |
 
