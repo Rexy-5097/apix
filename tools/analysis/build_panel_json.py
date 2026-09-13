@@ -26,6 +26,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from execution_boundary import build_boundary  # noqa: E402
+from replay_exclusions import replay  # noqa: E402
 
 from apix.ingestion.store import open_store  # noqa: E402
 from apix.schemas.enums import APWBucket  # noqa: E402
@@ -378,6 +382,10 @@ def build() -> dict:
 
 def main() -> None:
     panel = build()
+    # Both are derived from the panel that was just built, so the contract can
+    # never carry a boundary describing a different dataset. Neither writes.
+    panel["replay"] = replay(panel).as_dict()
+    panel["execution_boundary"] = build_boundary(panel)
     OUT.write_text(json.dumps(panel, indent=1), encoding="utf-8")
     q = panel["quality"]
     i = panel["index_status"]
@@ -390,6 +398,9 @@ def main() -> None:
     print(f"reconciled        {q['reconciled']}/{q['decomposed']}")
     print(f"evidence          {q['evidence_counts']}")
     print(f"index computable  {i['apix_l_computable']}  (waves={i['collection_waves']})")
+    r = panel["replay"]
+    print(f"exclusion replay  {r['agree']}/{r['candidates']} agree, {r['disagree']} disagree")
+    print(f"exec boundary     {panel['execution_boundary']['state_counts']}")
     print(f"written           {OUT.relative_to(ROOT)}")
 
 

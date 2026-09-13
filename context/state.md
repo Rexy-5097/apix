@@ -133,6 +133,8 @@ Eight open empirical questions are tracked in `docs/methodology/apix_formula_spe
 2. **Second collection wave, 19 September** — slazyverse. Identical frame: DEL–BOM,
    IndiGo, Saver, bands 2–6, same window. **Additionally capture the
    admissible-flight count per band**, which the first wave did not record.
+   Executable procedure, including the frame conditions each matched pair
+   depends on: [`docs/collection-2026-09-19.md`](../docs/collection-2026-09-19.md).
 3. Load wave 2 through the existing manual bridge, build the matched set for
    12 Sep ↔ 19 Sep, and compute the **first genuine Jevons relative** — Rexy-5097.
 4. Owner rulings on **AMB-8** and **AMB-9** before any production pipeline or any

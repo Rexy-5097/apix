@@ -23,11 +23,13 @@ Division.
 > | Uncertainty / CI | **NOT implemented** — no interval is reported anywhere |
 > | National representativeness | **not established** — 1 route, 1 carrier |
 >
-> **Real observations do not yet enter `src/apix/statistics/`.** They reach the
-> ingestion store and the descriptive analysis tools; the engine is exercised on
-> synthetic fixtures only, because §C.1 needs two collection waves before the
-> elementary layer can run at all. Component-by-component detail:
-> **[docs/capability-matrix.md](docs/capability-matrix.md)**.
+> **Real market observations pass through APIx's admissibility, banding, key
+> construction, deduplication and source-precedence stages. The pipeline stops at
+> the longitudinal Jevons step because the required t−7 observation does not yet
+> exist.** Three of those stages are **degenerate** on a single-wave, single-source
+> panel, and *exercised* is not *validated*: stage-by-stage detail in
+> **[docs/capability-matrix.md](docs/capability-matrix.md)**, claim-by-claim in
+> **[docs/claim-evidence-matrix.md](docs/claim-evidence-matrix.md)**.
 
 ---
 
@@ -205,6 +207,8 @@ One source of truth per class of information. Everything else links here.
 | Information | Authoritative file |
 |---|---|
 | **What actually works today** | [docs/capability-matrix.md](docs/capability-matrix.md) |
+| **Why any published figure should be believed** | [docs/claim-evidence-matrix.md](docs/claim-evidence-matrix.md) |
+| The second collection wave | [docs/collection-2026-09-19.md](docs/collection-2026-09-19.md) |
 | Methodology (frozen v2.1) | [docs/methodology/apix_formula_spec_v2_1.md](docs/methodology/apix_formula_spec_v2_1.md) |
 | Open ambiguities (AMB-8, AMB-9) | [docs/methodology/OPEN-AMBIGUITIES-checkpoint-2.md](docs/methodology/OPEN-AMBIGUITIES-checkpoint-2.md) |
 | Current project state | [context/state.md](context/state.md) |
@@ -277,7 +281,9 @@ discussion.
 
 | Document | What it covers |
 |---|---|
-| **[docs/capability-matrix.md](docs/capability-matrix.md)** | **What actually works today — real-data validated vs fixture-only vs specified-only vs blocked** |
+| **[docs/capability-matrix.md](docs/capability-matrix.md)** | **What actually works today — real-data exercised vs fixture-only vs specified-only vs blocked** |
+| **[docs/claim-evidence-matrix.md](docs/claim-evidence-matrix.md)** | **Every material claim → its evidence, calculation, test, status and limitation** |
+| [docs/collection-2026-09-19.md](docs/collection-2026-09-19.md) | The second wave: what must hold for a first matched pair to exist |
 | [docs/demo-script.md](docs/demo-script.md) | The 4-minute hackathon demo |
 | [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md) | Project instructions for AI coding agents |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
