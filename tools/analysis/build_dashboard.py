@@ -291,14 +291,36 @@ def build(p: dict) -> str:
     apws = [a["apw"] for a in prof]
     band_ids = [b["band"] for b in bands]
     widest = next(a for a in prof if a["apw"] == disp["widest_apw"])
-    audited = p["exclusions_total"] + q["valid_observations"]
+    # The audit universe, derived two independent ways and asserted to agree.
+    # The file corpus is what the collector photographed on the collection date;
+    # the T+45 batch arrived separately as chat images and is exactly the
+    # SECONDARY_CHAT_IMAGE group. So the exclusion accounting and the provenance
+    # split are the same accounting seen from two sides.
+    file_corpus = p["exclusions_total"] + ev["PRIMARY_HASHED"]
+    chat_batch = ev["SECONDARY_CHAT_IMAGE"]
+    # Which buckets the weaker-provenance batch actually belongs to, derived —
+    # it is not simply the last bucket, and guessing produced a wrong label once.
+    chat_buckets = sorted(
+        {o["apw"] for o in p["observations"] if o["evidence"] == "SECONDARY_CHAT_IMAGE"}
+    )
+    chat_label = ", ".join(f"T+{a}" for a in chat_buckets)
+    audited = file_corpus + chat_batch
+    if audited != p["exclusions_total"] + q["valid_observations"]:
+        raise ValueError(
+            f"the audit ladder no longer closes: {file_corpus} + {chat_batch} != "
+            f"{p['exclusions_total']} + {q['valid_observations']}"
+        )
     libs = "".join(f'<script src="{u}" defer></script>' for u in LIBS)
 
     return f"""<title>APIx — Airfare Price Index Engine</title>
-<meta name="description" content="APIx: a quality-adjusted airfare price index
-engine for India. {q["valid_observations"]} real market observations, seven
-advance-purchase buckets, and no published index — because the frozen
+<meta name="description" content="APIx: an auditable airfare measurement engine
+built for CPI augmentation. {q["valid_observations"]} real market observations,
+seven advance-purchase buckets, and no published index — because the frozen
 methodology requires evidence that does not exist yet.">
+<meta charset="utf-8">
+<!-- Without this a phone lays the page out at 980px and zooms out, so every
+     responsive rule below the tablet breakpoint never fires on real hardware. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -318,9 +340,9 @@ methodology requires evidence that does not exist yet.">
   <div class="wrap">
     <p class="eyebrow">MoSPI problem statement 26056</p>
     <h1>{lines("Airfare.", "Measured", "correctly.")}</h1>
-    <p class="sub rv" data-d="2">A quality-adjusted airfare price index for
-    India — and the auditable infrastructure that decides when it is allowed
-    to publish.</p>
+    <p class="sub rv" data-d="2">An auditable airfare measurement engine,
+    built for CPI augmentation — and the evidence rules that decide when it
+    may publish.</p>
   </div>
   <div class="wrap hero-foot">
     <p class="meta">{esc(frame["routes"][0])} &#183; {esc(frame["carriers"][0])}
@@ -366,7 +388,7 @@ methodology requires evidence that does not exist yet.">
         {esc(p["data_class"])}</p>
       </div>
       <div>
-        <p class="figure-xl rv" data-count="{q["valid_observations"]}">0</p>
+        <p class="figure-xl rv" data-count="{q["valid_observations"]}">{q["valid_observations"]}</p>
         <p class="figure-note rv" data-d="1">real market observations, collected
         {esc(p["collection_date"])} on {esc(frame["routes"][0])}. Every fare
         reconciles — base plus tax equals total, {q["reconciled"]}/{q["decomposed"]},
@@ -382,6 +404,24 @@ methodology requires evidence that does not exist yet.">
         matching no bucket is inadmissible and is never rounded into the
         nearest one.</p>
       </div>
+    </div>
+
+    <div class="plain rv" style="margin-top:var(--s8)">
+      <p class="q">What is an advance-purchase bucket?</p>
+      <p class="a">How many days before the flight the ticket was priced. We
+      always look {len(apws)} fixed distances ahead — {apws[0]} day, then
+      {apws[1]}, then {apws[2]}, out to {apws[-1]} — so we are comparing
+      "booked a day early" with "booked a day early", not with "booked two
+      months early".</p>
+      <details class="tech"><summary>Technical view</summary>
+        <p class="body">Spec A.3 assigns a bucket by <strong>exact</strong> lead
+        time. A quote whose lead time matches no frozen bucket is inadmissible
+        and is never rounded into the nearest one — that rule rejected 24 T+68
+        screenshots, and the replay later re-derived all 24 independently.</p>
+        <p class="eq">APW = {{{", ".join(f"T+{a}" for a in apws)}}}<br>
+        lead_time_days = travel_date &#8722; collection_date<br>
+        bucket(q) = APWBucket.from_lead_time(lead_time_days)  &#8594;  None is inadmissible</p>
+      </details>
     </div>
 
     <p class="eyebrow" style="margin-top:var(--s9)">DESCRIPTIVE APW PROFILE —
@@ -432,17 +472,17 @@ methodology requires evidence that does not exist yet.">
     <div>
       <p class="eyebrow">Chapter 03</p>
       <p class="figure-xl amber rv" data-count="{delta:.1f}" data-dp="1"
-         data-pre="+" data-post="%">+0%</p>
+         data-pre="+" data-post="%">+{delta:.1f}%</p>
       <h2 id="h-delta" class="sr">The T+{last["apw"]} to T+{first["apw"]} difference</h2>
       <p class="figure-note rv" data-d="1" style="font-size:var(--t-sub);
          font-family:var(--disp);max-width:30ch;line-height:1.4">
       T+{last["apw"]} sits {delta:.1f}% above T+{first["apw"]}.</p>
       <p class="after rv" data-d="2" style="max-width:44ch">
-      <strong>That is a descriptive difference between two cross-sections.</strong>
-      It is not a price movement, and it is <strong>not airfare inflation</strong>.
-      The two buckets sit on different travel dates, different weekdays, and
-      T+{last["apw"]} falls days after Diwali. A return-travel peak is a
-      hypothesis this panel cannot test.</p>
+      <strong>The panel shows a descriptive difference between two
+      cross-sections. Its cause cannot be established from these
+      observations.</strong> It is not a price movement, and it is
+      <strong>not airfare inflation</strong> — the two buckets sit on different
+      travel dates and different weekdays.</p>
     </div>
   </div>
 </section>
@@ -455,7 +495,20 @@ methodology requires evidence that does not exist yet.">
     <p class="lede rv" style="margin-top:var(--s4)">{len(apws)} buckets land on
     {conf["distinct_weekdays"]} distinct weekdays.
     {esc(", ".join(f"{d} appears {n} times" for d, n in conf["repeated_weekdays"].items()))}.</p>
-    <figure class="chart rv">
+    <div class="plain rv" data-d="1" style="margin-top:var(--s6)">
+      <p class="q">Why does that matter?</p>
+      <p class="a">Each bucket was priced for a <strong>different day of
+      travel</strong>. T+{prof[0]["apw"]} is a {esc(prof[0]["day_of_week"])}
+      flight, T+{prof[1]["apw"]} is a {esc(prof[1]["day_of_week"])} flight,
+      T+{prof[2]["apw"]} is a {esc(prof[2]["day_of_week"])} flight. So if two
+      buckets differ, we cannot tell whether it was the booking horizon that
+      moved the price, or simply that one of them is a weekend.</p>
+      <p class="a" style="margin-top:var(--s3)">These {len(apws)} numbers are
+      <strong>not {len(apws)} days of inflation</strong>. Different booking
+      horizons are attached to different travel dates.</p>
+    </div>
+
+    <figure class="chart rv" data-d="2">
       <div class="cwrap">{confound_chart(prof)}</div>
       <p class="src">{esc(conf["statement"])}</p>
     </figure>
@@ -524,7 +577,9 @@ methodology requires evidence that does not exist yet.">
       content-addressed artifact. The {ev["SECONDARY_CHAT_IMAGE"]} in the second
       group arrived as chat images rather than files, so no bytes could be hashed
       and their capture times are <strong>placeholders, not measurements</strong>.
-      We say so before you ask.</p>
+      They are not scattered through the panel either &#8212; they are the whole
+      of {chat_label}, so that bucket rests entirely on weaker evidence. We say
+      so before you ask.</p>
       <p class="body rv" data-d="1" style="margin-top:var(--s3)">
       {q["window_flags"]} observations fall outside their run's declared window.
       Spec A.5 keeps them in the store and out of the index — stored and flagged,
@@ -539,20 +594,29 @@ methodology requires evidence that does not exist yet.">
     <p class="eyebrow">Chapter 07</p>
     <h2 id="h-for">{lines("Every screenshot", "that did not", "become an observation")}</h2>
 
-    <div class="rv" style="margin-top:var(--s7);display:grid;
-         grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--s5);
-         max-width:840px">
-      <div><p class="figure-xl" style="font-size:clamp(52px,7vw,104px)"
-              data-count="{audited}">0</p>
-        <p class="meta" style="margin-top:var(--s2)">screenshots audited</p></div>
-      <div><p class="figure-xl" style="font-size:clamp(52px,7vw,104px)"
-              data-count="{q["valid_observations"]}">0</p>
-        <p class="meta" style="margin-top:var(--s2)">retained</p></div>
-      <div><p class="figure-xl" style="font-size:clamp(52px,7vw,104px)"
-              data-count="{p["exclusions_total"]}">0</p>
-        <p class="meta" style="margin-top:var(--s2)">excluded, each with a reason
-        and an id</p></div>
-    </div>
+    <p class="lede rv" style="margin-top:var(--s5)">Nothing was silently thrown
+    away. Here is the whole accounting, and it closes exactly.</p>
+
+    <ol class="ladder rv" data-d="1">
+      <li><b data-count="{file_corpus}">{file_corpus}</b>
+        <span>screenshots in the {esc(p["collection_date"])} file corpus</span></li>
+      <li data-op="&#8722;"><b data-count="{p["exclusions_total"]}">{p["exclusions_total"]}</b>
+        <span>excluded &#8212; every one carries a reason and an id</span></li>
+      <li data-op="="><b data-count="{ev["PRIMARY_HASHED"]}">{ev["PRIMARY_HASHED"]}</b>
+        <span>retained, each bound to a SHA-256 screenshot</span></li>
+      <li data-op="+"><b data-count="{chat_batch}">{chat_batch}</b>
+        <span>{chat_label} images that arrived as chat files &#8212; no bytes
+        to hash</span></li>
+      <li data-op="=" data-total="1"><b data-count="{audited}">{audited}</b>
+        <span>audited in total, of which <strong>{q["valid_observations"]}</strong>
+        became observations</span></li>
+    </ol>
+
+    <p class="body rv" data-d="2" style="margin-top:var(--s5)">Those two halves
+    are the same fact seen twice: the {ev["PRIMARY_HASHED"]} survivors of the file
+    corpus are exactly the {ev["PRIMARY_HASHED"]} hashed observations, and the
+    {chat_batch} chat images are exactly the {chat_batch} with weaker provenance.
+    The build refuses to render if that sum stops closing.</p>
 
     {decomposition(p["exclusions"], p["exclusions_total"])}
 
@@ -565,16 +629,16 @@ methodology requires evidence that does not exist yet.">
         it independently reaches the recorded verdict.</p>
       </div>
       <div>
-        <p class="figure-xl rv" data-count="{rep["agree"]}">0</p>
+        <p class="figure-xl rv" data-count="{rep["agree"]}">{rep["agree"]}</p>
         <p class="figure-note rv" data-d="1">of {rep["candidates"]} mechanically
         decidable exclusions reproduce the recorded verdict.</p>
         <p class="figure-xl amber rv" data-d="2" data-count="{rep["disagree"]}"
-           style="margin-top:var(--s7)">0</p>
+           style="margin-top:var(--s7)">{rep["disagree"]}</p>
         <p class="figure-note rv" data-d="3">disagreements. A single one would
         invalidate the audit.</p>
         <p class="figure-xl amber rv" data-d="2"
            data-count="{len(rep["wrongly_rejected"])}"
-           style="margin-top:var(--s7)">0</p>
+           style="margin-top:var(--s7)">{len(rep["wrongly_rejected"])}</p>
         <p class="figure-note rv" data-d="3">false rejections among the
         {rep["accepted_rechecked"]} accepted observations — the control arm. A
         rule that also rejected the accepted panel would prove nothing.</p>
@@ -616,6 +680,41 @@ methodology requires evidence that does not exist yet.">
     <h2 id="h-pend" style="font-size:var(--t-hero);font-weight:700;
         letter-spacing:-.052em;line-height:.86;max-width:none">
     {lines("INDEX", "PENDING")}</h2>
+    <div class="plain rv" style="margin-top:var(--s7)">
+      <p class="q">Why can't you just publish the prices you have?</p>
+      <p class="a">Because an index measures <strong>change</strong>, and change
+      needs two moments. We have one. Today's fares are a photograph; an index
+      needs two photographs of the <em>same thing</em> a week apart, so that what
+      moved is the price and not the product.</p>
+    </div>
+
+    <div class="steps rv" data-d="1">
+      <div><b>1</b><span>take one flight's fare today</span></div>
+      <i></i>
+      <div><b>2</b><span>divide it by the same flight's fare seven days ago</span></div>
+      <i></i>
+      <div><b>3</b><span>do that for every flight that appears in both weeks</span></div>
+      <i></i>
+      <div><b>4</b><span>take the middle of those changes, multiplying rather
+      than adding</span></div>
+      <i></i>
+      <div><b>5</b><span>that middle is the week's <strong>price relative</strong></span></div>
+    </div>
+
+    <details class="tech rv" data-d="2" style="max-width:62ch">
+      <summary>Technical view</summary>
+      <p class="body">Step 4 is the <strong>Jevons</strong> elementary
+      aggregator — the geometric mean of matched price relatives, computed in
+      logs. Multiplying rather than adding is what makes it symmetric: a fare
+      that doubles and one that halves cancel exactly, which an arithmetic mean
+      would not do. It is MoSPI's own elementary aggregator for the CPI.</p>
+      <p class="eq">J(c,t) = exp( (1/n) &#183; &#8721;&#8341; ln( p&#8341;(t) / p&#8341;(t&#8722;7) ) )<br>
+      I(c,t) = I(c,t&#8722;7) &#215; J(c,t)&nbsp;&nbsp;&nbsp;&#8212; spec C.1, LOCKED</p>
+      <p class="body" style="margin-top:var(--s3)">The matched set is items
+      present in <em>both</em> periods. With one wave that set is empty, so
+      J(c,t) has no denominator and the chain has nothing to multiply.</p>
+    </details>
+
     <div class="split" style="margin-top:var(--s7)">
       <div>
         <p class="lede rv">Methodology C.1 is <strong>locked</strong>:
@@ -724,9 +823,9 @@ methodology requires evidence that does not exist yet.">
   <div class="wrap cols">
     <div>
       <p><b>APIx</b></p>
-      <p style="margin-top:var(--s2)">A quality-adjusted airfare price index for
-      India, and the auditable infrastructure that produces it. MoSPI problem
-      statement 26056.</p>
+      <p style="margin-top:var(--s2)">An auditable airfare measurement engine,
+      built for CPI augmentation. MoSPI problem statement 26056. No market index
+      is published, and the panel is not nationally representative.</p>
       <p style="margin-top:var(--s3)">Every statistical figure on this page is
       generated from <span class="mono">data/panel.json</span>. Contextual frame
       figures are typed and name their source inline.</p>

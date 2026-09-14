@@ -108,6 +108,7 @@ CSS = """
   --fast:200ms; --med:560ms; --slow:1100ms;
   --out:cubic-bezier(.16,1,.3,1);
   --inout:cubic-bezier(.65,.05,.36,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
 }
 
 /* ================================================================ BASE === */
@@ -149,6 +150,104 @@ svg{display:block}
       font-weight:600;transition:top var(--fast) var(--out)}
 .skip:focus{top:16px}
 
+/* =========================================================== MATERIALS === */
+/* Three materials, each with one job, each used on a named short list of
+   surfaces. Applied everywhere they would stop meaning anything. */
+
+/* GLASS — for surfaces that float ABOVE the document and must not hide it:
+   the nav, the tooltip, the index-status chip, the unlock card. */
+.glass{
+  background:color-mix(in srgb,var(--card) 58%,transparent);
+  -webkit-backdrop-filter:blur(22px) saturate(1.8);
+  backdrop-filter:blur(22px) saturate(1.8);
+  border:1px solid color-mix(in srgb,#FFFFFF 66%,transparent);
+  box-shadow:0 1px 0 color-mix(in srgb,#FFFFFF 78%,transparent) inset,
+             0 20px 48px -26px rgba(22,24,28,.40);
+}
+.ch-night .glass,.glass-dark{
+  background:color-mix(in srgb,#000000 34%,transparent);
+  border-color:color-mix(in srgb,#FFFFFF 14%,transparent);
+  box-shadow:0 1px 0 color-mix(in srgb,#FFFFFF 12%,transparent) inset,
+             0 20px 48px -26px rgba(0,0,0,.7);
+}
+@supports not (backdrop-filter: blur(1px)){
+  .glass{background:color-mix(in srgb,var(--card) 94%,transparent)}
+}
+
+/* CLAY — for things you press. Soft, inset-lit, obviously pushable. Never on
+   the evidence itself: the data must not look like a toy. */
+.clay{
+  background:var(--paper-2);border:0;
+  box-shadow:5px 6px 13px -8px rgba(22,24,28,.24),
+             -4px -4px 10px -7px #FFFFFF inset,
+             2px 2px 5px -3px rgba(22,24,28,.14) inset;
+}
+
+/* TACTILE — hover lifts, press compresses, release springs back. */
+.tactile{transition:transform 240ms var(--spring),box-shadow var(--fast) var(--out),
+         background var(--fast) var(--out),color var(--fast) var(--out)}
+.tactile:hover{transform:translateY(-2px)}
+.tactile:active{transform:translateY(0) scale(.965);transition-duration:90ms}
+
+/* ============================================================== LADDER === */
+/* The audit accounting as a sum you can follow, not three unrelated tiles. */
+.ladder{list-style:none;margin:var(--s6) 0 0;padding:0;max-width:760px;
+        counter-reset:none}
+.ladder li{display:grid;grid-template-columns:42px minmax(0,auto) 1fr;
+           gap:var(--s4);align-items:baseline;padding-block:var(--s3);
+           border-bottom:1px solid var(--line)}
+.ladder li::before{content:attr(data-op);font-family:var(--mono);font-size:26px;
+                   color:var(--ink-3);text-align:center;line-height:1}
+.ladder li:first-child::before{content:""}
+.ladder b{font-size:clamp(38px,5vw,66px);font-weight:700;letter-spacing:-.04em;
+          font-variant-numeric:tabular-nums;line-height:1}
+.ladder span{font-size:var(--t-body);color:var(--ink-2);align-self:center}
+.ladder li[data-total="1"]{border-bottom:0;border-top:2px solid var(--ink);
+                           margin-top:var(--s2);padding-top:var(--s4)}
+.ladder li[data-total="1"] b{color:var(--amber-ink)}
+.ladder li[data-total="1"]::before{color:var(--ink)}
+
+/* ======================================================== EXPLAINERS ===== */
+/* Plain sentence first, mathematics on request. A judge should never need the
+   equation to understand what the equation is for. */
+.plain{margin-top:var(--s5);max-width:62ch}
+.plain .q{font-family:var(--mono);font-size:var(--t-2xs);letter-spacing:.16em;
+          text-transform:uppercase;color:var(--amber-ink);font-weight:500}
+.plain .a{font-size:var(--t-sub);line-height:1.45;letter-spacing:-.016em;
+          color:var(--ink);margin-top:var(--s2)}
+.ch-night .plain .a{color:var(--paper)}
+.ch-night .plain .q{color:#E0A046}
+.tech{margin-top:var(--s4);border-top:1px solid var(--line)}
+.ch-night .tech{border-top-color:#2B323A}
+.tech summary{cursor:pointer;list-style:none;padding-top:var(--s3);
+              font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.12em;
+              text-transform:uppercase;color:var(--ink-3);display:flex;gap:10px;
+              align-items:center;transition:color var(--fast)}
+.tech summary::-webkit-details-marker{display:none}
+.tech summary::after{content:"+";font-size:15px;color:var(--amber-ink)}
+.tech[open] summary::after{content:"2"}
+.tech summary:hover{color:var(--ink)}
+.ch-night .tech summary:hover{color:var(--paper)}
+.tech .body{margin-top:var(--s3)}
+.eq{font-family:var(--mono);font-size:var(--t-sm);background:var(--paper-2);
+    padding:var(--s4);border-radius:var(--r-sm);margin-top:var(--s3);
+    overflow-x:auto;line-height:1.9}
+.ch-night .eq{background:var(--night-2)}
+
+/* ============================================================= STEPS ===== */
+/* A concept built up one line at a time instead of dropped as a formula. */
+.steps{display:flex;flex-direction:column;gap:var(--s2);margin-top:var(--s5);
+       max-width:520px}
+.steps div{display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s4);
+           border-radius:var(--r-sm);background:var(--card);
+           font-size:var(--t-body)}
+.ch-night .steps div{background:var(--night-2)}
+.steps div b{font-family:var(--mono);font-size:var(--t-xs);color:var(--amber-ink);
+             letter-spacing:.1em}
+.ch-night .steps div b{color:#E0A046}
+.steps i{display:block;height:18px;width:1px;background:var(--line-2);
+         margin-left:calc(var(--s4) + 6px)}
+
 /* ============================================================= CHAPTER === */
 /* Each chapter owns a ground. The chapter you are in is legible from the
    background alone, before a single word is read. */
@@ -180,18 +279,32 @@ svg{display:block}
 .nav{position:fixed;inset:0 0 auto 0;z-index:200;height:64px;display:flex;
      align-items:center;gap:var(--s5);padding-inline:clamp(20px,5vw,64px);
      transition:background var(--med) var(--out),color var(--med) var(--out)}
-.nav[data-solid="1"]{background:color-mix(in srgb,var(--paper) 86%,transparent);
-                     backdrop-filter:blur(18px) saturate(1.4)}
+.nav[data-solid="1"]{background:color-mix(in srgb,var(--card) 58%,transparent);
+  -webkit-backdrop-filter:blur(22px) saturate(1.8);
+  backdrop-filter:blur(22px) saturate(1.8);
+  box-shadow:0 1px 0 color-mix(in srgb,#FFFFFF 70%,transparent) inset,
+             0 14px 34px -26px rgba(22,24,28,.38)}
 .nav[data-on-night="1"]{color:var(--paper)}
-.nav[data-on-night="1"][data-solid="1"]{background:color-mix(in srgb,var(--night) 84%,transparent)}
+.nav[data-on-night="1"][data-solid="1"]{
+  background:color-mix(in srgb,#000000 42%,transparent);
+  box-shadow:0 1px 0 color-mix(in srgb,#FFFFFF 12%,transparent) inset,
+             0 14px 34px -26px rgba(0,0,0,.8)}
 .brand{font-weight:800;font-size:19px;letter-spacing:-.04em;display:flex;
        align-items:center;gap:9px;flex-shrink:0}
 .brand i{width:10px;height:10px;border-radius:3px;background:var(--amber);
          display:block;font-style:normal}
 .nav .sp{flex:1}
 .chip{font-family:var(--mono);font-size:var(--t-2xs);letter-spacing:.12em;
-      padding:7px 13px;border-radius:100px;white-space:nowrap;font-weight:500;
-      background:var(--red-wash);color:var(--red)}
+      padding:7px 13px 7px 11px;border-radius:100px;white-space:nowrap;
+      font-weight:500;background:color-mix(in srgb,var(--red-wash) 72%,transparent);
+      color:var(--red);display:flex;align-items:center;gap:8px;
+      -webkit-backdrop-filter:blur(16px) saturate(1.6);
+      backdrop-filter:blur(16px) saturate(1.6);
+      border:1px solid color-mix(in srgb,var(--red) 22%,transparent)}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;
+              background:currentColor;flex-shrink:0;
+              animation:pulse 2.8s var(--inout) infinite}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
 .nav[data-on-night="1"] .chip{background:#2A1A17;color:#E08878}
 .dots{display:flex;gap:7px;align-items:center}
 .dots a{width:8px;height:8px;padding:0;border-radius:50%;display:block;
@@ -294,7 +407,9 @@ svg{display:block}
 .wall button[data-ev="SECONDARY_CHAT_IMAGE"]{background:var(--amber-wash)}
 .wall button::after{content:"";position:absolute;inset:0;border-radius:inherit;
                     border:1.5px solid transparent;transition:border-color var(--fast)}
-.wall button:hover,.wall button:focus-visible{transform:translateY(-3px) scale(1.07)}
+.wall button{transition:transform 260ms var(--spring)}
+.wall button:hover,.wall button:focus-visible{transform:translateY(-4px) scale(1.1)}
+.wall button:active{transform:translateY(-1px) scale(1.02);transition-duration:90ms}
 .wall button:hover::after{border-color:var(--ink)}
 .wall-key{display:flex;gap:var(--s5);flex-wrap:wrap;margin-top:var(--s4)}
 .wall-key span{display:flex;align-items:center;gap:9px;font-family:var(--mono);
@@ -384,8 +499,12 @@ svg{display:block}
 .bar{fill:var(--ex);transition:fill var(--fast) var(--out)}
 .bar:hover{fill:var(--amber)}
 
-#tip{position:fixed;z-index:400;pointer-events:none;opacity:0;background:var(--ink);
-     color:var(--paper);padding:13px 16px;border-radius:var(--r-sm);min-width:170px;
+#tip{position:fixed;z-index:400;pointer-events:none;opacity:0;
+     background:color-mix(in srgb,var(--ink) 84%,transparent);
+     -webkit-backdrop-filter:blur(20px) saturate(1.7);
+     backdrop-filter:blur(20px) saturate(1.7);
+     border:1px solid color-mix(in srgb,#FFFFFF 16%,transparent);
+     color:var(--paper);padding:13px 16px;border-radius:var(--r);min-width:170px;
      max-width:290px;font-size:var(--t-sm);box-shadow:0 18px 44px -20px rgba(0,0,0,.55);
      transition:opacity var(--fast) var(--out);transform:translate(-50%,calc(-100% - 16px))}
 #tip.on{opacity:1}
@@ -401,10 +520,17 @@ svg{display:block}
 .fset{display:flex;flex-wrap:wrap;gap:7px;align-items:center;min-width:0}
 .fset>span{font-family:var(--mono);font-size:var(--t-2xs);letter-spacing:.14em;
            text-transform:uppercase;color:var(--ink-3);margin-right:5px}
-.fset button{background:none;border:1px solid var(--line-2);color:var(--ink-2);
-             font-family:var(--mono);font-size:var(--t-xs);padding:7px 14px;
-             border-radius:100px;cursor:pointer;transition:all var(--fast) var(--out)}
-.fset button:hover{border-color:var(--ink);color:var(--ink)}
+.fset button{background:var(--paper-2);border:0;color:var(--ink-2);
+             font-family:var(--mono);font-size:var(--t-xs);padding:8px 15px;
+             border-radius:100px;cursor:pointer;
+             box-shadow:4px 5px 11px -8px rgba(22,24,28,.26),
+                        -3px -3px 8px -6px #FFFFFF inset,
+                        2px 2px 4px -3px rgba(22,24,28,.12) inset;
+             transition:transform 240ms var(--spring),
+                        box-shadow var(--fast) var(--out),
+                        background var(--fast) var(--out),color var(--fast) var(--out)}
+.fset button:hover{color:var(--ink);transform:translateY(-2px)}
+.fset button:active{transform:translateY(0) scale(.955);transition-duration:90ms}
 .fset button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);
                                   color:var(--paper)}
 .vcount{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3);
