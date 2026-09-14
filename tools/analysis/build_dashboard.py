@@ -49,6 +49,7 @@ LIBS = (
 #: Chapter id -> label. The dot navigation is generated from this, so a chapter
 #: cannot exist without a way to reach it.
 CHAPTERS = [
+    ("problem", "The problem"),
     ("observation", "The observation"),
     ("motion", "The panel, moving"),
     ("rail", "Seven buckets"),
@@ -62,6 +63,20 @@ CHAPTERS = [
     ("unlock", "19 September"),
     ("vault", "Evidence vault"),
 ]
+
+
+#: The waypoints a jury is asked to follow, keyed by the chapter they already
+#: live in. Every one is an existing section; this names them, it does not add
+#: anything. The order is the document's, because the nav doubles as a progress
+#: indicator and a nav that disagrees with the scroll is worse than no nav.
+JURY = {
+    "problem": "Problem",
+    "confound": "Confound",
+    "evidence": "Evidence",
+    "engine": "Boundary",
+    "pending": "Index status",
+    "vault": "Vault",
+}
 
 
 def lines(*parts: str) -> str:
@@ -115,7 +130,19 @@ def island(p: dict) -> str:
 
 
 def nav(p: dict) -> str:
-    dots = "".join(f'<a href="#{i}" aria-label="{esc(label)}"></a>' for i, label in CHAPTERS)
+    """Every chapter is a dot; the six jury waypoints also carry their name.
+
+    The name is real text rather than an `aria-label`, so the accessible name
+    and the visible one are the same string. Chapters that are not waypoints
+    keep their name too — collapsed to zero width until the row is hovered or
+    focused, which is a width change, not a display change, so a screen reader
+    still reads all thirteen.
+    """
+    dots = "".join(
+        f'<a href="#{i}"{' data-key="1"' if i in JURY else ""}>'
+        f"<i></i><span>{esc(JURY.get(i, label))}</span></a>"
+        for i, label in CHAPTERS
+    )
     return (
         '<nav class="nav" aria-label="Chapters">'
         '<span class="brand"><i></i>APIx</span>'
@@ -365,7 +392,7 @@ methodology requires evidence that does not exist yet.">
 </header>
 
 <!-- ═══════════════════════════════════════════════ STORY ═════════════ -->
-<section class="ch ch-paper ch-scene" aria-label="Why airfare is hard to measure">
+<section class="ch ch-paper ch-scene" id="problem" aria-label="Why airfare is hard to measure">
   <div class="wrap scene">
     <div>
       <p class="eyebrow">Beat two</p>
@@ -572,7 +599,7 @@ methodology requires evidence that does not exist yet.">
 <section class="ch ch-neutral ch-scene" id="delta" aria-labelledby="h-delta">
   <div class="wrap scene">
     <div>
-      <p class="eyebrow">Chapter 04</p>
+      <p class="eyebrow">Chapter 03</p>
       <h2 id="h-delta" class="sr">The T+{first["apw"]} to T+{last["apw"]} difference</h2>
 
       <ol class="derive rv">

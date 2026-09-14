@@ -74,6 +74,68 @@ def test_no_counter_falls_back_to_zero(html: str) -> None:
     assert not re.search(r'data-count="(?!0")[^"]+"[^>]*>\s*\+?0%?\s*<', html)
 
 
+def test_no_figure_is_ever_animated_through_a_wrong_value(html: str) -> None:
+    """A statistic is revealed, never tallied.
+
+    The counter used to run 0 -> target, which put a figure the panel does not
+    support on screen for about a second: "20 real observations" on the way to
+    35, "+12.4%" on the way to +38.6%. A jury can screenshot any frame. The
+    reveal animates the mask, so no intermediate value is ever written.
+    """
+    script = "".join(re.findall(r"<script>(.*?)</script>", html, flags=re.S))
+    block = re.search(r"number reveals.*?^\}\);", script, flags=re.S | re.M)
+    assert block, "the figure-reveal block has moved; this guard is now blind"
+    body = block.group(0)
+
+    assert "clipPath" in body, "the reveal no longer animates a mask"
+    for tally in ("toFixed(", "target *", "target*", "o.v", "render("):
+        assert tally not in body, (
+            f"the figure animation writes a computed number again ({tally!r}); "
+            "an animated statistic must never render a value it does not hold"
+        )
+
+
+def test_a_scroll_target_never_lands_under_the_fixed_nav(html: str) -> None:
+    """Anchor jumps must clear the nav, and the clearance comes from its height.
+
+    The nav is fixed, so a bare anchor jump parks the chapter heading behind
+    it. Both rules must be present and both must derive from --nav-h, or the
+    offset silently drifts the next time the nav is resized.
+    """
+    css = "".join(re.findall(r"<style>(.*?)</style>", html, flags=re.S))
+    assert re.search(r"--nav-h\s*:", css), "the nav height is not a token"
+    assert re.search(r"html\{[^}]*scroll-padding-top:\s*var\(--nav-clear\)", css), (
+        "html has no scroll-padding-top, so anchor jumps land under the nav"
+    )
+    assert re.search(r"\[id\]\{[^}]*scroll-margin-top:\s*var\(--nav-clear\)", css), (
+        "id targets have no scroll-margin-top"
+    )
+    assert re.search(r"--nav-clear\s*:\s*calc\(var\(--nav-h\)", css), (
+        "the clearance no longer derives from the nav's own height"
+    )
+
+
+def test_every_jury_waypoint_points_at_a_section_that_exists(html: str) -> None:
+    """The nav is a promise about where the argument goes; it must not dangle."""
+    hrefs = re.findall(r'<a href="#([^"]+)"[^>]*>(?:<i></i>)?<span>', html)
+    assert hrefs, "the chapter nav has no links"
+    for target in hrefs:
+        assert re.search(rf'<section[^>]*id="{re.escape(target)}"', html), (
+            f"the nav links to #{target}, which is not a section on the page"
+        )
+    keyed = re.findall(r'<a href="#([^"]+)" data-key="1"', html)
+    assert len(keyed) == 6, f"expected six jury waypoints, found {len(keyed)}: {keyed}"
+
+
+def test_chapter_numbers_are_a_sequence_with_no_gap_or_repeat(rendered: str) -> None:
+    """Two chapters both labelled 04, and no 03, is a reader losing their place."""
+    nums = [int(n) for n in re.findall(r"Chapter (\d\d)", rendered)]
+    assert nums, "no chapter numbers rendered"
+    assert nums == sorted(nums), f"chapter numbers are out of order: {nums}"
+    assert len(nums) == len(set(nums)), f"a chapter number repeats: {nums}"
+    assert nums == list(range(nums[0], nums[0] + len(nums))), f"a chapter number is missing: {nums}"
+
+
 # ── 2. the audit ladder must close, and derive from the contract ────────────
 
 
