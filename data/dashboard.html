@@ -248,7 +248,15 @@ svg{display:block}
 .rule{height:1px;background:var(--line);border:0;margin:0}
 
 /* =============================================================== NAV ===== */
-.nav{position:fixed;inset:0 0 auto 0;z-index:200;height:64px;display:flex;
+/* The nav is fixed, so anything scrolled flush to the top of the viewport
+   lands underneath it. scroll-padding-top moves the resting place of every
+   scroll target -- anchor links, the skip link, scrollIntoView, keyboard
+   focus -- clear of the bar, and scroll-margin-top covers the elements a
+   browser scrolls to directly. One token so the two can never drift apart. */
+:root{--nav-h:64px;--nav-clear:calc(var(--nav-h) + 22px)}
+html{scroll-padding-top:var(--nav-clear)}
+[id]{scroll-margin-top:var(--nav-clear)}
+.nav{position:fixed;inset:0 0 auto 0;z-index:200;height:var(--nav-h);display:flex;
      align-items:center;gap:var(--s5);padding-inline:clamp(20px,5vw,64px);
      transition:background var(--med) var(--out),color var(--med) var(--out)}
 .nav[data-solid="1"]{background:color-mix(in srgb,var(--card) 58%,transparent);
@@ -279,11 +287,24 @@ svg{display:block}
 @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
 .nav[data-on-night="1"] .chip{background:#2A1A17;color:#E08878}
 .dots{display:flex;gap:7px;align-items:center}
-.dots a{width:8px;height:8px;padding:0;border-radius:50%;display:block;
-        background:var(--line-2);transition:all var(--fast) var(--out)}
-.dots a[aria-current="true"]{background:var(--amber);width:22px;border-radius:100px}
-.nav[data-on-night="1"] .dots a{background:#3A424B}
-.nav[data-on-night="1"] .dots a[aria-current="true"]{background:#E0A046}
+.dots a{display:flex;align-items:center;gap:7px;padding:0}
+.dots a i{width:8px;height:8px;border-radius:50%;display:block;flex-shrink:0;
+          background:var(--line-2);transition:all var(--fast) var(--out)}
+.dots a[aria-current="true"] i{background:var(--amber);width:22px;border-radius:100px}
+/* Collapsed by width, never by display: the name stays in the accessibility
+   tree for every chapter even while only the waypoints show it on screen. */
+.dots a span{font-family:var(--mono);font-size:var(--t-2xs);letter-spacing:.1em;
+             text-transform:uppercase;white-space:nowrap;color:var(--ink-3);
+             max-width:0;opacity:0;overflow:hidden;
+             transition:max-width var(--med) var(--out),
+                        opacity var(--fast) var(--out),color var(--fast) var(--out)}
+.dots a[aria-current="true"] span{color:var(--ink)}
+.dots:hover a span,.dots a:focus-visible span{max-width:14ch;opacity:1}
+@media (min-width:1200px){ .dots a[data-key="1"] span{max-width:14ch;opacity:1} }
+.nav[data-on-night="1"] .dots a i{background:#3A424B}
+.nav[data-on-night="1"] .dots a[aria-current="true"] i{background:#E0A046}
+.nav[data-on-night="1"] .dots a span{color:#939CA6}
+.nav[data-on-night="1"] .dots a[aria-current="true"] span{color:var(--paper)}
 
 /* ============================================================== HERO ===== */
 .hero{min-height:100svh;display:grid;grid-template-rows:1fr auto;
@@ -668,7 +689,14 @@ html.rail-flat .rail-panel:first-child{border-top:0}
   :root{--s9:88px;--s8:64px;--s7:56px}
   .derive li{grid-template-columns:72px 1fr;gap:var(--s3)}
   .derive .dn{grid-column:2}
-  .nav .dots{display:none}
+  /* A phone has no room for thirteen dots and a label beside each, but it
+     still needs a way through the argument. The six waypoints stay, unlabelled
+     and on a tighter gap; the intermediate chapters are reached by scrolling,
+     which on a phone is what a reader does anyway. */
+  .nav{gap:14px}
+  .nav .dots{display:flex;gap:9px}
+  .dots a:not([data-key="1"]){display:none}
+  .dots a span{display:none}
   .hero h1{max-width:none}
   .scene{min-height:auto;padding-block:var(--s7)}
   .scene .stmt{max-width:none}
@@ -723,7 +751,7 @@ html.rail-flat .rail-panel:first-child{border-top:0}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script><script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
 
 <a class="skip" href="#observation">Skip to the evidence</a>
-<nav class="nav" aria-label="Chapters"><span class="brand"><i></i>APIx</span><span class="dots"><a href="#observation" aria-label="The observation"></a><a href="#motion" aria-label="The panel, moving"></a><a href="#rail" aria-label="Seven buckets"></a><a href="#delta" aria-label="The difference"></a><a href="#confound" aria-label="The confound"></a><a href="#dispersion" aria-label="Dispersion"></a><a href="#evidence" aria-label="Evidence"></a><a href="#forensics" aria-label="Forensics"></a><a href="#engine" aria-label="Execution"></a><a href="#pending" aria-label="Index status"></a><a href="#unlock" aria-label="19 September"></a><a href="#vault" aria-label="Evidence vault"></a></span><span class="sp"></span><span class="chip">INDEX PENDING</span></nav>
+<nav class="nav" aria-label="Chapters"><span class="brand"><i></i>APIx</span><span class="dots"><a href="#problem" data-key="1"><i></i><span>Problem</span></a><a href="#observation"><i></i><span>The observation</span></a><a href="#motion"><i></i><span>The panel, moving</span></a><a href="#rail"><i></i><span>Seven buckets</span></a><a href="#delta"><i></i><span>The difference</span></a><a href="#confound" data-key="1"><i></i><span>Confound</span></a><a href="#dispersion"><i></i><span>Dispersion</span></a><a href="#evidence" data-key="1"><i></i><span>Evidence</span></a><a href="#forensics"><i></i><span>Forensics</span></a><a href="#engine" data-key="1"><i></i><span>Boundary</span></a><a href="#pending" data-key="1"><i></i><span>Index status</span></a><a href="#unlock"><i></i><span>19 September</span></a><a href="#vault" data-key="1"><i></i><span>Vault</span></a></span><span class="sp"></span><span class="chip">INDEX PENDING</span></nav>
 
 <main>
 
@@ -745,7 +773,7 @@ html.rail-flat .rail-panel:first-child{border-top:0}
 </header>
 
 <!-- ═══════════════════════════════════════════════ STORY ═════════════ -->
-<section class="ch ch-paper ch-scene" aria-label="Why airfare is hard to measure">
+<section class="ch ch-paper ch-scene" id="problem" aria-label="Why airfare is hard to measure">
   <div class="wrap scene">
     <div>
       <p class="eyebrow">Beat two</p>
@@ -944,7 +972,7 @@ html.rail-flat .rail-panel:first-child{border-top:0}
 <section class="ch ch-neutral ch-scene" id="delta" aria-labelledby="h-delta">
   <div class="wrap scene">
     <div>
-      <p class="eyebrow">Chapter 04</p>
+      <p class="eyebrow">Chapter 03</p>
       <h2 id="h-delta" class="sr">The T+1 to T+60 difference</h2>
 
       <ol class="derive rv">
@@ -1453,47 +1481,56 @@ setTimeout(function(){
   [].slice.call(document.querySelectorAll('.line-mask > span')).forEach(function(s){
     s.style.transform='none';
   });
+  /* A masked figure is invisible, so it belongs to the same failsafe. */
+  [].slice.call(document.querySelectorAll('[data-count]')).forEach(function(el){
+    el.style.clipPath=''; el.style.transform=''; el.style.transition='';
+  });
 }, 2500);
 
-/* ------------------------------------------------------- number counters */
-/* The element's own text is the TRUTH and is already correct in the markup.
-   The counter animates 0 -> target and then restores that exact string, so a
-   blocked script, a reduced-motion setting or the 1.6s before the animation
-   runs all show the real figure rather than a zero. A page that renders "0
-   screenshots audited" is worse than one that renders nothing. */
+/* -------------------------------------------------------- number reveals */
+/* The element's text is the truth and is already correct in the markup; this
+   only uncovers it. The earlier version tallied 0 -> target, which put a
+   WRONG statistic on screen for about a second: "20 real observations" on the
+   way to 35, "+12.4%" on the way to +38.6%. A jury can screenshot any frame,
+   and a figure this page does not support must never be one of them -- so the
+   final value is masked and revealed, and no intermediate value exists. */
 document.querySelectorAll('[data-count]').forEach(function(el){
-  var target = parseFloat(el.dataset.count);
-  if(!isFinite(target)) return;
-  var truth = el.textContent;
-  var dp = el.dataset.dp ? +el.dataset.dp : 0;
-  var pre = el.dataset.pre || '', post = el.dataset.post || '';
-  function render(v){ el.textContent = pre + v.toFixed(dp) + post; }
-  function settle(){ el.textContent = truth; }
   if(RM) return;                       /* reduced motion: leave the truth alone */
+  /* Every number in both insets is a percentage. Mixing units across the two
+     ends -- 100% here, em there -- gives the tween nothing it can interpolate
+     and it silently animates nothing at all. The -25% overhang keeps ascenders
+     and descenders outside the clip at rest. */
+  var HID = 'inset(-25% 0 100% 0)', SEEN = 'inset(-25% 0 -25% 0)';
+  function show(){
+    el.style.clipPath = ''; el.style.transition = ''; el.style.willChange = '';
+  }
+  /* Clip only. These elements mostly also carry .rv, whose tween owns their
+     transform; two tweens animating one transform is a fight the figure loses. */
+  el.style.willChange = 'clip-path';
+  el.style.clipPath = HID;
   if(hasGSAP){
-    var o = {v:0};
-    G.to(o, { v:target, duration:1.5, ease:'expo.out',
-      scrollTrigger:{ trigger:el, start:'top 88%' },
-      onStart:function(){ render(0); },
-      onUpdate:function(){ render(o.v); },
-      onComplete:settle });
+    /* immediateRender must be forced. A tween carrying a ScrollTrigger and no
+       scrub defaults it to false, and without it the from-state was skipped
+       outright: the figure just appeared, with no reveal at all. Forcing it
+       applies the mask when the tween starts, as the figure enters the
+       viewport. It is deliberately NOT masked at rest -- an untouched figure
+       reads its true value, so a script that dies before its turn costs the
+       animation and nothing else. */
+    G.fromTo(el, {clipPath:HID},
+      { clipPath:SEEN, duration:1.0, ease:'expo.out', immediateRender:true,
+        scrollTrigger:{ trigger:el, start:'top 88%' }, onComplete:show });
   } else if('IntersectionObserver' in window){
     var io = new IntersectionObserver(function(es){
       es.forEach(function(e){
         if(!e.isIntersecting) return;
         io.unobserve(e.target);
-        var t0 = performance.now();
-        render(0);
-        (function step(now){
-          var k = Math.min(1, (now-t0)/1300);
-          if(k >= 1){ settle(); return; }
-          render(target * (1 - Math.pow(1-k, 4)));
-          requestAnimationFrame(step);
-        })(t0);
+        el.style.transition = 'clip-path .95s cubic-bezier(.16,1,.3,1)';
+        el.style.clipPath = SEEN;
+        setTimeout(show, 1050);
       });
     }, {threshold:.3});
     io.observe(el);
-  }
+  } else { show(); }
 });
 
 /* ---------------------------------------------------- nav: dots + ground */
@@ -1521,7 +1558,12 @@ dots.forEach(function(a){
     var t = document.querySelector(a.getAttribute('href'));
     if(!t) return;
     ev.preventDefault();
-    if(lenis) lenis.scrollTo(t, {offset:-40}); else t.scrollIntoView({behavior:RM?'auto':'smooth'});
+    /* CSS scroll-padding-top handles scrollIntoView; Lenis does its own
+       scrolling and has to be told the same clearance explicitly. */
+    var navEl = document.querySelector('.nav');
+    var clear = (navEl ? navEl.offsetHeight : 64) + 22;
+    if(lenis) lenis.scrollTo(t, {offset:-clear});
+    else t.scrollIntoView({behavior:RM?'auto':'smooth'});
   });
 });
 
@@ -1751,7 +1793,11 @@ document.querySelectorAll('.stage').forEach(function(btn){
   var gm = {}; D.apw.forEach(function(a){ gm[a.apw] = a.geomean; });
   function gy(o){ return ((gm[o.apw] - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.6; }
 
-  var INK=[0.30,0.34,0.39], BLUE=[0.18,0.36,0.54], AMBER=[0.72,0.45,0.07];
+  /* Each node sits at 1.20x its old contrast ratio against the paper -- solved
+     against the WCAG relative-luminance curve, not by scaling the channels,
+     which overshoots badly (a 20% shorter RGB distance is a ~46% ratio jump).
+     Hue and saturation are untouched: the field reads stronger, not brighter. */
+  var INK=[0.259,0.294,0.337], BLUE=[0.157,0.313,0.470], AMBER=[0.648,0.405,0.063];
 
   /* Seven layouts. Each returns [x, y, z, colour], all from recorded fields. */
   var LAYOUTS = [
@@ -1830,7 +1876,7 @@ document.querySelectorAll('.stage').forEach(function(btn){
       var m=EDGES[e][0], n=EDGES[e][1];
       LP[e*6]=P[m*3]; LP[e*6+1]=P[m*3+1]; LP[e*6+2]=P[m*3+2];
       LP[e*6+3]=P[n*3]; LP[e*6+4]=P[n*3+1]; LP[e*6+5]=P[n*3+2];
-      var g = 0.80 - 0.34*vis;
+      var g = 0.732 - 0.321*vis;   /* the same 1.20x, both ends of the fade */
       for(var q=0;q<6;q++) LC[e*6+q] = g;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER,bP); gl.bufferData(gl.ARRAY_BUFFER,P,gl.DYNAMIC_DRAW);

@@ -341,47 +341,56 @@ setTimeout(function(){
   [].slice.call(document.querySelectorAll('.line-mask > span')).forEach(function(s){
     s.style.transform='none';
   });
+  /* A masked figure is invisible, so it belongs to the same failsafe. */
+  [].slice.call(document.querySelectorAll('[data-count]')).forEach(function(el){
+    el.style.clipPath=''; el.style.transform=''; el.style.transition='';
+  });
 }, 2500);
 
-/* ------------------------------------------------------- number counters */
-/* The element's own text is the TRUTH and is already correct in the markup.
-   The counter animates 0 -> target and then restores that exact string, so a
-   blocked script, a reduced-motion setting or the 1.6s before the animation
-   runs all show the real figure rather than a zero. A page that renders "0
-   screenshots audited" is worse than one that renders nothing. */
+/* -------------------------------------------------------- number reveals */
+/* The element's text is the truth and is already correct in the markup; this
+   only uncovers it. The earlier version tallied 0 -> target, which put a
+   WRONG statistic on screen for about a second: "20 real observations" on the
+   way to 35, "+12.4%" on the way to +38.6%. A jury can screenshot any frame,
+   and a figure this page does not support must never be one of them -- so the
+   final value is masked and revealed, and no intermediate value exists. */
 document.querySelectorAll('[data-count]').forEach(function(el){
-  var target = parseFloat(el.dataset.count);
-  if(!isFinite(target)) return;
-  var truth = el.textContent;
-  var dp = el.dataset.dp ? +el.dataset.dp : 0;
-  var pre = el.dataset.pre || '', post = el.dataset.post || '';
-  function render(v){ el.textContent = pre + v.toFixed(dp) + post; }
-  function settle(){ el.textContent = truth; }
   if(RM) return;                       /* reduced motion: leave the truth alone */
+  /* Every number in both insets is a percentage. Mixing units across the two
+     ends -- 100% here, em there -- gives the tween nothing it can interpolate
+     and it silently animates nothing at all. The -25% overhang keeps ascenders
+     and descenders outside the clip at rest. */
+  var HID = 'inset(-25% 0 100% 0)', SEEN = 'inset(-25% 0 -25% 0)';
+  function show(){
+    el.style.clipPath = ''; el.style.transition = ''; el.style.willChange = '';
+  }
+  /* Clip only. These elements mostly also carry .rv, whose tween owns their
+     transform; two tweens animating one transform is a fight the figure loses. */
+  el.style.willChange = 'clip-path';
+  el.style.clipPath = HID;
   if(hasGSAP){
-    var o = {v:0};
-    G.to(o, { v:target, duration:1.5, ease:'expo.out',
-      scrollTrigger:{ trigger:el, start:'top 88%' },
-      onStart:function(){ render(0); },
-      onUpdate:function(){ render(o.v); },
-      onComplete:settle });
+    /* immediateRender must be forced. A tween carrying a ScrollTrigger and no
+       scrub defaults it to false, and without it the from-state was skipped
+       outright: the figure just appeared, with no reveal at all. Forcing it
+       applies the mask when the tween starts, as the figure enters the
+       viewport. It is deliberately NOT masked at rest -- an untouched figure
+       reads its true value, so a script that dies before its turn costs the
+       animation and nothing else. */
+    G.fromTo(el, {clipPath:HID},
+      { clipPath:SEEN, duration:1.0, ease:'expo.out', immediateRender:true,
+        scrollTrigger:{ trigger:el, start:'top 88%' }, onComplete:show });
   } else if('IntersectionObserver' in window){
     var io = new IntersectionObserver(function(es){
       es.forEach(function(e){
         if(!e.isIntersecting) return;
         io.unobserve(e.target);
-        var t0 = performance.now();
-        render(0);
-        (function step(now){
-          var k = Math.min(1, (now-t0)/1300);
-          if(k >= 1){ settle(); return; }
-          render(target * (1 - Math.pow(1-k, 4)));
-          requestAnimationFrame(step);
-        })(t0);
+        el.style.transition = 'clip-path .95s cubic-bezier(.16,1,.3,1)';
+        el.style.clipPath = SEEN;
+        setTimeout(show, 1050);
       });
     }, {threshold:.3});
     io.observe(el);
-  }
+  } else { show(); }
 });
 
 /* ---------------------------------------------------- nav: dots + ground */
@@ -409,7 +418,12 @@ dots.forEach(function(a){
     var t = document.querySelector(a.getAttribute('href'));
     if(!t) return;
     ev.preventDefault();
-    if(lenis) lenis.scrollTo(t, {offset:-40}); else t.scrollIntoView({behavior:RM?'auto':'smooth'});
+    /* CSS scroll-padding-top handles scrollIntoView; Lenis does its own
+       scrolling and has to be told the same clearance explicitly. */
+    var navEl = document.querySelector('.nav');
+    var clear = (navEl ? navEl.offsetHeight : 64) + 22;
+    if(lenis) lenis.scrollTo(t, {offset:-clear});
+    else t.scrollIntoView({behavior:RM?'auto':'smooth'});
   });
 });
 
@@ -639,7 +653,11 @@ document.querySelectorAll('.stage').forEach(function(btn){
   var gm = {}; D.apw.forEach(function(a){ gm[a.apw] = a.geomean; });
   function gy(o){ return ((gm[o.apw] - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.6; }
 
-  var INK=[0.30,0.34,0.39], BLUE=[0.18,0.36,0.54], AMBER=[0.72,0.45,0.07];
+  /* Each node sits at 1.20x its old contrast ratio against the paper -- solved
+     against the WCAG relative-luminance curve, not by scaling the channels,
+     which overshoots badly (a 20% shorter RGB distance is a ~46% ratio jump).
+     Hue and saturation are untouched: the field reads stronger, not brighter. */
+  var INK=[0.259,0.294,0.337], BLUE=[0.157,0.313,0.470], AMBER=[0.648,0.405,0.063];
 
   /* Seven layouts. Each returns [x, y, z, colour], all from recorded fields. */
   var LAYOUTS = [
@@ -718,7 +736,7 @@ document.querySelectorAll('.stage').forEach(function(btn){
       var m=EDGES[e][0], n=EDGES[e][1];
       LP[e*6]=P[m*3]; LP[e*6+1]=P[m*3+1]; LP[e*6+2]=P[m*3+2];
       LP[e*6+3]=P[n*3]; LP[e*6+4]=P[n*3+1]; LP[e*6+5]=P[n*3+2];
-      var g = 0.80 - 0.34*vis;
+      var g = 0.732 - 0.321*vis;   /* the same 1.20x, both ends of the fade */
       for(var q=0;q<6;q++) LC[e*6+q] = g;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER,bP); gl.bufferData(gl.ARRAY_BUFFER,P,gl.DYNAMIC_DRAW);
