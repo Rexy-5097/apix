@@ -1,21 +1,19 @@
-"""Render `data/dashboard.html` — the jury-facing APIx surface.
+"""Render `data/dashboard.html` — the jury-facing APIx experience.
 
     data/panel.json  ->  this module  ->  data/dashboard.html
 
-**One data source, and it is not this file.** Every statistical figure on the
-page is read from the panel contract at render time. This module owns layout,
-language and interaction; it owns no numbers. The previous hand-authored
-dashboard went stale twice — a base-year mixing error and a series count — and
-`tests/test_observed_panel.py` now fails the build if any headline figure here
-disagrees with the contract.
+**One data source, and it is not this file.** Every statistical figure is read
+from the panel contract at render time. This module owns narrative, layout and
+language; it owns no numbers. `tests/test_observed_panel.py` fails the build if
+any headline figure here disagrees with the contract.
 
-The page is a **single self-contained file**: no webfont, no CDN, no build
-step. That is a demo-reliability decision before it is an engineering one — a
-venue network that drops must not be able to take the evidence off screen — and
-it keeps the artifact byte-reproducible, which is what lets
-`git diff --exit-code data/` mean something.
+**It is a document, not a dashboard.** The page is an editorial sequence —
+landing, story, data, confound, evidence, forensics, engine, limitation, index
+pending, the unlock, and only then the evidence vault. Chapters change ground
+colour rather than stacking cards, because a reader should know which chapter
+they are in before reading a word.
 
-Design system: `dashboard_theme.py`. Charts and behaviour: `dashboard_viz.py`.
+Design system: `dashboard_theme.py`. Charts and choreography: `dashboard_viz.py`.
 """
 
 from __future__ import annotations
@@ -27,37 +25,51 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dashboard_theme import CSS, STATE_COLOURS  # noqa: E402
+from dashboard_theme import CSS, FONT_HREF, STATE_COLOURS  # noqa: E402
 from dashboard_viz import (  # noqa: E402
     JS,
     apw_chart,
     band_chart,
     confound_chart,
     esc,
-    exclusion_chart,
-    provenance_chart,
     rupee,
 )
 
 PANEL = ROOT / "data" / "panel.json"
 OUT = ROOT / "data" / "dashboard.html"
 
-#: Section id -> nav label. The nav is generated from this, so a section can
-#: never exist without a way to reach it.
-NAV = [
+#: CDN libraries. Every one is feature-detected in the page script; none is
+#: required for the content to render. Pinned so the artifact stays stable.
+LIBS = (
+    "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js",
+    "https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js",
+)
+
+#: Chapter id -> label. The dot navigation is generated from this, so a chapter
+#: cannot exist without a way to reach it.
+CHAPTERS = [
+    ("observation", "The observation"),
+    ("rail", "Seven buckets"),
+    ("delta", "The difference"),
+    ("confound", "The confound"),
+    ("dispersion", "Dispersion"),
     ("evidence", "Evidence"),
-    ("confound", "Confound"),
-    ("provenance", "Provenance"),
-    ("boundary", "Boundary"),
+    ("forensics", "Forensics"),
+    ("engine", "Execution"),
     ("pending", "Index status"),
-    ("engine", "Engine"),
-    ("method", "Method"),
-    ("limits", "Limits"),
-    ("next", "19 Sep"),
+    ("unlock", "19 September"),
+    ("vault", "Evidence vault"),
 ]
 
 
-def data_island(p: dict) -> str:
+def lines(*parts: str) -> str:
+    """A heading whose lines ride up from behind their own clip."""
+    inner = "".join(f"<span>{p}</span>" for p in parts)
+    return f'<span class="line-mask">{inner}</span>'
+
+
+def island(p: dict) -> str:
     """The contract subset the interactive layers read.
 
     Serialised from the panel, never typed. Key order is fixed so the rendered
@@ -82,112 +94,165 @@ def data_island(p: dict) -> str:
             for b in p["band_profile"]
         ],
         "obs": [
-            {"apw": o["apw"], "band": o["band"], "total": o["total"], "ev": o["evidence"]}
+            {
+                "apw": o["apw"],
+                "band": o["band"],
+                "total": o["total"],
+                "ev": o["evidence"],
+                "flight": o["flight"],
+                "td": o["travel_date"],
+                "observation_id": o["observation_id"],
+            }
             for o in p["observations"]
         ],
         "apwOrder": [a["apw"] for a in p["apw_profile"]],
-        "pipeline": [
-            {"label": "collect", "done": True, "stop": False},
-            {"label": "parse", "done": True, "stop": False},
-            {"label": "normalise", "done": True, "stop": False},
-            {"label": "admissibility", "done": True, "stop": False},
-            {"label": "band / key", "done": True, "stop": False},
-            {"label": "dedup", "done": True, "stop": False},
-            {"label": "build panel", "done": True, "stop": False},
-            {"label": "matched t / t-7", "done": False, "stop": True},
-            {"label": "Jevons", "done": False, "stop": False},
-            {"label": "index", "done": False, "stop": False},
-        ],
     }
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
 
 
-def nav_html() -> str:
-    items = "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t in NAV)
+def nav(p: dict) -> str:
+    dots = "".join(f'<a href="#{i}" aria-label="{esc(label)}"></a>' for i, label in CHAPTERS)
     return (
-        '<nav class="nav" aria-label="Section navigation">'
+        '<nav class="nav" aria-label="Chapters">'
         '<span class="brand"><i></i>APIx</span>'
-        f"<ol>{items}</ol>"
-        '<span class="spacer"></span>'
-        '<span class="idx">INDEX PENDING</span>'
+        f'<span class="dots">{dots}</span>'
+        '<span class="sp"></span>'
+        '<span class="chip">INDEX PENDING</span>'
         "</nav>"
-        '<div class="prog" role="presentation"></div>'
     )
 
 
-def metric(kind: str, key: str, value: str, sub: str) -> str:
+def rail(profile: list[dict]) -> str:
+    """The seven advance-purchase buckets as a horizontal journey."""
+    widest = max(a["spread_pct"] for a in profile)
+    panels = []
+    for a in profile:
+        pct = a["spread_pct"] / widest * 100
+        panels.append(
+            f'<article class="rail-panel">'
+            f'<p class="meta">bucket {profile.index(a) + 1} of {len(profile)}</p>'
+            f'<h3 class="apw">T+{a["apw"]}</h3>'
+            f'<p class="when">{esc(a["day_of_week"])} {esc(a["travel_date"])}'
+            f" &#183; {a['n']} observations</p>"
+            f'<dl class="rail-figs">'
+            f"<div><dt>geometric mean</dt><dd>&#8377;{rupee(a['geomean'])}</dd></div>"
+            f"<div><dt>spread</dt><dd>{a['spread_pct']}%</dd></div>"
+            f"<div><dt>observed min</dt><dd>&#8377;{rupee(a['min'])}</dd></div>"
+            f"<div><dt>observed max</dt><dd>&#8377;{rupee(a['max'])}</dd></div>"
+            f"</dl>"
+            f'<div class="rail-bar"><i style="width:{pct:.1f}%"></i></div>'
+            f'<p class="meta" style="margin-top:var(--s3)">spread, relative to the '
+            f"widest bucket</p>"
+            f"</article>"
+        )
     return (
-        f'<div class="metric {kind}"><span class="k">{esc(key)}</span>'
-        f'<span class="v">{esc(value)}</span><span class="s">{esc(sub)}</span></div>'
+        '<div class="rail-outer"><div class="rail-pin">'
+        f'<div class="rail-track">{"".join(panels)}</div>'
+        "</div></div>"
     )
 
 
-def boundary_html(boundary: dict) -> str:
-    """The execution boundary as an expandable spatial rail.
+def wall(rows: list[dict]) -> str:
+    """One tile per real observation, grouped by evidence grade.
 
-    States come straight from the contract. `EXERCISED` is deliberately not the
-    success colour: the vocabulary exists precisely because "the code ran" is a
-    weaker claim than "the property is validated".
+    No screenshot thumbnails: the artifacts are not in the repository, and a
+    placeholder image would be a fabricated evidence asset.
     """
+    prim = [(i, o) for i, o in enumerate(rows) if o["evidence"] == "PRIMARY_HASHED"]
+    sec = [(i, o) for i, o in enumerate(rows) if o["evidence"] != "PRIMARY_HASHED"]
+
+    def tiles(group: list[tuple[int, dict]]) -> str:
+        return "".join(
+            f'<button data-i="{i}" data-ev="{o["evidence"]}" '
+            f'aria-label="{esc(o["flight"])} on {esc(o["travel_date"])}, T plus '
+            f"{o['apw']}, band {o['band']}, "
+            f"{'bound to a hashed screenshot' if o['evidence'] == 'PRIMARY_HASHED' else 'from a chat image, no bytes hashed'}"
+            f'"></button>'
+            for i, o in group
+        )
+
+    return (
+        f'<div class="wall">{tiles(prim)}</div>'
+        f'<p class="meta" style="margin-top:var(--s5)">'
+        f"{len(sec)} observations arrived separately</p>"
+        f'<div class="wall" style="max-width:280px">{tiles(sec)}</div>'
+        f'<div class="wall-key">'
+        f'<span><i style="background:var(--green-wash)"></i>'
+        f"{len(prim)} PRIMARY_HASHED &#183; bound to a SHA-256 screenshot</span>"
+        f'<span><i style="background:var(--amber-wash)"></i>'
+        f"{len(sec)} SECONDARY_CHAT_IMAGE &#183; no bytes hashed</span>"
+        f"</div>"
+    )
+
+
+def decomposition(exclusions: list[dict], total: int) -> str:
+    """The 122 excluded screenshots, by recorded reason, largest first."""
+    mech = ("APW_MATCHES_NO_BUCKET", "OUTSIDE_CONTRACTED_BANDS")
+    biggest = max(e["count"] for e in exclusions)
+    rows = []
+    for e in sorted(exclusions, key=lambda e: -e["count"]):
+        is_mech = any(e["reason"].startswith(m) for m in mech)
+        label = e["reason"].split(" (")[0]
+        rows.append(
+            f'<div class="row" data-mech="{1 if is_mech else 0}">'
+            f'<span class="n">{e["count"]}</span>'
+            f'<span class="track"><i style="width:{e["count"] / biggest * 100:.1f}%"></i></span>'
+            f'<span class="lab">{esc(label)}</span></div>'
+        )
+    return f'<div class="decomp">{"".join(rows)}</div>'
+
+
+def stages_html(boundary: dict) -> str:
     out = []
     for i, st in enumerate(boundary["stages"]):
         cls = STATE_COLOURS[st["state"]]
         bullets = "".join(f"<li>{esc(e)}</li>" for e in st["evidence"])
-        ran = f'<span class="sp">spec {esc(st["spec"])}' + (
-            f" &middot; {esc(st['ran'])}</span>" if st["ran"] else "</span>"
-        )
+        spec = f"spec {esc(st['spec'])}" + (f" &#183; {esc(st['ran'])}" if st["ran"] else "")
         if st["key"] == "matched_set":
             out.append(
-                '<div class="stop-rule">real data stops here &mdash; '
-                "spec C.1 needs a t&minus;7 wave</div>"
+                '<p class="stop-line">real data stops here &#183; '
+                "spec C.1 needs a t&minus;7 wave</p>"
             )
         out.append(
-            f'<button class="bs" data-state="{st["state"]}" aria-expanded="false" '
-            f'aria-controls="bd-{i}" id="bt-{i}">'
-            f'<span class="rail"><i></i></span>'
-            f'<span class="nm">{esc(st["name"])}</span>'
-            f'<span class="pill {cls} stt">{st["state"]}</span>'
-            f"{ran}</button>"
-            f'<div class="bd" id="bd-{i}" data-open="0" role="region" aria-labelledby="bt-{i}">'
-            f'<div><ul>{bullets}</ul><p class="n">{esc(st["note"])}</p></div></div>'
+            f'<button class="stage" data-state="{st["state"]}" aria-expanded="false" '
+            f'aria-controls="sb-{i}" id="sbt-{i}">'
+            f'<span class="dot"></span>'
+            f'<span><span class="nm">{esc(st["name"])}</span>'
+            f'<span class="sp">{spec}</span></span>'
+            f'<span class="state {cls}">{st["state"]}</span></button>'
+            f'<div class="stage-body" id="sb-{i}" data-open="0" role="region" '
+            f'aria-labelledby="sbt-{i}"><div>'
+            f'<ul>{bullets}</ul><p class="note">{esc(st["note"])}</p>'
+            f"</div></div>"
         )
-    legend = "".join(
-        f'<div class="card"><span class="k"><span class="pill {STATE_COLOURS[k]}">{k}</span>'
-        f"</span><p>{esc(v)}</p></div>"
-        for k, v in boundary["states"].items()
-    )
-    return f'<div class="grid g2" style="margin-bottom:var(--s5)">{legend}</div>' + (
-        f'<div class="bnd">{"".join(out)}</div>'
-    )
+    return f'<div class="stages">{"".join(out)}</div>'
 
 
-def observations_html(rows: list[dict], apws: list[int], bands: list[int]) -> str:
-    """Filterable table of all 35 real observations. Every cell is a stored field."""
-
+def vault(rows: list[dict], apws: list[int], bands: list[int]) -> str:
     def group(name: str, label: str, values: list, fmt) -> str:
         btns = f'<button data-f="{name}" data-v="all" aria-pressed="true">all</button>'
         btns += "".join(
             f'<button data-f="{name}" data-v="{v}" aria-pressed="false">{fmt(v)}</button>'
             for v in values
         )
-        return f'<span class="flabel">{label}</span><span class="fgrp">{btns}</span>'
+        return f'<span class="fset"><span>{label}</span>{btns}</span>'
 
     filters = (
         '<div class="filters">'
         + group("apw", "APW", apws, lambda v: f"T+{v}")
-        + group("band", "Band", bands, lambda v: str(v))
+        + group("band", "Band", bands, str)
         + group(
             "ev",
             "Evidence",
             ["PRIMARY_HASHED", "SECONDARY_CHAT_IMAGE"],
             lambda v: "hashed" if v == "PRIMARY_HASHED" else "chat image",
         )
-        + '<span class="count" id="obs-count" aria-live="polite"></span></div>'
+        + '<span class="vcount" id="obs-count" aria-live="polite"></span></div>'
     )
     body = []
     for o in rows:
-        tag = "p" if o["evidence"] == "PRIMARY_HASHED" else "s"
-        tagtxt = "HASHED" if o["evidence"] == "PRIMARY_HASHED" else "CHAT IMG"
+        pill = "p" if o["evidence"] == "PRIMARY_HASHED" else "s"
+        txt = "HASHED" if o["evidence"] == "PRIMARY_HASHED" else "CHAT IMG"
         body.append(
             f'<tr data-apw="{o["apw"]}" data-band="{o["band"]}" data-ev="{o["evidence"]}">'
             f'<td class="m">T+{o["apw"]}</td>'
@@ -199,15 +264,15 @@ def observations_html(rows: list[dict], apws: list[int], bands: list[int]) -> st
             f'<td class="m r">{rupee(o["base"])}</td>'
             f'<td class="m r">{rupee(o["tax"])}</td>'
             f'<td class="m r"><strong>{rupee(o["total"])}</strong></td>'
-            f'<td><span class="tag {tag}">{tagtxt}</span></td></tr>'
+            f'<td><span class="pill {pill}">{txt}</span></td></tr>'
         )
     return (
         filters + '<div class="tscroll"><table id="obs-table">'
-        '<caption class="sr">All 35 real observations, filterable by '
+        '<caption class="sr">Every real observation, filterable by '
         "advance-purchase bucket, departure band and evidence grade</caption>"
         "<thead><tr><th>APW</th><th>travel date</th><th>dow</th><th>flight</th>"
-        '<th>dep</th><th class="r">band</th><th class="r">base ₹</th>'
-        '<th class="r">tax ₹</th><th class="r">total ₹</th><th>evidence</th>'
+        '<th>dep</th><th class="r">band</th><th class="r">base</th>'
+        '<th class="r">tax</th><th class="r">total</th><th>evidence</th>'
         f"</tr></thead><tbody>{''.join(body)}</tbody></table></div>"
     )
 
@@ -220,462 +285,471 @@ def build(p: dict) -> str:
     run = p["runs"][0] if p["runs"] else {}
     first, last = prof[0], prof[-1]
     # Derived from the geomeans, never from `rel_to_first` — that field is
-    # already rounded to 4dp and rounding a rounded ratio again turns 38.55%
+    # already rounded to 4dp, and rounding a rounded ratio again turns 38.55%
     # into 38.5%. One rounding, at display time only.
     delta = 100 * (last["geomean"] / first["geomean"] - 1)
     apws = [a["apw"] for a in prof]
     band_ids = [b["band"] for b in bands]
     widest = next(a for a in prof if a["apw"] == disp["widest_apw"])
-    n_ex = sum(1 for s in bnd["stages"] if s["state"] == "EXERCISED")
-    n_dg = sum(1 for s in bnd["stages"] if s["state"] == "DEGENERATE")
-    n_pd = sum(1 for s in bnd["stages"] if s["state"] == "PENDING")
+    audited = p["exclusions_total"] + q["valid_observations"]
+    libs = "".join(f'<script src="{u}" defer></script>' for u in LIBS)
 
     return f"""<title>APIx — Airfare Price Index Engine</title>
 <meta name="description" content="APIx: a quality-adjusted airfare price index
-engine for India. {q["valid_observations"]} real market observations,
-{len(apws)}/{len(apws)} advance-purchase buckets, and no published index —
-because the frozen methodology requires evidence that does not exist yet.">
-<meta name="color-scheme" content="dark light">
+engine for India. {q["valid_observations"]} real market observations, seven
+advance-purchase buckets, and no published index — because the frozen
+methodology requires evidence that does not exist yet.">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="{FONT_HREF}">
 <style>{CSS}</style>
-
 <script>document.documentElement.className += " js";</script>
-<noscript><style>
-/* The canvases are decoration and need script to draw anything at all. */
-#field,#pipe,.scroll-cue{{display:none}}
-</style></noscript>
+{libs}
 
-<a class="skip" href="#evidence">Skip to the evidence</a>
-{nav_html()}
+<a class="skip" href="#observation">Skip to the evidence</a>
+{nav(p)}
 
-<main id="top">
+<main>
 
+<!-- ═══════════════════════════════════════════════ LANDING ═══════════ -->
 <header class="hero">
   <canvas id="field" aria-hidden="true"></canvas>
   <div class="wrap">
-    <p class="eyebrow">MoSPI problem statement 26056 · methodology v{
-        run.get("methodology_version", "2.1")
-    } frozen</p>
-    <h1>Airfare is the weakest measurement point in the <em>CPI&nbsp;basket</em>.</h1>
-    <p class="lede">APIx is the engine that measures it honestly — and refuses
-    to publish until the evidence exists.</p>
-
-    <div class="route">
-      <b>{esc(frame["routes"][0])}</b><span class="arr">→</span>
-      <span>{esc(frame["carriers"][0])} · {esc(frame["fare_families"][0])}</span>
-      <span class="arr">·</span>
-      <span>collected {esc(p["collection_date"])}</span>
-      <span class="pill real">{esc(p["data_class"])}</span>
-    </div>
-
-    <div class="metrics">
-      {
-        metric(
-            "is-real",
-            "real observations",
-            str(q["valid_observations"]),
-            f"{len(apws)}/{len(apws)} frozen APW buckets · {len(bands)} departure bands",
-        )
-    }
-      {
-        metric(
-            "",
-            "collection plan",
-            f"{q['plan_completion_pct']}%",
-            f"{q['valid_observations']}/{q['plan_slots']} slots — plan completion, not statistical coverage",
-        )
-    }
-      {
-        metric(
-            "is-warn",
-            "exclusions audited",
-            str(p["exclusions_total"]),
-            f"{rep['agree']}/{rep['candidates']} mechanically decidable reproduce the recorded verdict",
-        )
-    }
-      {
-        metric(
-            "is-hold",
-            "APIx-L index",
-            "PENDING",
-            f"spec C.1 needs matched t / t−7 · unlocks {idx['next_wave_unlocking_index']}",
-        )
-    }
-    </div>
+    <p class="eyebrow">MoSPI problem statement 26056</p>
+    <h1>{lines("Airfare.", "Measured", "correctly.")}</h1>
+    <p class="sub rv" data-d="2">A quality-adjusted airfare price index for
+    India — and the auditable infrastructure that decides when it is allowed
+    to publish.</p>
   </div>
-  <div class="scroll-cue" aria-hidden="true">scroll<span></span></div>
+  <div class="wrap hero-foot">
+    <p class="meta">{esc(frame["routes"][0])} &#183; {esc(frame["carriers"][0])}
+    &#183; methodology v{esc(run.get("methodology_version", ""))} frozen</p>
+    <p class="cue"><i></i>scroll</p>
+  </div>
 </header>
 
-<!-- ============================================================ 01 ==== -->
-<section id="evidence" class="wrap" aria-labelledby="h-evidence">
-  <div class="shead"><span class="n">01</span>
-    <h2 id="h-evidence">The observation</h2></div>
-  <p class="lede rv">{q["valid_observations"]} fares, one route, one carrier, one
-  fare family, collected on {esc(p["collection_date"])} inside a declared
-  {esc(run.get("window_declared", ""))} window under a frozen protocol. All
-  {len(apws)} advance-purchase buckets are present — T+{apws[0]} through
-  T+{apws[-1]} — and every fare reconciles: base plus tax equals total,
-  {q["reconciled"]}/{q["decomposed"]}, in exact decimal.</p>
-
-  <div class="banner rv">
-    <span class="t">Descriptive APW profile — NOT AN INDEX</span>
-    <p>{esc(p["apw_profile_disclaimer"].split(". ", 1)[1])}</p>
+<!-- ═══════════════════════════════════════════════ STORY ═════════════ -->
+<section class="ch ch-paper ch-scene" aria-label="Why airfare is hard to measure">
+  <div class="wrap scene">
+    <div>
+      <h2 class="stmt">{lines("Airfare is", "volatile.")}</h2>
+      <p class="after rv">A single sector can vary two to four hundred percent
+      inside one day. Rail, fuel, telephone, postage — every other line in the
+      CPI transport basket is priced from an administrative source with one
+      authoritative provider. Airfare is read off a commercial website that
+      reprices continuously.</p>
+    </div>
   </div>
-
-  <figure class="chart rv" style="margin-top:var(--s5)">
-    <figcaption>
-      <h3>Fare by advance-purchase bucket</h3>
-      <span class="meta">₹ geometric mean, spec §D.2 log form · n={q["valid_observations"]}</span>
-    </figcaption>
-    <div class="cwrap">{apw_chart(prof)}</div>
-    <p class="src">Source: <span class="mono">data/panel.json → apw_profile</span>.
-    Seven separate cross-sections on seven different travel dates, plotted on an
-    ordinal axis. The T+{last["apw"]} bucket sits {delta:.1f}% above T+{first["apw"]} —
-    a descriptive difference between two cross-sections, <strong>not a price
-    movement and not airfare inflation</strong>.</p>
-  </figure>
-
-  <figure class="chart rv" style="margin-top:var(--s5)">
-    <figcaption>
-      <h3>Departure-band structure</h3>
-      <span class="meta">₹ geometric mean by 3-hour band, spec §B.2 · bands
-      {band_ids[0]}–{band_ids[-1]}, anchored 00:00 IST</span>
-    </figcaption>
-    <div class="cwrap">{band_chart(bands)}</div>
-    <p class="src">Source: <span class="mono">data/panel.json → band_profile</span>.
-    Band spread across the day is {p["band_spread_pct"]}% — an order of magnitude
-    smaller than the spread within a single bucket, which is why the collection
-    contract fixes one flight per band rather than sampling the day.</p>
-  </figure>
-
-  <h3 class="rv" style="margin-top:var(--s8)">Every observation, inspectable</h3>
-  <p class="lede rv" style="margin-bottom:var(--s4)">Filter by bucket, band or
-  evidence grade. Nothing is aggregated away.</p>
-  <div class="rv">{observations_html(p["observations"], apws, band_ids)}</div>
-</section>
-
-<!-- ============================================================ 02 ==== -->
-<section id="confound" class="wrap" aria-labelledby="h-confound">
-  <div class="shead"><span class="n">02</span>
-    <h2 id="h-confound">Why a naïve comparison is dangerous</h2></div>
-  <p class="lede rv">A single sector can vary two to four hundred percent within
-  a day. <strong>Most of that is not inflation — it is product mix</strong>:
-  booking horizon, fare family, departure time, baggage terms. An index built on
-  naive daily averages accumulates that as chain drift, which is a bias, not
-  noise. It does not average out with more data.</p>
-
-  <figure class="chart rv" style="margin-top:var(--s5)">
-    <figcaption>
-      <h3>Lead time is confounded with travel date</h3>
-      <span class="meta">{conf["distinct_weekdays"]} distinct weekdays across
-      {len(apws)} buckets</span>
-    </figcaption>
-    <div class="cwrap">{confound_chart(prof)}</div>
-    <p class="src">Source: <span class="mono">data/panel.json → confound</span>.
-    {esc(conf["statement"])}</p>
-  </figure>
-  <p class="note rv">{
-        esc(", ".join(f"{d} appears {n}×" for d, n in conf["repeated_weekdays"].items()))
-    }.
-  Because each bucket sits on its own travel date, the buckets are not
-  interchangeable time observations — so the profile above is descriptive and
-  <strong>is not a time-series</strong>.</p>
-</section>
-
-<!-- ============================================================ 03 ==== -->
-<section id="dispersion" class="wrap" aria-labelledby="h-disp">
-  <div class="shead"><span class="n">03</span>
-    <h2 id="h-disp">Within-bucket dispersion</h2></div>
-  <p class="lede rv">T+{disp["widest_apw"]} has the widest observed spread —
-  {disp["widest_spread_pct"]}%, against {disp["others_max_spread_pct"]}% for the
-  next widest bucket. <strong>The panel establishes the dispersion; it
-  does not establish its cause.</strong> No anomaly-detection definition is in
-  force, so this is reported as observed dispersion and <strong>not as an
-  anomaly</strong>.</p>
-  <div class="grid g2 rv" style="margin-top:var(--s5)">
-    <div class="card"><span class="k">cheapest in bucket</span>
-      <h3>{esc(disp["widest_min_obs"]["flight"])} · {esc(disp["widest_min_obs"]["dep"])}</h3>
-      <p class="mono">₹{rupee(disp["widest_min_obs"]["total"])} · band {
-        disp["widest_min_obs"]["band"]
-    }</p>
-      <p class="mono" style="font-size:var(--t-xs);color:var(--ink-3)">{
-        esc(disp["widest_min_obs"]["observation_id"])
-    }</p></div>
-    <div class="card"><span class="k">dearest in bucket</span>
-      <h3>{esc(disp["widest_max_obs"]["flight"])} · {esc(disp["widest_max_obs"]["dep"])}</h3>
-      <p class="mono">₹{rupee(disp["widest_max_obs"]["total"])} · band {
-        disp["widest_max_obs"]["band"]
-    }</p>
-      <p class="mono" style="font-size:var(--t-xs);color:var(--ink-3)">{
-        esc(disp["widest_max_obs"]["observation_id"])
-    }</p></div>
-  </div>
-  <p class="note rv">This is a <strong>cross-band</strong> spread across
-  {widest["n"]} flights on a single travel date. It is <em>not</em> within-band
-  dispersion, which is degenerate at n=1 in this panel — a different quantity,
-  and neither substitutes for the other.</p>
-</section>
-
-<!-- ============================================================ 04 ==== -->
-<section id="provenance" class="wrap" aria-labelledby="h-prov">
-  <div class="shead"><span class="n">04</span>
-    <h2 id="h-prov">Evidence, and where it is weaker</h2></div>
-  <p class="lede rv">Provenance is <strong>not uniform across the panel</strong>,
-  and the data model records that as a derived fact rather than a label someone
-  remembered to apply.</p>
-
-  <figure class="chart rv" style="margin-top:var(--s5)">
-    <figcaption><h3>Evidence grade</h3>
-      <span class="meta">n={
-        q["valid_observations"]
-    } · derived from artifact binding</span></figcaption>
-    <div class="cwrap">{provenance_chart(ev["PRIMARY_HASHED"], ev["SECONDARY_CHAT_IMAGE"])}</div>
-    <p class="src">The T+45 batch arrived as chat images rather than files, so no
-    bytes could be hashed and its capture times are <strong>placeholders, not
-    measurements</strong>. Those {ev["SECONDARY_CHAT_IMAGE"]} rows are marked
-    <span class="tag s">CHAT IMG</span> in the table above. We say so before you ask.</p>
-  </figure>
-
-  <figure class="chart rv" style="margin-top:var(--s5)">
-    <figcaption><h3>Exclusion audit — {p["exclusions_total"]} screenshots</h3>
-      <span class="meta">every excluded screenshot carries a reason and an id</span></figcaption>
-    <div class="cwrap">{exclusion_chart(p["exclusions"], rep["agree"], rep["candidates"])}</div>
-    <p class="src">Source: <span class="mono">data/panel.json → exclusions, replay</span>.
-    Nothing was deleted. {esc(rep["statement"])}</p>
-  </figure>
-
-  <div class="grid g3 rv" style="margin-top:var(--s5)">
-    <div class="card"><span class="k">replayed</span>
-      <h3 class="mono">{rep["agree"]}/{rep["candidates"]}</h3>
-      <p>reproduce the recorded §A.3/§B.2 verdict</p></div>
-    <div class="card"><span class="k">disagreements</span>
-      <h3 class="mono">{rep["disagree"]}</h3>
-      <p>a single one would invalidate the audit</p></div>
-    <div class="card"><span class="k">false rejections</span>
-      <h3 class="mono">{len(rep["wrongly_rejected"])}</h3>
-      <p>of {rep["accepted_rechecked"]} accepted observations — the control arm</p></div>
-  </div>
-  <p class="note rv">{esc(rep["scope_note"])}</p>
-  <p class="note rv">{q["window_flags"]} observations fall outside their run's
-  declared window. Spec §A.5 keeps them in the store and out of the index —
-  stored and flagged, never discarded.</p>
-</section>
-
-<!-- ============================================================ 05 ==== -->
-<section id="boundary" class="wrap" aria-labelledby="h-bnd">
-  <div class="shead"><span class="n">05</span>
-    <h2 id="h-bnd">Real-data execution boundary</h2></div>
-  <p class="lede rv"><strong>{esc(bnd["claim"])}</strong></p>
-  <p class="lede rv">{n_ex} stages exercised, {n_dg} degenerate, {n_pd} pending,
-  one blocked. Generated from the contract, stage by stage — select any stage for
-  the evidence behind its state.</p>
-
-  <canvas id="pipe" aria-hidden="true"></canvas>
-  <p class="note rv">A diagram of the recorded workflow, animated so the order
-  reads at a glance. <strong>It is a visualisation, not a live process
-  monitor</strong> — nothing on this page polls or measures a running job, and
-  the packets stop exactly where the evidence stops.</p>
-
-  <div class="rv" style="margin-top:var(--s5)">{boundary_html(bnd)}</div>
-  <p class="note rv">{esc(bnd["caveat"])}</p>
-  <p class="note rv">Reconstructed from <span class="mono">{esc(bnd["reconstructed_from"])}</span>.
-  {esc(bnd["reconstruction_check"])}.</p>
-</section>
-
-<!-- ============================================================ 06 ==== -->
-<section id="pending" class="wrap" aria-labelledby="h-pend">
-  <div class="shead"><span class="n">06</span>
-    <h2 id="h-pend">Why no index exists yet</h2></div>
-  <div class="banner stop rv">
-    <span class="t">APIx-L — PENDING, and that is the design</span>
-    <p>Methodology §C.1 is <strong>LOCKED</strong>:
-    <span class="mono">I(c,t) = I(c,t−7) × J(c,t)</span>. Every index value needs
-    a matched pair at <span class="mono">t</span> and <span class="mono">t−7</span>.
-    APIx holds {idx["collection_waves"]} collection wave, which gives
-    {idx["matched_pairs_available"]} matched pairs. So APIx-L is
-    <strong>not computable</strong> today, and the engine refuses rather than
-    inventing a level.</p>
-  </div>
-  <div class="flow rv" style="margin-top:var(--s5)">
-    <span class="step now">t = {esc(p["collection_date"])}</span><span class="arr">→</span>
-    <span class="step stop">needs t−7</span><span class="arr">→</span>
-    <span class="step stop">no counterpart wave</span><span class="arr">→</span>
-    <span class="step stop">publication blocked</span>
-  </div>
-  <p class="lede rv" style="margin-top:var(--s5)">This is not an unfinished
-  feature. Everything downstream is implemented and covered by the
-  fixture suite; what is missing is the evidence the formula requires. The first
-  date that can supply a matched pair is
-  <strong>{idx["next_wave_unlocking_index"]}</strong>.</p>
-  <p class="note rv">{esc(idx["apix_l_blocker"])}</p>
-</section>
-
-<!-- ============================================================ 07 ==== -->
-<section id="engine" class="wrap" aria-labelledby="h-eng">
-  <div class="shead"><span class="n">07</span>
-    <h2 id="h-eng">The engine, on a controlled test fixture</h2></div>
-  <div class="banner rv">
-    <span class="t">Not market data — controlled synthetic test fixture</span>
-    <p>The engine is demonstrated on a <strong>controlled synthetic test
-    fixture</strong>, in index points on a base of 100, with no currency figures
-    anywhere. It is rendered to its own file,
-    <span class="mono">data/engine-validation.html</span>, and a test asserts it
-    never merges into this page. <strong>Nothing on that page is an airfare
-    observation, and nothing on it is an APIx index value.</strong></p>
-  </div>
-  <p class="lede rv">It exists to show that the engine computes, chains and
-  <em>refuses</em> correctly — not to say anything about prices. Run it yourself:</p>
-  <div class="chart rv" style="margin-top:var(--s4)">
-    <p class="mono" style="color:var(--accent)">python tools/analysis/engine_demo.py</p>
-    <p class="src">Matched sets at t and t−7 · Jevons relatives · chaining across
-    14 consecutive publication dates · and the engine raising rather than
-    inventing a level when fed a state dated after the period being published.
-    Every value there is synthetic test data.</p>
+  <div class="wrap scene right">
+    <div>
+      <h2 class="stmt">{lines("But volatility", "is not", "<em>inflation</em>.")}</h2>
+      <p class="after rv">Most of that movement is product mix — booking
+      horizon, fare family, departure time, baggage terms. An index built on
+      naive daily averages accumulates it as chain drift. That is a bias, not
+      noise, and it does not average out with more data.</p>
+    </div>
   </div>
 </section>
 
-<!-- ============================================================ 08 ==== -->
-<section id="method" class="wrap" aria-labelledby="h-meth">
-  <div class="shead"><span class="n">08</span>
-    <h2 id="h-meth">Methodology</h2></div>
-  <div class="flow rv">
-    <span class="step now">raw observation</span><span class="arr">→</span>
-    <span class="step now">admissibility §A.6</span><span class="arr">→</span>
-    <span class="step now">band / key §B.2</span><span class="arr">→</span>
-    <span class="step now">dedup §D.4</span><span class="arr">→</span>
-    <span class="step next">Jevons §D.2</span><span class="arr">→</span>
-    <span class="step next">advance-cell §E</span><span class="arr">→</span>
-    <span class="step next">Young / Mod. Laspeyres §F</span><span class="arr">→</span>
-    <span class="step stop">publication §H</span>
-  </div>
-  <p class="note rv">Blue runs on today's data — the same thing section 05 calls
-  EXERCISED, which is <strong>not</strong> "validated". Amber is implemented and
-  invariant-tested but has no input yet, because every one of those steps
-  consumes a price <em>relative</em>, and a relative needs two collection waves.</p>
-  <div class="faq rv" style="margin-top:var(--s5)">
-    <details class="qa"><summary>Jevons at the elementary level (§D.2)</summary>
-      <div class="a">The geometric mean of matched price relatives, computed in
-      logs — the normative form, so the descriptive summary on this page and the
-      engine cannot drift into different arithmetic. MoSPI's own elementary
-      aggregator for the CPI.</div></details>
-    <details class="qa"><summary>Advance-purchase stratification (§A.3)</summary>
-      <div class="a">Seven frozen buckets, assigned by <strong>exact</strong> lead
-      time. A quote whose lead time matches no bucket is inadmissible and is never
-      rounded into the nearest one. That rule rejected 24 T+68 screenshots, and
-      the replay in section 04 re-derived all 24 independently.</div></details>
-    <details class="qa"><summary>The matched set (§D.1, §D.8)</summary>
-      <div class="a">Items present in <em>both</em> t and t−7. A tier ladder
-      relaxes item identity from flight number to departure slot when schedules
-      move, and a Tier-3 cell publishes a declared unit value and forms no matched
-      set at all. None of this is reached by real data yet.</div></details>
-    <details class="qa"><summary>Weekly chaining (§C.1, LOCKED)</summary>
-      <div class="a"><span class="mono">I(c,t) = I(c,t−7) × J(c,t)</span>. The
-      level holds between weekly links and moves once per link. A seven-day
-      relative applied daily would compound sevenfold; the suite asserts that
-      compounded value as forbidden.</div></details>
-    <details class="qa"><summary>What the engine refuses to do</summary>
-      <div class="a">Publish without a matched pair; publish without a declared
-      coverage denominator (AMB-8); weight a multi-carrier route without declared
-      shares (AMB-9); admit a quote whose lead time matches no frozen bucket.
-      Four independent guards, none of which may be weakened to obtain a
-      number.</div></details>
+<!-- ═══════════════════════════════════════════════ OBSERVATION ═══════ -->
+<section class="ch ch-paper" id="observation" aria-labelledby="h-obs">
+  <div class="wrap">
+    <div class="split">
+      <div class="stick">
+        <p class="eyebrow">Chapter 01</p>
+        <h2 id="h-obs">{lines("The", "observation")}</h2>
+        <p class="lede rv" style="margin-top:var(--s4)">One route, one carrier,
+        one fare family, one collection wave — inside a declared
+        {esc(run.get("window_declared", ""))} window under a frozen protocol.</p>
+        <p class="meta rv" data-d="1" style="margin-top:var(--s5)">
+        {esc(p["data_class"])}</p>
+      </div>
+      <div>
+        <p class="figure-xl rv" data-count="{q["valid_observations"]}">0</p>
+        <p class="figure-note rv" data-d="1">real market observations, collected
+        {esc(p["collection_date"])} on {esc(frame["routes"][0])}. Every fare
+        reconciles — base plus tax equals total, {q["reconciled"]}/{q["decomposed"]},
+        in exact decimal. {q["plan_completion_pct"]}% of the collection plan
+        ({q["valid_observations"]}/{q["plan_slots"]} slots) is filled: that is
+        plan completion, and it is not statistical coverage.</p>
+
+        <p class="figure-xl amber rv" data-d="2"
+           style="margin-top:var(--s8)">{len(apws)}<span
+           style="font-size:.34em;letter-spacing:-.02em"> / {len(apws)}</span></p>
+        <p class="figure-note rv" data-d="3">frozen advance-purchase buckets,
+        T+{apws[0]} through T+{apws[-1]}, assigned by exact lead time. A quote
+        matching no bucket is inadmissible and is never rounded into the
+        nearest one.</p>
+      </div>
+    </div>
+
+    <p class="eyebrow" style="margin-top:var(--s9)">DESCRIPTIVE APW PROFILE —
+    NOT AN INDEX</p>
+    <p class="lede rv" style="max-width:52ch">{esc(p["apw_profile_disclaimer"].split(". ", 1)[1])}</p>
+
+    <figure class="chart rv">
+      <figcaption>
+        <h3>Fare by advance-purchase bucket</h3>
+        <p class="meta">geometric mean, spec D.2 log form &#183;
+        n={q["valid_observations"]}</p>
+      </figcaption>
+      <div class="cwrap">{apw_chart(prof)}</div>
+      <p class="src">Source <span class="mono">data/panel.json &#8594; apw_profile</span>.
+      Seven separate cross-sections on seven different travel dates, drawn on an
+      ordinal axis.</p>
+    </figure>
+
+    <figure class="chart rv" style="margin-top:var(--s8)">
+      <figcaption>
+        <h3>Departure-band structure</h3>
+        <p class="meta">spec B.2 &#183; bands {band_ids[0]}&#8211;{band_ids[-1]},
+        3-hour, anchored 00:00 IST</p>
+      </figcaption>
+      <div class="cwrap">{band_chart(bands)}</div>
+      <p class="src">Spread across the day is {p["band_spread_pct"]}% — an order
+      of magnitude smaller than the spread inside a single bucket, which is why
+      the contract fixes one flight per band rather than sampling the day.</p>
+    </figure>
   </div>
 </section>
 
-<!-- ============================================================ 09 ==== -->
-<section id="limits" class="wrap" aria-labelledby="h-lim">
-  <div class="shead"><span class="n">09</span>
-    <h2 id="h-lim">What is not established</h2></div>
-  <p class="lede rv">Stated here rather than discovered later.</p>
-  <div class="grid g2 rv" style="margin-top:var(--s5)">
-    <div class="card"><span class="k">AMB-8 · open</span>
-      <h3>Statistical coverage NOT ESTABLISHED</h3>
-      <p>{esc(q["statistical_coverage_blocker"])}</p>
-      <p><strong>{q["plan_completion_pct"]}% is collection-plan completion</strong>
-      — {q["valid_observations"]}/{q["plan_slots"]} slots — and is a different
-      quantity from statistical coverage.</p></div>
-    <div class="card"><span class="k">AMB-9 · open</span>
-      <h3>Carrier weighting blocked</h3>
-      <p>Spec §G.3/§G.5 carry no carrier term in the within-route weight formula.
-      At one carrier the allocation is mathematically degenerate; beyond one
-      carrier <span class="mono">within_route_weights</span> raises rather than
-      guessing. An owner ruling is required before any carrier expansion.</p></div>
-    <div class="card"><span class="k">OQ-1 · open</span>
-      <h3>Collection window value not fixed</h3>
-      <p>§A.5 locks the <em>rule</em> that all collection runs inside a fixed
-      daily window; the window's published value is not yet fixed. So no single
-      admissible count is normative — {q["window_flags"]} observations sit outside
-      the runs' declared window and are flagged, not discarded.</p></div>
-    <div class="card"><span class="k">§M · specified only</span>
-      <h3>APIx-TPD NOT IMPLEMENTED</h3>
-      <p>The quote-level Time Product Dummy estimator is specified in §M and the
-      package is empty — a test fails the build if that stops being true. The
-      panel also holds {idx["tpd_quotes_available"]} quotes against a
-      <span class="mono">min_quotes_window</span> of
-      {idx["tpd_min_quotes_window"]:,}. Both are true and both are stated.</p></div>
-    <div class="card"><span class="k">uncertainty</span>
-      <h3>No interval is reported</h3>
-      <p>The bootstrap is specified and not implemented, and the collection design
-      does not yet record the admissible-flight universe per band, so it does not
-      carry the sampling-design information an interval would need. Observed
-      dispersion is reported instead, which assumes nothing.</p></div>
-    <div class="card"><span class="k">scope</span>
-      <h3>National representativeness not established</h3>
-      <p>One route of the DGCA city-pair frame, one carrier, one channel, one day.
-      Route and carrier weighting are implemented and <strong>not exercised</strong>.
-      MoSPI has not endorsed APIx.</p></div>
+<!-- ═══════════════════════════════════════════════ RAIL ══════════════ -->
+<section class="ch ch-neutral" id="rail" aria-labelledby="h-rail"
+         style="padding-block:var(--s7)">
+  <div class="wrap">
+    <p class="eyebrow">Chapter 02</p>
+    <h2 id="h-rail">{lines("Seven buckets,", "seven travel dates")}</h2>
+    <p class="lede rv" style="margin-top:var(--s4)">Each one is a separate
+    cross-section. Scroll sideways through them.</p>
+  </div>
+  {rail(prof)}
+</section>
+
+<!-- ═══════════════════════════════════════════════ THE DIFFERENCE ════ -->
+<section class="ch ch-neutral ch-scene" id="delta" aria-labelledby="h-delta">
+  <div class="wrap scene">
+    <div>
+      <p class="eyebrow">Chapter 03</p>
+      <p class="figure-xl amber rv" data-count="{delta:.1f}" data-dp="1"
+         data-pre="+" data-post="%">+0%</p>
+      <h2 id="h-delta" class="sr">The T+{last["apw"]} to T+{first["apw"]} difference</h2>
+      <p class="figure-note rv" data-d="1" style="font-size:var(--t-sub);
+         font-family:var(--disp);max-width:30ch;line-height:1.4">
+      T+{last["apw"]} sits {delta:.1f}% above T+{first["apw"]}.</p>
+      <p class="after rv" data-d="2" style="max-width:44ch">
+      <strong>That is a descriptive difference between two cross-sections.</strong>
+      It is not a price movement, and it is <strong>not airfare inflation</strong>.
+      The two buckets sit on different travel dates, different weekdays, and
+      T+{last["apw"]} falls days after Diwali. A return-travel peak is a
+      hypothesis this panel cannot test.</p>
+    </div>
   </div>
 </section>
 
-<!-- ============================================================ 10 ==== -->
-<section id="next" class="wrap" aria-labelledby="h-next">
-  <div class="shead"><span class="n">10</span>
-    <h2 id="h-next">{idx["next_wave_unlocking_index"]}</h2></div>
-  <p class="lede rv">Seven days after the wave we hold. Same route, same carrier,
-  same five bands, same selection rule, same window — because every one of those
-  is part of the cell key, and a cell that changes has no counterpart to match
-  against.</p>
-  <div class="flow rv" style="margin-top:var(--s5)">
-    <span class="step now">wave 1 · {esc(p["collection_date"])}</span><span class="arr">→</span>
-    <span class="step next">wave 2 · {
-        idx["next_wave_unlocking_index"]
-    }</span><span class="arr">→</span>
-    <span class="step next">matched t / t−7</span><span class="arr">→</span>
-    <span class="step next">first real Jevons relative</span><span class="arr">→</span>
-    <span class="step next">first real index calculation</span>
+<!-- ═══════════════════════════════════════════════ CONFOUND ══════════ -->
+<section class="ch ch-neutral" id="confound" aria-labelledby="h-conf">
+  <div class="wrap">
+    <p class="eyebrow">Chapter 04</p>
+    <h2 id="h-conf">{lines("Lead time is", "confounded with", "travel date")}</h2>
+    <p class="lede rv" style="margin-top:var(--s4)">{len(apws)} buckets land on
+    {conf["distinct_weekdays"]} distinct weekdays.
+    {esc(", ".join(f"{d} appears {n} times" for d, n in conf["repeated_weekdays"].items()))}.</p>
+    <figure class="chart rv">
+      <div class="cwrap">{confound_chart(prof)}</div>
+      <p class="src">{esc(conf["statement"])}</p>
+    </figure>
   </div>
-  <p class="note rv">A 7-day shift preserves the travel date's weekday for all
-  {len(apws)} buckets, which is why the cell keys line up. No future value is
-  predicted here — the procedure is written down, and whether it produces a
-  result is a question for the data.</p>
-  <p class="note rv">Reaching a first index value clears none of AMB-8, AMB-9 or
-  OQ-1. A first index value is a first index value; it is not a published index.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════ DISPERSION ════════ -->
+<section class="ch ch-paper" id="dispersion" aria-labelledby="h-disp">
+  <div class="wrap split">
+    <div class="stick">
+      <p class="eyebrow">Chapter 05</p>
+      <h2 id="h-disp">{lines("Within-bucket dispersion")}</h2>
+    </div>
+    <div>
+      <p class="lede rv">T+{disp["widest_apw"]} has the widest observed spread —
+      {disp["widest_spread_pct"]}%, against {disp["others_max_spread_pct"]}% for
+      the next widest bucket.</p>
+      <p class="body rv" data-d="1" style="margin-top:var(--s4)">
+      <strong>The panel establishes the dispersion; it does not establish its
+      cause.</strong> No anomaly-detection definition is in force, so this is
+      reported as observed dispersion and <strong>not as an anomaly</strong>.</p>
+      <div class="rv" data-d="2" style="margin-top:var(--s6);display:grid;
+           grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--s5)">
+        <div><p class="meta">cheapest in bucket</p>
+          <p class="mono" style="font-size:22px;margin-top:6px">
+          {esc(disp["widest_min_obs"]["flight"])}</p>
+          <p class="mono" style="color:var(--ink-3);font-size:var(--t-xs)">
+          {esc(disp["widest_min_obs"]["dep"])} &#183; band
+          {disp["widest_min_obs"]["band"]} &#183;
+          &#8377;{rupee(disp["widest_min_obs"]["total"])}</p>
+          <p class="mono" style="color:var(--ink-3);font-size:var(--t-2xs);
+             margin-top:6px">{esc(disp["widest_min_obs"]["observation_id"])}</p></div>
+        <div><p class="meta">dearest in bucket</p>
+          <p class="mono" style="font-size:22px;margin-top:6px">
+          {esc(disp["widest_max_obs"]["flight"])}</p>
+          <p class="mono" style="color:var(--ink-3);font-size:var(--t-xs)">
+          {esc(disp["widest_max_obs"]["dep"])} &#183; band
+          {disp["widest_max_obs"]["band"]} &#183;
+          &#8377;{rupee(disp["widest_max_obs"]["total"])}</p>
+          <p class="mono" style="color:var(--ink-3);font-size:var(--t-2xs);
+             margin-top:6px">{esc(disp["widest_max_obs"]["observation_id"])}</p></div>
+      </div>
+      <p class="body rv" data-d="3" style="margin-top:var(--s5)">This is a
+      <strong>cross-band</strong> spread across {widest["n"]} flights on a single
+      travel date. It is not within-band dispersion, which is degenerate at n=1
+      in this panel — a different quantity, and neither substitutes for the
+      other.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ EVIDENCE ══════════ -->
+<section class="ch ch-sky" id="evidence" aria-labelledby="h-ev">
+  <div class="wrap split">
+    <div class="stick">
+      <p class="eyebrow">Chapter 06</p>
+      <h2 id="h-ev">{lines("Evidence,", "and where it", "is weaker")}</h2>
+      <p class="lede rv" style="margin-top:var(--s4)">Provenance is not uniform
+      across the panel, and the data model records that as a derived fact rather
+      than a label someone remembered to apply.</p>
+    </div>
+    <div>
+      {wall(p["observations"])}
+      <p class="body rv" style="margin-top:var(--s5)">An observation is
+      <span class="mono">PRIMARY_HASHED</span> only if its run actually carries a
+      content-addressed artifact. The {ev["SECONDARY_CHAT_IMAGE"]} in the second
+      group arrived as chat images rather than files, so no bytes could be hashed
+      and their capture times are <strong>placeholders, not measurements</strong>.
+      We say so before you ask.</p>
+      <p class="body rv" data-d="1" style="margin-top:var(--s3)">
+      {q["window_flags"]} observations fall outside their run's declared window.
+      Spec A.5 keeps them in the store and out of the index — stored and flagged,
+      never discarded.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ FORENSICS ═════════ -->
+<section class="ch ch-sky" id="forensics" aria-labelledby="h-for">
+  <div class="wrap">
+    <p class="eyebrow">Chapter 07</p>
+    <h2 id="h-for">{lines("Every screenshot", "that did not", "become an observation")}</h2>
+
+    <div class="rv" style="margin-top:var(--s7);display:grid;
+         grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--s5);
+         max-width:840px">
+      <div><p class="figure-xl" style="font-size:clamp(52px,7vw,104px)"
+              data-count="{audited}">0</p>
+        <p class="meta" style="margin-top:var(--s2)">screenshots audited</p></div>
+      <div><p class="figure-xl" style="font-size:clamp(52px,7vw,104px)"
+              data-count="{q["valid_observations"]}">0</p>
+        <p class="meta" style="margin-top:var(--s2)">retained</p></div>
+      <div><p class="figure-xl" style="font-size:clamp(52px,7vw,104px)"
+              data-count="{p["exclusions_total"]}">0</p>
+        <p class="meta" style="margin-top:var(--s2)">excluded, each with a reason
+        and an id</p></div>
+    </div>
+
+    {decomposition(p["exclusions"], p["exclusions_total"])}
+
+    <div class="split" style="margin-top:var(--s9)">
+      <div class="stick">
+        <h3>{lines("Then we asked", "the engine")}</h3>
+        <p class="body rv" style="margin-top:var(--s4)">Two of those reasons are
+        mechanically decidable. We fed the recorded candidates back through the
+        same frozen spec A.3 and spec B.2 code the engine uses, and asked whether
+        it independently reaches the recorded verdict.</p>
+      </div>
+      <div>
+        <p class="figure-xl rv" data-count="{rep["agree"]}">0</p>
+        <p class="figure-note rv" data-d="1">of {rep["candidates"]} mechanically
+        decidable exclusions reproduce the recorded verdict.</p>
+        <p class="figure-xl amber rv" data-d="2" data-count="{rep["disagree"]}"
+           style="margin-top:var(--s7)">0</p>
+        <p class="figure-note rv" data-d="3">disagreements. A single one would
+        invalidate the audit.</p>
+        <p class="figure-xl amber rv" data-d="2"
+           data-count="{len(rep["wrongly_rejected"])}"
+           style="margin-top:var(--s7)">0</p>
+        <p class="figure-note rv" data-d="3">false rejections among the
+        {rep["accepted_rechecked"]} accepted observations — the control arm. A
+        rule that also rejected the accepted panel would prove nothing.</p>
+        <p class="body rv" data-d="4" style="margin-top:var(--s6)">
+        {esc(rep["statement"])}</p>
+        <p class="body rv" data-d="4" style="margin-top:var(--s3)">
+        {esc(rep["scope_note"])}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ ENGINE ════════════ -->
+<section class="ch ch-night" id="engine" aria-labelledby="h-eng">
+  <div class="wrap">
+    <p class="eyebrow">Chapter 08</p>
+    <h2 id="h-eng">{lines("Real-data execution boundary")}</h2>
+    <p class="lede rv" style="margin-top:var(--s4);max-width:46ch">
+    {esc(bnd["claim"])}</p>
+    {stages_html(bnd)}
+    <p class="body rv" style="margin-top:var(--s6);max-width:60ch">
+    {esc(bnd["caveat"])}</p>
+    <p class="body rv" data-d="1" style="margin-top:var(--s3);max-width:60ch">
+    Reconstructed from <span class="mono">{esc(bnd["reconstructed_from"])}</span>.
+    {esc(bnd["reconstruction_check"])}.</p>
+    <p class="body rv" data-d="2" style="margin-top:var(--s5);max-width:60ch">
+    The engine is separately demonstrated end to end on a <strong>controlled
+    synthetic test fixture</strong>, rendered to its own file
+    <span class="mono">data/engine-validation.html</span> — index points on a
+    base of 100, no currency anywhere, and a test asserts it never merges into
+    this page. Nothing on that page is an airfare observation.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ PENDING ═══════════ -->
+<section class="ch ch-neutral" id="pending" aria-labelledby="h-pend">
+  <div class="wrap">
+    <p class="eyebrow">Chapter 09</p>
+    <h2 id="h-pend" style="font-size:var(--t-hero);font-weight:700;
+        letter-spacing:-.052em;line-height:.86;max-width:none">
+    {lines("INDEX", "PENDING")}</h2>
+    <div class="split" style="margin-top:var(--s7)">
+      <div>
+        <p class="lede rv">Methodology C.1 is <strong>locked</strong>:
+        <span class="mono">I(c,t) = I(c,t&minus;7) &#215; J(c,t)</span>.</p>
+      </div>
+      <div>
+        <p class="body rv">Every index value needs a matched pair at
+        <span class="mono">t</span> and <span class="mono">t&minus;7</span>.
+        APIx holds {idx["collection_waves"]} collection wave, which gives
+        {idx["matched_pairs_available"]} matched pairs. So APIx-L is
+        <strong>not computable</strong> today, and the engine refuses rather
+        than inventing a level.</p>
+        <p class="body rv" data-d="1" style="margin-top:var(--s4)">This is not an
+        unfinished feature. Everything downstream is implemented and covered by
+        the fixture suite. What is missing is the evidence the formula requires.</p>
+        <p class="body rv" data-d="2" style="margin-top:var(--s4);
+           font-family:var(--mono);font-size:var(--t-xs)">
+        {esc(idx["apix_l_blocker"])}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ UNLOCK ════════════ -->
+<section class="ch ch-paper" id="unlock" aria-labelledby="h-unlock">
+  <div class="wrap">
+    <p class="eyebrow">Chapter 10</p>
+    <h2 id="h-unlock">{lines("The condition", "that changes", "the state")}</h2>
+    <p class="lede rv" style="margin-top:var(--s4)">Seven days after the wave we
+    hold. Same route, same carrier, same five bands, same selection rule, same
+    window — because each of those is part of the cell key, and a cell that
+    changes has no counterpart to match against.</p>
+
+    <div class="timeline rv" data-d="1">
+      <span class="node" data-now="1"><i></i><b>{esc(p["collection_date"])}</b>
+        <span>wave 1 &#183; held</span></span>
+      <span class="link dash"></span>
+      <span class="node" data-key="1"><i></i><b>{idx["next_wave_unlocking_index"]}</b>
+        <span>wave 2 &#183; required</span></span>
+      <span class="link"></span>
+      <span class="node"><i></i><b>matched t / t&minus;7</b>
+        <span>spec D.1</span></span>
+      <span class="link"></span>
+      <span class="node"><i></i><b>Jevons relative</b><span>spec D.2</span></span>
+      <span class="link"></span>
+      <span class="node"><i></i><b>index calculation</b><span>spec C.1</span></span>
+    </div>
+
+    <p class="body rv" data-d="2" style="margin-top:var(--s7)">A 7-day shift
+    preserves the travel date's weekday for all {len(apws)} buckets, which is why
+    the cell keys line up. No future value is predicted here — the procedure is
+    written down, and whether it produces a result is a question for the data.</p>
+
+    <div style="margin-top:var(--s9);max-width:860px">
+      <h3 class="rv">What a first index value would still not clear</h3>
+      <details class="qa rv"><summary>Statistical coverage — AMB-8, open</summary>
+        <div class="a">{esc(q["statistical_coverage_blocker"])} The
+        {q["plan_completion_pct"]}% above is collection-plan completion
+        ({q["valid_observations"]}/{q["plan_slots"]} slots), which is a different
+        quantity.</div></details>
+      <details class="qa rv"><summary>Carrier weighting — AMB-9, open</summary>
+        <div class="a">Spec G.3/G.5 carry no carrier term in the within-route
+        weight formula. At one carrier the allocation is mathematically
+        degenerate; beyond one carrier
+        <span class="mono">within_route_weights</span> raises rather than
+        guessing. An owner ruling is required before any carrier expansion.</div></details>
+      <details class="qa rv"><summary>The collection window — OQ-1, open</summary>
+        <div class="a">Spec A.5 locks the rule that all collection runs inside a
+        fixed daily window; the window's published value is not yet fixed. So no
+        single admissible count is normative — {q["window_flags"]} observations
+        sit outside the runs' declared window and are flagged, not discarded.</div></details>
+      <details class="qa rv"><summary>APIx-TPD — specified, NOT IMPLEMENTED</summary>
+        <div class="a">The quote-level Time Product Dummy estimator is specified
+        in spec M and the package is empty — a test fails the build if that stops
+        being true. The panel also holds {idx["tpd_quotes_available"]} quotes
+        against a <span class="mono">min_quotes_window</span> of
+        {idx["tpd_min_quotes_window"]:,}. Both are true and both are stated.</div></details>
+      <details class="qa rv"><summary>Uncertainty — specified, not implemented</summary>
+        <div class="a">The bootstrap is specified and not implemented, and the
+        collection design does not yet record the admissible-flight universe per
+        band, so it does not carry the sampling-design information an interval
+        would need. Observed dispersion is reported instead, which assumes
+        nothing.</div></details>
+      <details class="qa rv"><summary>National representativeness — not established</summary>
+        <div class="a">One route of the DGCA city-pair frame, one carrier, one
+        channel, one day. Route and carrier weighting are implemented and not
+        exercised. MoSPI has not endorsed APIx.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ VAULT ═════════════ -->
+<section class="ch ch-paper" id="vault" aria-labelledby="h-vault">
+  <div class="wrap">
+    <p class="eyebrow">Chapter 11</p>
+    <h2 id="h-vault">{lines("Inspect every", "observation")}</h2>
+    <p class="lede rv" style="margin-top:var(--s4);margin-bottom:var(--s7)">
+    The evidence vault. Nothing is aggregated away.</p>
+    <div class="rv">{vault(p["observations"], apws, band_ids)}</div>
+  </div>
 </section>
 
 </main>
 
-<footer class="wrap">
-  <div class="row">
+<footer>
+  <div class="wrap cols">
     <div>
-      <p><b>APIx</b> · quality-adjusted airfare price index for India ·
-      MoSPI problem statement 26056</p>
-      <p>Every statistical figure on this page is generated from
-      <span class="mono">data/panel.json</span>; contextual frame figures are
-      typed and name their source inline.</p>
+      <p><b>APIx</b></p>
+      <p style="margin-top:var(--s2)">A quality-adjusted airfare price index for
+      India, and the auditable infrastructure that produces it. MoSPI problem
+      statement 26056.</p>
+      <p style="margin-top:var(--s3)">Every statistical figure on this page is
+      generated from <span class="mono">data/panel.json</span>. Contextual frame
+      figures are typed and name their source inline.</p>
     </div>
     <div>
-      <p><b>data class</b> {esc(p["data_class"])} ·
-      synthetic_data_present = {p["synthetic_data_present"]}</p>
-      <p><b>version vector</b> methodology {esc(run.get("methodology_version", ""))} ·
-      basket {esc(run.get("basket_version", ""))} ·
-      protocol {esc(run.get("protocol_version", ""))} ·
+      <p><b>data class</b></p>
+      <p class="mono" style="margin-top:var(--s2)">{esc(p["data_class"])}<br>
+      synthetic_data_present = {p["synthetic_data_present"]}<br>
+      generated from {esc(p["generated_from"])}</p>
+    </div>
+    <div>
+      <p><b>version vector</b></p>
+      <p class="mono" style="margin-top:var(--s2)">
+      methodology {esc(run.get("methodology_version", ""))}<br>
+      basket {esc(run.get("basket_version", ""))}<br>
+      protocol {esc(run.get("protocol_version", ""))}<br>
       precedence {esc(run.get("source_precedence_version", ""))}</p>
-      <p><b>generated from</b> {esc(p["generated_from"])}</p>
     </div>
   </div>
 </footer>
 
 <div id="tip" role="status" aria-live="polite"></div>
-<script type="application/json" id="apix-data">{data_island(p)}</script>
+<script type="application/json" id="apix-data">{island(p)}</script>
 <script>{JS}</script>
 """
 
