@@ -276,7 +276,15 @@ svg{display:block}
 .rule{height:1px;background:var(--line);border:0;margin:0}
 
 /* =============================================================== NAV ===== */
-.nav{position:fixed;inset:0 0 auto 0;z-index:200;height:64px;display:flex;
+/* The nav is fixed, so anything scrolled flush to the top of the viewport
+   lands underneath it. scroll-padding-top moves the resting place of every
+   scroll target -- anchor links, the skip link, scrollIntoView, keyboard
+   focus -- clear of the bar, and scroll-margin-top covers the elements a
+   browser scrolls to directly. One token so the two can never drift apart. */
+:root{--nav-h:64px;--nav-clear:calc(var(--nav-h) + 22px)}
+html{scroll-padding-top:var(--nav-clear)}
+[id]{scroll-margin-top:var(--nav-clear)}
+.nav{position:fixed;inset:0 0 auto 0;z-index:200;height:var(--nav-h);display:flex;
      align-items:center;gap:var(--s5);padding-inline:clamp(20px,5vw,64px);
      transition:background var(--med) var(--out),color var(--med) var(--out)}
 .nav[data-solid="1"]{background:color-mix(in srgb,var(--card) 58%,transparent);
@@ -307,11 +315,24 @@ svg{display:block}
 @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
 .nav[data-on-night="1"] .chip{background:#2A1A17;color:#E08878}
 .dots{display:flex;gap:7px;align-items:center}
-.dots a{width:8px;height:8px;padding:0;border-radius:50%;display:block;
-        background:var(--line-2);transition:all var(--fast) var(--out)}
-.dots a[aria-current="true"]{background:var(--amber);width:22px;border-radius:100px}
-.nav[data-on-night="1"] .dots a{background:#3A424B}
-.nav[data-on-night="1"] .dots a[aria-current="true"]{background:#E0A046}
+.dots a{display:flex;align-items:center;gap:7px;padding:0}
+.dots a i{width:8px;height:8px;border-radius:50%;display:block;flex-shrink:0;
+          background:var(--line-2);transition:all var(--fast) var(--out)}
+.dots a[aria-current="true"] i{background:var(--amber);width:22px;border-radius:100px}
+/* Collapsed by width, never by display: the name stays in the accessibility
+   tree for every chapter even while only the waypoints show it on screen. */
+.dots a span{font-family:var(--mono);font-size:var(--t-2xs);letter-spacing:.1em;
+             text-transform:uppercase;white-space:nowrap;color:var(--ink-3);
+             max-width:0;opacity:0;overflow:hidden;
+             transition:max-width var(--med) var(--out),
+                        opacity var(--fast) var(--out),color var(--fast) var(--out)}
+.dots a[aria-current="true"] span{color:var(--ink)}
+.dots:hover a span,.dots a:focus-visible span{max-width:14ch;opacity:1}
+@media (min-width:1200px){ .dots a[data-key="1"] span{max-width:14ch;opacity:1} }
+.nav[data-on-night="1"] .dots a i{background:#3A424B}
+.nav[data-on-night="1"] .dots a[aria-current="true"] i{background:#E0A046}
+.nav[data-on-night="1"] .dots a span{color:#939CA6}
+.nav[data-on-night="1"] .dots a[aria-current="true"] span{color:var(--paper)}
 
 /* ============================================================== HERO ===== */
 .hero{min-height:100svh;display:grid;grid-template-rows:1fr auto;
@@ -696,7 +717,14 @@ html.rail-flat .rail-panel:first-child{border-top:0}
   :root{--s9:88px;--s8:64px;--s7:56px}
   .derive li{grid-template-columns:72px 1fr;gap:var(--s3)}
   .derive .dn{grid-column:2}
-  .nav .dots{display:none}
+  /* A phone has no room for thirteen dots and a label beside each, but it
+     still needs a way through the argument. The six waypoints stay, unlabelled
+     and on a tighter gap; the intermediate chapters are reached by scrolling,
+     which on a phone is what a reader does anyway. */
+  .nav{gap:14px}
+  .nav .dots{display:flex;gap:9px}
+  .dots a:not([data-key="1"]){display:none}
+  .dots a span{display:none}
   .hero h1{max-width:none}
   .scene{min-height:auto;padding-block:var(--s7)}
   .scene .stmt{max-width:none}
