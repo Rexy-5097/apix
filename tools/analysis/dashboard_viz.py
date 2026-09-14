@@ -332,28 +332,40 @@ setTimeout(function(){
 }, 2500);
 
 /* ------------------------------------------------------- number counters */
+/* The element's own text is the TRUTH and is already correct in the markup.
+   The counter animates 0 -> target and then restores that exact string, so a
+   blocked script, a reduced-motion setting or the 1.6s before the animation
+   runs all show the real figure rather than a zero. A page that renders "0
+   screenshots audited" is worse than one that renders nothing. */
 document.querySelectorAll('[data-count]').forEach(function(el){
   var target = parseFloat(el.dataset.count);
+  if(!isFinite(target)) return;
+  var truth = el.textContent;
   var dp = el.dataset.dp ? +el.dataset.dp : 0;
   var pre = el.dataset.pre || '', post = el.dataset.post || '';
   function render(v){ el.textContent = pre + v.toFixed(dp) + post; }
-  if(RM){ render(target); return; }
+  function settle(){ el.textContent = truth; }
+  if(RM) return;                       /* reduced motion: leave the truth alone */
   if(hasGSAP){
     var o = {v:0};
-    G.to(o, { v:target, duration:1.6, ease:'expo.out',
-      scrollTrigger:{ trigger:el, start:'top 86%' },
-      onUpdate:function(){ render(o.v); } });
-  } else {
+    G.to(o, { v:target, duration:1.5, ease:'expo.out',
+      scrollTrigger:{ trigger:el, start:'top 88%' },
+      onStart:function(){ render(0); },
+      onUpdate:function(){ render(o.v); },
+      onComplete:settle });
+  } else if('IntersectionObserver' in window){
     var io = new IntersectionObserver(function(es){
       es.forEach(function(e){
         if(!e.isIntersecting) return;
-        var t0 = performance.now();
-        (function step(now){
-          var k = Math.min(1, (now-t0)/1400);
-          render(target * (1 - Math.pow(1-k, 4)));
-          if(k < 1) requestAnimationFrame(step);
-        })(t0);
         io.unobserve(e.target);
+        var t0 = performance.now();
+        render(0);
+        (function step(now){
+          var k = Math.min(1, (now-t0)/1300);
+          if(k >= 1){ settle(); return; }
+          render(target * (1 - Math.pow(1-k, 4)));
+          requestAnimationFrame(step);
+        })(t0);
       });
     }, {threshold:.3});
     io.observe(el);
