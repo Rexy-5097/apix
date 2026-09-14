@@ -4,9 +4,25 @@
 
 Everything between a website and a canonical observation.
 
-## Not yet implemented
+## What exists
 
-Checkpoint 3. No collector, adapter or parser has been written.
+- `store.py` — the SQLite store and content-addressed artifact directory
+  (Checkpoint 2H). Every real observation reaches it through the **manual**
+  loader, `tools/collection/load_manual.py`.
+- `collectors/` — the automated-collection layer: a source-adapter interface, the
+  compliance gate, eligibility, earliest-eligible-flight-per-band selection, the
+  Saver fare decision, normalisation into the existing canonical `Observation`,
+  and a run export with a SHA-256 manifest. See
+  [`docs/engineering/automated-collection.md`](../../../docs/engineering/automated-collection.md).
+
+| Adapter | Fixture mode | Live mode |
+|---|---|---|
+| IndiGo | implemented, tested on SYNTHETIC pages | implemented, **refused by the compliance gate** (`AUTOMATION_PROHIBITED`); has never run |
+| Air India, Akasa Air, SpiceJet, Air India Express | — | not implemented |
+| Aggregators | — | not implemented |
+
+**No live automated collection has taken place.** Every real observation in
+APIx was collected manually.
 
 ## The line this layer does not cross
 

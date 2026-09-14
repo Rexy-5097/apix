@@ -137,6 +137,10 @@ temp/
 # would redistribute their content. An evidence archive is a separate, owner-led
 # decision -- see compliance/manual-collection-procedure.md section 9.
 data/collection/
+# The automated collector's own store and run exports. Kept apart from the manual
+# study's store so a trial or fixture run can never mix into it; gitignored for
+# the same redistribution reason.
+data/collection-automated/
 
 # Checkpoint 2J manual collection: the screenshot corpus is 186 MB of raw
 # evidence and OCR spill. It is retained locally per the 5-year artifact policy
