@@ -238,10 +238,9 @@ because the frozen methodology requires evidence that does not exist yet.">
 <meta name="color-scheme" content="dark light">
 <style>{CSS}</style>
 
+<script>document.documentElement.className += " js";</script>
 <noscript><style>
-/* Reveal-on-scroll is applied by script. Without script the page must still
-   show every figure, so the animated initial state is cancelled outright. */
-.rv{{opacity:1!important;transform:none!important}}
+/* The canvases are decoration and need script to draw anything at all. */
 #field,#pipe,.scroll-cue{{display:none}}
 </style></noscript>
 

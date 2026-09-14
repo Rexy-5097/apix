@@ -46,7 +46,10 @@ CSS = """
   --surface:#0E141B; --surface-2:#141C25; --sunk:#0A1016;
   --line:#1B242E; --line-2:#2A3742; --line-3:#3D4C5A;
 
-  --ink:#EEF3F8; --ink-2:#A8B8C6; --ink-3:#6C7E8E; --ink-4:#47576544;
+  /* ink-3 sits on --surface more often than on --bg, and carries 11-12.5px
+     metadata. #6C7E8E measured 4.42:1 there; this clears AA on all three
+     grounds (surface 4.85, bg 5.23, sunk 5.01). */
+  --ink:#EEF3F8; --ink-2:#A8B8C6; --ink-3:#728595; --ink-4:#47576544;
 
   /* APIx signature. One accent, used sparingly enough that it still means
      something when it appears. */
@@ -79,7 +82,7 @@ CSS = """
   --t-xl:clamp(20px,2.2vw,26px);
   --t-2xl:clamp(28px,3.4vw,42px);
   --t-3xl:clamp(38px,6vw,78px);
-  --t-4xl:clamp(48px,9vw,124px);
+  --t-4xl:clamp(44px,6.6vw,96px);
 
   /* Space scale, 4px base. */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
@@ -126,7 +129,7 @@ body{
 }
 h1,h2,h3,h4{font-family:var(--disp); margin:0; text-wrap:balance; letter-spacing:-.022em}
 h1{font-size:var(--t-4xl); font-weight:680; line-height:.94; letter-spacing:-.04em;
-   max-width:13ch; text-wrap:balance}
+   max-width:15ch; text-wrap:balance}
 h2{font-size:var(--t-2xl); font-weight:640; line-height:1.06}
 h3{font-size:var(--t-xl);  font-weight:620; line-height:1.15}
 p{margin:0}
@@ -184,8 +187,16 @@ svg{display:block}
 
 /* ============================================================= HERO ===== */
 .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
-      justify-content:center;padding:96px 0 var(--s7);overflow:hidden}
-#field{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.9}
+      justify-content:center;padding:84px 0 var(--s6);overflow:hidden}
+#field{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.62;
+       -webkit-mask-image:radial-gradient(115% 90% at 78% 52%,#000 42%,transparent 78%);
+       mask-image:radial-gradient(115% 90% at 78% 52%,#000 42%,transparent 78%)}
+@media (min-width:1000px){
+  /* Right half only: the headline gets clean ground, the lattice gets room. */
+  #field{left:38%;width:62%;opacity:.85;
+         -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 88%,transparent);
+         mask-image:linear-gradient(90deg,transparent,#000 26%,#000 88%,transparent)}
+}
 .hero>.wrap{position:relative;z-index:1}
 .hero .eyebrow{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.22em;
                text-transform:uppercase;color:var(--accent);margin-bottom:var(--s4)}
@@ -211,7 +222,7 @@ svg{display:block}
 /* ============================================================ METRICS === */
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
          gap:1px;background:var(--line);border:1px solid var(--line);
-         margin-top:var(--s7)}
+         margin-top:var(--s6)}
 .metric{background:var(--surface);padding:var(--s4) var(--s4) var(--s5);
         display:flex;flex-direction:column;gap:5px;position:relative;
         transition:background var(--base) var(--ease)}
@@ -236,10 +247,17 @@ section+section{border-top:1px solid var(--line)}
 .sub{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.14em;
      text-transform:uppercase;color:var(--ink-3);margin-bottom:var(--s3)}
 
-/* Reveal-on-scroll. Opt-in per element, disabled under reduced motion. */
-.rv{opacity:0;transform:translateY(14px);
-    transition:opacity var(--slow) var(--ease), transform var(--slow) var(--ease)}
-.rv.in{opacity:1;transform:none}
+/* Reveal-on-scroll, as progressive enhancement.
+   Content is visible by DEFAULT. The hidden initial state applies only under
+   `html.js`, a class a tiny inline script sets during head parse. If script is
+   disabled, blocked by a Content-Security-Policy, or throws before that line,
+   the class never lands and every figure renders.
+   `<noscript>` alone does NOT cover this: it applies when scripting is
+   disabled, not when a script is present but prevented from running. */
+.rv{opacity:1;transform:none}
+.js .rv{opacity:0;transform:translateY(14px);
+        transition:opacity var(--slow) var(--ease), transform var(--slow) var(--ease)}
+.js .rv.in{opacity:1;transform:none}
 .rv[data-d="1"]{transition-delay:70ms} .rv[data-d="2"]{transition-delay:140ms}
 .rv[data-d="3"]{transition-delay:210ms} .rv[data-d="4"]{transition-delay:280ms}
 
@@ -263,7 +281,7 @@ section+section{border-top:1px solid var(--line)}
 /* ============================================================== CARD ==== */
 .grid{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
 .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.g3{grid-template-columns:repeat(auto-fit,minmax(228px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(196px,1fr))}
 .card{background:var(--surface);padding:var(--s5);display:flex;flex-direction:column;
       gap:var(--s2)}
 .card h3{font-size:var(--t-lg);font-weight:640}
@@ -430,6 +448,10 @@ footer .row{display:flex;flex-wrap:wrap;gap:var(--s5);justify-content:space-betw
 footer b{color:var(--ink-2);font-weight:600}
 
 /* ========================================================= RESPONSIVE === */
+@media (max-width:1000px){
+  /* 3+1 leaves an empty cell that reads as a broken card; 2x2 never does. */
+  .metrics{grid-template-columns:1fr 1fr}
+}
 @media (max-width:900px){
   :root{--s9:72px;--s8:56px}
   .nav{gap:var(--s3)}
@@ -439,7 +461,10 @@ footer b{color:var(--ink-2);font-weight:600}
   .bd{padding-left:calc(var(--s5) + 20px + var(--s2))}
   .hero .lede{max-width:100%}
 }
-@media (max-height:820px),(max-width:620px){
+/* The metrics row now sits near the bottom of the hero by design, so the
+   absolutely-positioned cue collides with it on any normal laptop. It is
+   decoration; it yields to the evidence. */
+@media (max-height:1040px),(max-width:620px){
   .scroll-cue{display:none}
 }
 @media (max-width:620px){
@@ -456,7 +481,7 @@ footer b{color:var(--ink-2);font-weight:600}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
                        transition-duration:.001ms!important;scroll-behavior:auto!important}
-  .rv{opacity:1;transform:none}
+  .js .rv{opacity:1;transform:none}
   .scroll-cue span{animation:none}
   #field,#pipe{display:none}
 }
