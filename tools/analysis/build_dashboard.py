@@ -319,12 +319,18 @@ def build(p: dict) -> str:
         )
     libs = "".join(f'<script src="{u}" defer></script>' for u in LIBS)
 
-    return f"""<title>APIx — Airfare Price Index Engine</title>
+    return f"""<!DOCTYPE html>
+<!-- Not decoration. Without it the browser parses in quirks mode, where
+     document.scrollingElement is <body> and documentElement.scrollTop is
+     inert. The smooth-scroll library cancels the wheel event and then writes
+     the new position to documentElement.scrollTop, so the wheel did nothing
+     at all: the page could only be moved by dragging the scrollbar. -->
+<meta charset="utf-8">
+<title>APIx — Airfare Price Index Engine</title>
 <meta name="description" content="APIx: an auditable airfare measurement engine
 built for CPI augmentation. {q["valid_observations"]} real market observations,
 seven advance-purchase buckets, and no published index — because the frozen
 methodology requires evidence that does not exist yet.">
-<meta charset="utf-8">
 <!-- Without this a phone lays the page out at 980px and zooms out, so every
      responsive rule below the tablet breakpoint never fires on real hardware. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
