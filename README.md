@@ -62,6 +62,44 @@ Each of those files carries a banner saying so. **APIx itself is `src/apix/`,
 `tests/`, `tools/analysis/`, `tools/collection/`, `docs/methodology/`,
 `data/`, `compliance/` and `source_registry/`.**
 
+## Demo & media
+
+### The dashboard
+
+**[`data/dashboard.html`](data/dashboard.html)** — the delivered jury surface: the
+35 observations, the advance-purchase profile, the confound, the evidence
+ladder, the exclusion replay, the execution boundary, and why no index is
+published. It is generated, never hand-authored.
+
+It loads **nothing from the network**. The three libraries and both font
+families are vendored in [`data/vendor/`](data/vendor/README.md), so it renders
+identically on conference wifi, on a locked-down machine, and from a `file://`
+URL with the cable pulled. Open it directly, or serve the repo:
+
+```bash
+python -m http.server 8753   # then open http://127.0.0.1:8753/data/dashboard.html
+```
+
+It degrades rather than breaks: with the libraries blocked, with no script at
+all, and under `prefers-reduced-motion`, every figure and every chapter is still
+readable.
+
+### Architecture
+
+| | |
+|---|---|
+| [System architecture](docs/assets/architecture/apix-system-architecture.svg) | collection → evidence → canonical observations → validation → statistics → publication guard |
+| [Real-data execution boundary](docs/assets/architecture/apix-execution-boundary.svg) | the 14 stages, and exactly where real data stops |
+| [Current vs next wave](docs/assets/architecture/apix-current-vs-next-wave.svg) | what the second collection unlocks, and why the date is not a forecast |
+
+![APIx real-data execution boundary](docs/assets/architecture/apix-execution-boundary.svg)
+
+### Screenshots and video
+
+**Not yet captured.** See [`docs/assets/README.md`](docs/assets/README.md) for
+why, and for the capture protocol — including the assertion that must pass
+before any capture, so a screenshot can never show a statistic mid-animation.
+
 ## Repository layout
 
 Every row states what is actually on disk today. **`EMPTY` means the package
@@ -90,7 +128,7 @@ docs/            methodology, engineering, the dossier
 tests/           architecture boundary, property and invariant tests
 tools/analysis/  panel + dashboard generators, engine demo
 collection-input/  the screenshot -> observation audit trail (see its README:
-                   two files are load-bearing, the rest are retained provenance)
+                   five files are load-bearing; the rest are retained provenance)
 ```
 
 **The dashboard is generated, never hand-authored:**
