@@ -372,6 +372,37 @@ svg{display:block}
   #field{width:86%;height:38%;right:-12%;bottom:2%;opacity:.4}
 }
 
+/* ======================================================== FIELD STORY ==== */
+/* A pinned canvas with the narration scrolling over it. The canvas carries no
+   text of its own, so the beats stay readable when WebGL is unavailable and
+   the section degrades to an ordinary sequence of paragraphs. */
+.field-story{position:relative;padding-block:0}
+.field-pin{position:sticky;top:0;height:100svh;margin-bottom:-100svh;z-index:0;
+           pointer-events:none}
+#field3d{width:100%;height:100%;display:block}
+.field-steps{position:relative;z-index:1}
+.fbeat{min-height:92svh;display:flex;flex-direction:column;justify-content:center;
+       max-width:34ch;opacity:.22;transition:opacity var(--med) var(--out)}
+.fbeat[data-on="1"]{opacity:1}
+.fbeat h3{font-size:var(--t-chap);font-weight:600;letter-spacing:-.035em;
+          line-height:1.02;margin-block:var(--s3)}
+.fbeat .body{max-width:34ch}
+@media (min-width:1000px){
+  .field-pin{margin-left:34%;width:66%}
+}
+@media (max-width:999px){
+  /* A single column has no empty side for the canvas to occupy, so the phone
+     layout uses the other half of the scrollytelling convention: the graphic
+     is an opaque band held at the top and the narration scrolls beneath it.
+     The canvas never sits behind body copy, which is what made the earlier
+     translucent version hard to read. */
+  .field-pin{height:34svh;margin-bottom:-34svh;z-index:2;background:var(--paper);
+             -webkit-mask-image:linear-gradient(#000 74%,transparent);
+             mask-image:linear-gradient(#000 74%,transparent)}
+  .field-steps{padding-top:36svh}
+  .fbeat{min-height:50svh;padding-block:var(--s5);max-width:none;opacity:1}
+}
+
 /* =============================================================== RAIL ==== */
 /* The horizontal APW journey: the landscape moves, not a row of cards. */
 .rail-outer{position:relative;height:560vh}
@@ -478,6 +509,40 @@ svg{display:block}
 .stop-line::before,.stop-line::after{content:"";flex:1;height:1px;
                                      background:currentColor;opacity:.34}
 .ch-night .stop-line{color:#E08878}
+
+/* ========================================================== DERIVATION === */
+/* The +38.6% arrives as an arithmetic you can follow, not as a headline. */
+.derive{list-style:none;margin:0 0 var(--s6);padding:0;max-width:560px}
+.derive li{display:grid;grid-template-columns:88px auto 1fr;gap:var(--s4);
+           align-items:baseline;padding-block:var(--s3);
+           border-bottom:1px solid var(--line)}
+.derive .dk{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.12em;
+            text-transform:uppercase;color:var(--ink-3)}
+.derive .dv{font-size:30px;font-weight:500;letter-spacing:-.02em}
+.derive .dn{font-size:var(--t-xs);color:var(--ink-3);align-self:center}
+.derive li[data-op="ratio"]{border-bottom:0;border-top:2px solid var(--ink);
+                            margin-top:var(--s2);padding-top:var(--s4)}
+.derive li[data-op="ratio"] .dv{color:var(--amber-ink)}
+
+/* The qualification travels with the number and never scrolls away from it. */
+.qualify{margin-top:var(--s4);display:inline-flex;align-items:center;gap:10px;
+         font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.1em;
+         text-transform:uppercase;color:var(--amber-ink);
+         background:var(--amber-wash);padding:10px 16px;border-radius:100px}
+.qualify strong{font-weight:600}
+
+/* ====================================================== PIPELINE FREEZE == */
+/* Stages the real data reaches light as they arrive. Stages past the evidence
+   boundary never light: they stay inert, because nothing has run there. */
+.js .stage[data-past="0"]{opacity:.38;transition:opacity var(--med) var(--out)}
+.js .stage[data-past="0"][data-lit="1"]{opacity:1}
+.stage[data-past="1"]{opacity:.52}
+.stage[data-past="1"] .nm{color:var(--ink-3)}
+.ch-night .stage[data-past="1"] .nm{color:#7F8893}
+.stage[data-past="1"]{background:repeating-linear-gradient(-45deg,
+  transparent 0 7px, color-mix(in srgb,var(--ink) 4%,transparent) 7px 8px)}
+.ch-night .stage[data-past="1"]{background:repeating-linear-gradient(-45deg,
+  transparent 0 7px, rgba(255,255,255,.035) 7px 8px)}
 
 /* ============================================================= CHART ===== */
 .chart{margin-top:var(--s5)}
@@ -595,10 +660,30 @@ footer .mono{color:#B6BDC6}
    the evidence. */
 .rv{opacity:1;transform:none}
 .js .rv{opacity:0;transform:translateY(20px)}
+/* The beats dim only once script is present to brighten the active one. */
+html:not(.js) .fbeat{opacity:1}
 /* The clip that makes the reveal also clips descenders. Pad the box and pull
    it back, so a 'y' keeps its tail and the line spacing is unchanged. */
 .line-mask{display:block;overflow:hidden;padding-bottom:.16em;margin-bottom:-.16em}
 .js .line-mask>span{display:block;transform:translateY(112%)}
+
+/* The rail travels sideways under a script-driven transform. Nothing else can
+   move it, so when the driver is absent — no script at all, or the animation
+   library blocked — six of the seven panels sit outside a clipped pin and are
+   unreachable, and the reader loses six advance-purchase buckets without any
+   sign that they existed. Both cases fall back to the vertical stack the phone
+   layout already uses: `html:not(.js)` covers no script, and the script adds
+   `rail-flat` itself when it finds no library. */
+html:not(.js) .rail-outer,html.rail-flat .rail-outer{height:auto}
+html:not(.js) .rail-pin,html.rail-flat .rail-pin{position:static;height:auto;
+                                                 display:block;overflow:visible}
+html:not(.js) .rail-track,html.rail-flat .rail-track{flex-direction:column;
+                                                     transform:none!important}
+html:not(.js) .rail-panel,html.rail-flat .rail-panel{flex:auto;border-left:0;
+            border-top:1px solid var(--line);padding-inline:0;
+            padding-block:var(--s6);min-height:0}
+html:not(.js) .rail-panel:first-child,
+html.rail-flat .rail-panel:first-child{border-top:0}
 
 /* ========================================================= RESPONSIVE ==== */
 @media (max-width:1080px){
@@ -609,6 +694,8 @@ footer .mono{color:#B6BDC6}
 }
 @media (max-width:760px){
   :root{--s9:88px;--s8:64px;--s7:56px}
+  .derive li{grid-template-columns:72px 1fr;gap:var(--s3)}
+  .derive .dn{grid-column:2}
   .nav .dots{display:none}
   .hero h1{max-width:none}
   .scene{min-height:auto;padding-block:var(--s7)}
@@ -635,7 +722,10 @@ footer .mono{color:#B6BDC6}
   .js .rv{opacity:1;transform:none}
   .js .line-mask>span{transform:none}
   .cue i{animation:none}
-  #field{display:none}
+  #field,#field3d{display:none}
+  .field-pin{position:static;height:0;margin-bottom:0}
+  .field-steps{padding-top:0}
+  .fbeat{min-height:auto;opacity:1;padding-block:var(--s6);max-width:none}
   .rail-outer{height:auto}
   .rail-pin{position:static;height:auto;display:block}
   .rail-track{flex-direction:column;transform:none!important}
@@ -644,7 +734,10 @@ footer .mono{color:#B6BDC6}
 
 /* =============================================================== PRINT === */
 @media print{
-  .nav,.cue,#field,#tip,.filters{display:none!important}
+  .nav,.cue,#field,#field3d,#tip,.filters{display:none!important}
+  .field-pin{position:static;height:0;margin-bottom:0}
+  .field-steps{padding-top:0}
+  .fbeat{min-height:auto;opacity:1;max-width:none}
   body{background:#fff}
   .ch{padding-block:28px;break-inside:avoid}
   .ch-night{background:#fff;color:#000}

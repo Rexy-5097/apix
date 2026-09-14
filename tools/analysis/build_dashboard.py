@@ -50,6 +50,7 @@ LIBS = (
 #: cannot exist without a way to reach it.
 CHAPTERS = [
     ("observation", "The observation"),
+    ("motion", "The panel, moving"),
     ("rail", "Seven buckets"),
     ("delta", "The difference"),
     ("confound", "The confound"),
@@ -106,6 +107,9 @@ def island(p: dict) -> str:
             for o in p["observations"]
         ],
         "apwOrder": [a["apw"] for a in p["apw_profile"]],
+        # Weekday per bucket. Each bucket has exactly one travel date and
+        # therefore exactly one weekday, which is what beats 4-6 expose.
+        "dowByApw": {str(a["apw"]): a["day_of_week"] for a in p["apw_profile"]},
     }
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
 
@@ -204,8 +208,11 @@ def decomposition(exclusions: list[dict], total: int) -> str:
 
 def stages_html(boundary: dict) -> str:
     out = []
+    past = 0  # flips once the pipeline crosses the evidence boundary
     for i, st in enumerate(boundary["stages"]):
         cls = STATE_COLOURS[st["state"]]
+        if st["key"] == "matched_set":
+            past = 1
         bullets = "".join(f"<li>{esc(e)}</li>" for e in st["evidence"])
         spec = f"spec {esc(st['spec'])}" + (f" &#183; {esc(st['ran'])}" if st["ran"] else "")
         if st["key"] == "matched_set":
@@ -214,7 +221,7 @@ def stages_html(boundary: dict) -> str:
                 "spec C.1 needs a t&minus;7 wave</p>"
             )
         out.append(
-            f'<button class="stage" data-state="{st["state"]}" aria-expanded="false" '
+            f'<button class="stage" data-state="{st["state"]}" data-past="{past}" aria-expanded="false" '
             f'aria-controls="sb-{i}" id="sbt-{i}">'
             f'<span class="dot"></span>'
             f'<span><span class="nm">{esc(st["name"])}</span>'
@@ -312,12 +319,18 @@ def build(p: dict) -> str:
         )
     libs = "".join(f'<script src="{u}" defer></script>' for u in LIBS)
 
-    return f"""<title>APIx — Airfare Price Index Engine</title>
+    return f"""<!DOCTYPE html>
+<!-- Not decoration. Without it the browser parses in quirks mode, where
+     document.scrollingElement is <body> and documentElement.scrollTop is
+     inert. The smooth-scroll library cancels the wheel event and then writes
+     the new position to documentElement.scrollTop, so the wheel did nothing
+     at all: the page could only be moved by dragging the scrollbar. -->
+<meta charset="utf-8">
+<title>APIx — Airfare Price Index Engine</title>
 <meta name="description" content="APIx: an auditable airfare measurement engine
 built for CPI augmentation. {q["valid_observations"]} real market observations,
 seven advance-purchase buckets, and no published index — because the frozen
 methodology requires evidence that does not exist yet.">
-<meta charset="utf-8">
 <!-- Without this a phone lays the page out at 980px and zooms out, so every
      responsive rule below the tablet breakpoint never fires on real hardware. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -355,6 +368,7 @@ methodology requires evidence that does not exist yet.">
 <section class="ch ch-paper ch-scene" aria-label="Why airfare is hard to measure">
   <div class="wrap scene">
     <div>
+      <p class="eyebrow">Beat two</p>
       <h2 class="stmt">{lines("Airfare is", "volatile.")}</h2>
       <p class="after rv">A single sector can vary two to four hundred percent
       inside one day. Rail, fuel, telephone, postage — every other line in the
@@ -365,11 +379,44 @@ methodology requires evidence that does not exist yet.">
   </div>
   <div class="wrap scene right">
     <div>
+      <p class="eyebrow">Beat three</p>
       <h2 class="stmt">{lines("But volatility", "is not", "<em>inflation</em>.")}</h2>
       <p class="after rv">Most of that movement is product mix — booking
       horizon, fare family, departure time, baggage terms. An index built on
       naive daily averages accumulates it as chain drift. That is a bias, not
       noise, and it does not average out with more data.</p>
+    </div>
+  </div>
+  <div class="wrap scene">
+    <div>
+      <p class="eyebrow">Beat four</p>
+      <p class="figure-xl rv" data-count="{q["valid_observations"]}">{q["valid_observations"]}</p>
+      <h2 class="sr">{q["valid_observations"]} real observations</h2>
+      <p class="after rv" data-d="1">real market observations, collected
+      {esc(p["collection_date"])} on {esc(frame["routes"][0])} under a frozen
+      protocol. Every fare reconciles — base plus tax equals total,
+      {q["reconciled"]}/{q["decomposed"]}, in exact decimal.</p>
+    </div>
+  </div>
+  <div class="wrap scene right">
+    <div>
+      <p class="eyebrow">Beat five</p>
+      <p class="figure-xl amber rv">{len(apws)}<span
+         style="font-size:.32em;letter-spacing:-.02em"> / {len(apws)}</span></p>
+      <h2 class="sr">{len(apws)} of {len(apws)} advance-purchase buckets</h2>
+      <p class="after rv" data-d="1">frozen advance-purchase buckets,
+      T+{apws[0]} through T+{apws[-1]}, assigned by exact lead time. All
+      {len(apws)} present, {q["plan_completion_pct"]}% of the collection plan
+      filled.</p>
+    </div>
+  </div>
+  <div class="wrap scene">
+    <div>
+      <p class="eyebrow">And yet</p>
+      <h2 class="stmt">{lines("That still is", "not an <em>index</em>.")}</h2>
+      <p class="after rv">An index measures change, and change needs two
+      moments. We hold one. Everything that follows is the evidence for that
+      sentence — and the machinery that refuses to publish without it.</p>
     </div>
   </div>
 </section>
@@ -388,21 +435,12 @@ methodology requires evidence that does not exist yet.">
         {esc(p["data_class"])}</p>
       </div>
       <div>
-        <p class="figure-xl rv" data-count="{q["valid_observations"]}">{q["valid_observations"]}</p>
-        <p class="figure-note rv" data-d="1">real market observations, collected
-        {esc(p["collection_date"])} on {esc(frame["routes"][0])}. Every fare
-        reconciles — base plus tax equals total, {q["reconciled"]}/{q["decomposed"]},
-        in exact decimal. {q["plan_completion_pct"]}% of the collection plan
-        ({q["valid_observations"]}/{q["plan_slots"]} slots) is filled: that is
-        plan completion, and it is not statistical coverage.</p>
-
-        <p class="figure-xl amber rv" data-d="2"
-           style="margin-top:var(--s8)">{len(apws)}<span
-           style="font-size:.34em;letter-spacing:-.02em"> / {len(apws)}</span></p>
-        <p class="figure-note rv" data-d="3">frozen advance-purchase buckets,
-        T+{apws[0]} through T+{apws[-1]}, assigned by exact lead time. A quote
-        matching no bucket is inadmissible and is never rounded into the
-        nearest one.</p>
+        <p class="body rv">{q["plan_completion_pct"]}% of the collection plan is
+        filled — {q["valid_observations"]} of {q["plan_slots"]} slots, being
+        {len(apws)} frozen buckets by {len(band_ids)} departure bands.
+        <strong>That is plan completion, and it is not statistical
+        coverage</strong>: spec I gates routes on a share of "expected cells",
+        and nothing in the frozen spec defines an expected cell.</p>
       </div>
     </div>
 
@@ -426,7 +464,9 @@ methodology requires evidence that does not exist yet.">
 
     <p class="eyebrow" style="margin-top:var(--s9)">DESCRIPTIVE APW PROFILE —
     NOT AN INDEX</p>
-    <p class="lede rv" style="max-width:52ch">{esc(p["apw_profile_disclaimer"].split(". ", 1)[1])}</p>
+    <p class="lede rv" style="max-width:52ch">{
+        esc(p["apw_profile_disclaimer"].split(". ", 1)[1])
+    }</p>
 
     <figure class="chart rv">
       <figcaption>
@@ -454,6 +494,68 @@ methodology requires evidence that does not exist yet.">
   </div>
 </section>
 
+<!-- ═══════════════════════════════════════════════ THE FIELD ═════════ -->
+<section class="ch ch-paper field-story" id="motion" aria-labelledby="h-field">
+  <div class="field-pin"><canvas id="field3d" aria-hidden="true"></canvas></div>
+  <div class="field-steps wrap">
+    <div class="fbeat" data-on="1">
+      <p class="meta">01 &#183; the panel</p>
+      <h3 id="h-field">{q["valid_observations"]} fares.</h3>
+      <p class="body">Every one a real quote, read off a screenshot on
+      {esc(p["collection_date"])}. Arranged here by price alone, because that is
+      the only thing we have looked at so far.</p>
+    </div>
+    <div class="fbeat">
+      <p class="meta">02 &#183; lead time</p>
+      <h3>Sorted by how far ahead.</h3>
+      <p class="body">{len(apws)} frozen advance-purchase buckets, T+{apws[0]}
+      through T+{apws[-1]}. The cloud becomes {len(apws)} columns.</p>
+    </div>
+    <div class="fbeat">
+      <p class="meta">03 &#183; time of day</p>
+      <h3>Split by departure band.</h3>
+      <p class="body">{len(band_ids)} three-hour bands. Each bucket holds exactly
+      one flight per band &#8212; {len(apws)} &#215; {len(band_ids)} =
+      {q["plan_slots"]} slots, and every one of them is filled.</p>
+    </div>
+    <div class="fbeat">
+      <p class="meta">04 &#183; travel date</p>
+      <h3>Each bucket is one travel date.</h3>
+      <p class="body">T+{prof[0]["apw"]} is {esc(prof[0]["travel_date"])};
+      T+{prof[-1]["apw"]} is {esc(prof[-1]["travel_date"])}.
+      <strong>Nothing moves</strong> &#8212; because sorting by lead time and
+      sorting by travel date are the same sort.</p>
+    </div>
+    <div class="fbeat">
+      <p class="meta">05 &#183; weekday</p>
+      <h3>And each date is one weekday.</h3>
+      <p class="body">{
+        esc(" &#183; ".join(f"T+{a['apw']} {a['day_of_week']}" for a in prof)).replace(
+            "&amp;#183;", "&#183;"
+        )
+    }</p>
+    </div>
+    <div class="fbeat">
+      <p class="meta">06 &#183; the confound</p>
+      <h3>Two weekdays appear twice.</h3>
+      <p class="body">{
+        esc(", ".join(f"{d} appears {n} times" for d, n in conf["repeated_weekdays"].items()))
+    }.
+      So a difference between buckets could be the booking horizon, or could be
+      the weekday. This panel cannot separate them &#8212; that is what
+      <em>confounded</em> means.</p>
+    </div>
+    <div class="fbeat">
+      <p class="meta">07 &#183; the profile</p>
+      <h3>Collapse each bucket to its middle.</h3>
+      <p class="body">{len(apws)} geometric means &#8212; the shape of the chart
+      below. <strong>A descriptive APW profile, not an airfare index</strong>:
+      seven cross-sections on seven different dates, not one thing measured
+      seven times.</p>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════════════════════════════════════════ RAIL ══════════════ -->
 <section class="ch ch-neutral" id="rail" aria-labelledby="h-rail"
          style="padding-block:var(--s7)">
@@ -470,13 +572,28 @@ methodology requires evidence that does not exist yet.">
 <section class="ch ch-neutral ch-scene" id="delta" aria-labelledby="h-delta">
   <div class="wrap scene">
     <div>
-      <p class="eyebrow">Chapter 03</p>
-      <p class="figure-xl amber rv" data-count="{delta:.1f}" data-dp="1"
+      <p class="eyebrow">Chapter 04</p>
+      <h2 id="h-delta" class="sr">The T+{first["apw"]} to T+{last["apw"]} difference</h2>
+
+      <ol class="derive rv">
+        <li><span class="dk">T+{first["apw"]}</span>
+          <span class="dv mono">&#8377;{rupee(first["geomean"])}</span>
+          <span class="dn">geometric mean, {first["n"]} observations,
+          {esc(first["day_of_week"])} {esc(first["travel_date"])}</span></li>
+        <li><span class="dk">T+{last["apw"]}</span>
+          <span class="dv mono">&#8377;{rupee(last["geomean"])}</span>
+          <span class="dn">geometric mean, {last["n"]} observations,
+          {esc(last["day_of_week"])} {esc(last["travel_date"])}</span></li>
+        <li data-op="ratio"><span class="dk">ratio</span>
+          <span class="dv mono">{last["geomean"] / first["geomean"]:.4f}</span>
+          <span class="dn">&#8377;{rupee(last["geomean"])} &#247;
+          &#8377;{rupee(first["geomean"])}</span></li>
+      </ol>
+
+      <p class="figure-xl amber rv" data-d="1" data-count="{delta:.1f}" data-dp="1"
          data-pre="+" data-post="%">+{delta:.1f}%</p>
-      <h2 id="h-delta" class="sr">The T+{last["apw"]} to T+{first["apw"]} difference</h2>
-      <p class="figure-note rv" data-d="1" style="font-size:var(--t-sub);
-         font-family:var(--disp);max-width:30ch;line-height:1.4">
-      T+{last["apw"]} sits {delta:.1f}% above T+{first["apw"]}.</p>
+      <p class="qualify rv" data-d="1">Descriptive APW difference &#8212;
+      <strong>NOT an airfare index</strong></p>
       <p class="after rv" data-d="2" style="max-width:44ch">
       <strong>The panel shows a descriptive difference between two
       cross-sections. Its cause cannot be established from these
