@@ -1,622 +1,1213 @@
-<title>APIx Airfare Index Engine</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<title>APIx — Airfare Price Index Engine</title>
+<meta name="description" content="APIx: a quality-adjusted airfare price index
+engine for India. 35 real market observations,
+7/7 advance-purchase buckets, and no published index —
+because the frozen methodology requires evidence that does not exist yet.">
+<meta name="color-scheme" content="dark light">
 <style>
+/* ============================================================ TOKENS ==== */
 :root{
-  --paper:#F1F4F7; --card:#FFFFFF; --sunk:#E6EBF0; --rule:#D4DCE4; --rule-2:#B9C5D0;
-  --ink:#0D131A; --ink-2:#3B4854; --ink-3:#6B7A88;
-  --amber:#A9680F; --amber-soft:#FAEFDB;
-  --ok:#1F6B46; --ok-soft:#E0EFE7;
-  --no:#9E2F27; --no-soft:#F7E3E1;
-  --hold:#44548A; --hold-soft:#E4E9F4;
-  --shadow:0 1px 2px rgba(13,19,26,.05), 0 8px 20px -12px rgba(13,19,26,.18);
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
-  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
-  --disp:"Barlow Condensed","IBM Plex Sans",system-ui,sans-serif;
+  color-scheme: dark;
+
+  /* Ground. Near-black with a blue cast: black is a colour, not an absence. */
+  --bg:#07090C; --bg-2:#0A0E13;
+  --surface:#0E141B; --surface-2:#141C25; --sunk:#0A1016;
+  --line:#1B242E; --line-2:#2A3742; --line-3:#3D4C5A;
+
+  --ink:#EEF3F8; --ink-2:#A8B8C6; --ink-3:#6C7E8E; --ink-4:#47576544;
+
+  /* APIx signature. One accent, used sparingly enough that it still means
+     something when it appears. */
+  --accent:#F0A93C; --accent-2:#FFC978; --accent-soft:#2A2113;
+
+  /* Evidence-state palette. Each has a soft ground for fills. */
+  --ex:#7FB2FF;  --ex-soft:#121B2B;      /* exercised  - ran, not validated  */
+  --dg:#F0A93C;  --dg-soft:#241B0E;      /* degenerate - ran, established none*/
+  --pd:#7C8B99;  --pd-soft:#131A21;      /* pending    - evidence absent     */
+  --bl:#F0887C;  --bl-soft:#2A1614;      /* blocked    - refused by design   */
+  --real:#5FD3A0; --real-soft:#0D2219;   /* real market data                 */
+
+  --shadow-1:0 1px 2px rgba(0,0,0,.55);
+  --shadow-2:0 2px 6px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.9);
+  --shadow-3:0 4px 12px rgba(0,0,0,.45), 0 28px 64px -28px rgba(0,0,0,1);
+  --glow:0 0 0 1px var(--line-2), 0 0 24px -6px rgba(240,169,60,.22);
+
+  /* System stacks. Chosen, not defaulted: SF Pro / Segoe UI Variable are the
+     best display faces already on a jury's machine, and neither needs a
+     network round trip to arrive. */
+  --sans:ui-sans-serif,-apple-system,"Segoe UI Variable Text","Segoe UI",Inter,
+         Roboto,system-ui,sans-serif;
+  --disp:ui-sans-serif,-apple-system,"Segoe UI Variable Display","Segoe UI",
+         Inter,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code","Segoe UI Mono",Menlo,Consolas,
+         "Liberation Mono",monospace;
+
+  /* Type scale, 1.25 minor third off 15px, clamped for fluid display sizes. */
+  --t-xs:11px; --t-sm:12.5px; --t-md:14px; --t-lg:16px;
+  --t-xl:clamp(20px,2.2vw,26px);
+  --t-2xl:clamp(28px,3.4vw,42px);
+  --t-3xl:clamp(38px,6vw,78px);
+  --t-4xl:clamp(48px,9vw,124px);
+
+  /* Space scale, 4px base. */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
+  --s6:32px; --s7:48px; --s8:72px; --s9:112px; --s10:160px;
+
+  --r:2px; --r-2:4px;          /* radii stay near-zero: this is an instrument */
+  --maxw:1240px; --readw:66ch;
+
+  --fast:140ms; --base:260ms; --slow:620ms;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --spring:cubic-bezier(.34,1.36,.64,1);
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0C1219; --card:#141C25; --sunk:#1B2530; --rule:#253039; --rule-2:#36444F;
-  --ink:#E9EEF3; --ink-2:#AFBDC9; --ink-3:#7C8B99;
-  --amber:#EFA93F; --amber-soft:#2A2214;
-  --ok:#63D09A; --ok-soft:#13271E;
-  --no:#F0887C; --no-soft:#2B1816;
-  --hold:#9AAFE6; --hold-soft:#191F31;
-  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 24px -14px rgba(0,0,0,.7);
-}}
-:root[data-theme="dark"]{
-  --paper:#0C1219; --card:#141C25; --sunk:#1B2530; --rule:#253039; --rule-2:#36444F;
-  --ink:#E9EEF3; --ink-2:#AFBDC9; --ink-3:#7C8B99;
-  --amber:#EFA93F; --amber-soft:#2A2214;
-  --ok:#63D09A; --ok-soft:#13271E;
-  --no:#F0887C; --no-soft:#2B1816;
-  --hold:#9AAFE6; --hold-soft:#191F31;
-  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 24px -14px rgba(0,0,0,.7);
+
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    color-scheme: light;
+    --bg:#F4F6F8; --bg-2:#EDF1F4;
+    --surface:#FFFFFF; --surface-2:#F7F9FB; --sunk:#E7ECF1;
+    --line:#DDE4EA; --line-2:#C3CED8; --line-3:#A3B1BE;
+    /* ink-3 carries 11-12.5px metadata, so it is held to AA for small text:
+       #6B7B8A measured 4.02:1 on this ground and was darkened to clear 4.5. */
+    --ink:#0B1117; --ink-2:#41505D; --ink-3:#5F6E7A; --ink-4:#9AA9B644;
+    --accent:#9C6410; --accent-2:#7A4E08; --accent-soft:#FBF0DC;
+    --ex:#2C5AA8; --ex-soft:#E6EDF9;
+    --dg:#9C6410; --dg-soft:#FBF0DC;
+    --pd:#5F6E7C; --pd-soft:#EBEFF3;
+    --bl:#A6342A; --bl-soft:#FAE6E3;
+    --real:#14684A; --real-soft:#E2F2EB;
+    --shadow-1:0 1px 2px rgba(13,19,26,.06);
+    --shadow-2:0 1px 3px rgba(13,19,26,.07), 0 10px 24px -16px rgba(13,19,26,.3);
+    --shadow-3:0 2px 6px rgba(13,19,26,.08), 0 24px 56px -28px rgba(13,19,26,.4);
+    --glow:0 0 0 1px var(--line-2);
+  }
 }
-*{box-sizing:border-box}
-body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.55}
-.wrap{max-width:1080px;margin:0 auto;padding:30px 20px 80px;display:flex;flex-direction:column;gap:28px}
-h1,h2,h3{font-family:var(--disp);margin:0;text-wrap:balance}
-h1{font-size:clamp(30px,5.4vw,48px);font-weight:700;line-height:1;text-transform:uppercase;letter-spacing:.01em}
-h2{font-size:22px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-h3{font-size:15px;font-weight:600}
+
+/* ============================================================== BASE ==== */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:var(--t-md); line-height:1.6;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:var(--disp); margin:0; text-wrap:balance; letter-spacing:-.022em}
+h1{font-size:var(--t-4xl); font-weight:680; line-height:.94; letter-spacing:-.04em;
+   max-width:13ch; text-wrap:balance}
+h2{font-size:var(--t-2xl); font-weight:640; line-height:1.06}
+h3{font-size:var(--t-xl);  font-weight:620; line-height:1.15}
 p{margin:0}
-.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-header{border-bottom:2px solid var(--ink);padding-bottom:18px;display:flex;flex-direction:column;gap:11px}
-.chips{display:flex;flex-wrap:wrap;gap:7px}
-.chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--rule-2);background:var(--card);color:var(--ink-2)}
-.chip.real{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
-.chip.warn{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
-.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.st{background:var(--card);padding:16px 17px;display:flex;flex-direction:column;gap:5px}
-.st .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
-.st.yes .lab{color:var(--ok)} .st.no .lab{color:var(--no)} .st.hold .lab{color:var(--hold)}
-.st .val{font-family:var(--disp);font-size:25px;font-weight:600;line-height:1.05}
-.st .why{font-size:12.5px;color:var(--ink-2)}
-section{display:flex;flex-direction:column;gap:13px}
-.sechead{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--rule);padding-bottom:6px}
-.sechead .n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.08em}
-.lede{color:var(--ink-2);max-width:76ch}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.tile{background:var(--card);padding:13px 14px;display:flex;flex-direction:column;gap:3px}
-.tile .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-.tile .v{font-family:var(--mono);font-size:23px;font-weight:600;font-variant-numeric:tabular-nums}
-.tile .s{font-size:11.5px;color:var(--ink-3)}
-.tile.good .v{color:var(--ok)} .tile.bad .v{color:var(--no)} .tile.hold .v{color:var(--hold)}
-.chartbox{background:var(--card);border:1px solid var(--rule);box-shadow:var(--shadow);padding:18px 16px 10px;overflow-x:auto}
-svg{display:block;max-width:100%;height:auto}
-.tscroll{overflow-x:auto;border:1px solid var(--rule);background:var(--card);max-height:560px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:var(--sunk);font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:8px 10px;white-space:nowrap;border-bottom:1px solid var(--rule);position:sticky;top:0}
-td{padding:7px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
-tr:last-child td{border-bottom:none}
-td.m{font-family:var(--mono);font-variant-numeric:tabular-nums}
-td.r{text-align:right}
-.pill{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;padding:1px 6px;border:1px solid;white-space:nowrap}
-.p-ok{color:var(--ok);background:var(--ok-soft);border-color:var(--ok)}
-.p-no{color:var(--no);background:var(--no-soft);border-color:var(--no)}
-.p-hold{color:var(--hold);background:var(--hold-soft);border-color:var(--hold)}
-.rows{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.row{background:var(--card);padding:11px 14px;display:flex;gap:13px;align-items:flex-start}
-.row .cnt{font-family:var(--mono);font-size:15px;font-weight:600;min-width:34px;text-align:right;color:var(--amber)}
-.row .txt{font-size:13.5px}
-/* Deliberately NOT a flex container. `display:flex` makes every inline <strong>,
-   <em> and text node inside a note its own flex item, which shreds the sentence
-   into columns — visible on the T+45 provenance note since #13. The arrow is
-   absolutely positioned instead, so the text flows as prose. */
-.note{font-size:13px;color:var(--ink-2);position:relative;padding-left:17px}
-.note::before{content:"\2192";color:var(--amber);font-family:var(--mono);position:absolute;left:0;top:0}
-.warn{border-left:3px solid var(--no);background:var(--no-soft);padding:13px 15px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
-.warn strong{color:var(--no)}
-details{background:var(--card);border:1px solid var(--rule)}
-summary{padding:10px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
-summary:hover{color:var(--amber)}
-details[open] summary{border-bottom:1px solid var(--rule)}
-.det-body{padding:12px 14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);word-break:break-word}
-.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--mono);font-size:11.5px}
-.flow .step{padding:6px 11px;border:1px solid var(--rule-2);background:var(--card)}
-.flow .step.now{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
-.flow .step.next{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
+a{color:inherit; text-underline-offset:3px; text-decoration-color:var(--line-3)}
+a:hover{text-decoration-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:var(--r)}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums slashed-zero}
+.tnum{font-variant-numeric:tabular-nums}
+table{border-collapse:collapse; width:100%; font-size:var(--t-sm)}
+svg{display:block}
+::selection{background:var(--accent); color:#07090C}
+
+.wrap{max-width:var(--maxw); margin-inline:auto; padding-inline:clamp(16px,4vw,40px)}
+.read{max-width:var(--readw)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:fixed;top:-60px;left:12px;z-index:200;background:var(--accent);
+      color:#07090C;padding:10px 16px;font-weight:640;transition:top var(--fast)}
+.skip:focus{top:12px}
+
+/* ============================================================== NAV ===== */
+.nav{
+  position:fixed; inset:0 0 auto 0; z-index:90; height:56px;
+  display:flex; align-items:center; gap:var(--s5);
+  padding-inline:clamp(16px,4vw,40px);
+  background:color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter:saturate(1.6) blur(14px);
+  border-bottom:1px solid transparent;
+  transition:border-color var(--base) var(--ease), background var(--base) var(--ease);
+}
+.nav[data-stuck="1"]{border-bottom-color:var(--line);
+  background:color-mix(in srgb, var(--bg) 92%, transparent)}
+.nav .brand{font-family:var(--disp);font-weight:700;letter-spacing:-.03em;font-size:17px;
+            display:flex;align-items:center;gap:9px;flex-shrink:0}
+.nav .brand i{width:9px;height:9px;background:var(--accent);display:block;
+              box-shadow:0 0 14px var(--accent); font-style:normal}
+.nav ol{display:flex;gap:2px;list-style:none;margin:0;padding:0;overflow-x:auto;
+        scrollbar-width:none}
+.nav ol::-webkit-scrollbar{display:none}
+.nav a{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.06em;
+       text-transform:uppercase;color:var(--ink-3);padding:7px 10px;
+       text-decoration:none;white-space:nowrap;position:relative;
+       transition:color var(--fast) var(--ease)}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="true"]{color:var(--accent)}
+.nav a[aria-current="true"]::after{
+  content:"";position:absolute;left:10px;right:10px;bottom:2px;height:1px;
+  background:var(--accent)}
+.nav .spacer{flex:1}
+.nav .idx{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.08em;
+          color:var(--bl);border:1px solid var(--bl);background:var(--bl-soft);
+          padding:4px 9px;white-space:nowrap;flex-shrink:0}
+.prog{position:fixed;top:56px;left:0;height:2px;background:var(--accent);z-index:91;
+      width:0;box-shadow:0 0 12px var(--accent);transition:width 90ms linear}
+
+/* ============================================================= HERO ===== */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
+      justify-content:center;padding:96px 0 var(--s7);overflow:hidden}
+#field{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.9}
+.hero>.wrap{position:relative;z-index:1}
+.hero .eyebrow{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.22em;
+               text-transform:uppercase;color:var(--accent);margin-bottom:var(--s4)}
+.hero h1{margin-bottom:var(--s4)}
+.hero h1 em{font-style:normal;color:var(--accent);
+            -webkit-text-stroke:0}
+.hero .lede{font-size:var(--t-xl);color:var(--ink-2);max-width:30ch;line-height:1.35;
+            font-weight:380;letter-spacing:-.015em}
+.hero .route{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s6);
+             font-family:var(--mono);font-size:var(--t-sm);color:var(--ink-2);
+             flex-wrap:wrap}
+.hero .route b{color:var(--ink);font-weight:620;font-size:var(--t-lg)}
+.hero .route .arr{color:var(--accent)}
+.scroll-cue{position:absolute;bottom:26px;left:50%;translate:-50% 0;z-index:1;
+            font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.18em;
+            text-transform:uppercase;color:var(--ink-3);display:flex;
+            flex-direction:column;align-items:center;gap:8px}
+.scroll-cue span{width:1px;height:26px;background:linear-gradient(var(--ink-3),transparent);
+                 animation:cue 2.4s var(--ease) infinite}
+@keyframes cue{0%{opacity:0;transform:scaleY(.3);transform-origin:top}
+               40%{opacity:1}100%{opacity:0;transform:scaleY(1);transform-origin:top}}
+
+/* ============================================================ METRICS === */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+         gap:1px;background:var(--line);border:1px solid var(--line);
+         margin-top:var(--s7)}
+.metric{background:var(--surface);padding:var(--s4) var(--s4) var(--s5);
+        display:flex;flex-direction:column;gap:5px;position:relative;
+        transition:background var(--base) var(--ease)}
+.metric:hover{background:var(--surface-2)}
+.metric .k{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.12em;
+           text-transform:uppercase;color:var(--ink-3)}
+.metric .v{font-family:var(--disp);font-size:30px;font-weight:660;line-height:1;
+           letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.metric .s{font-size:var(--t-sm);color:var(--ink-3);line-height:1.4}
+.metric.is-real .v{color:var(--real)} .metric.is-real .k{color:var(--real)}
+.metric.is-hold .v{color:var(--bl)}   .metric.is-hold .k{color:var(--bl)}
+.metric.is-warn .v{color:var(--accent)} .metric.is-warn .k{color:var(--accent)}
+
+/* =========================================================== SECTIONS === */
+section{position:relative;padding-block:var(--s9)}
+section+section{border-top:1px solid var(--line)}
+.shead{display:flex;align-items:baseline;gap:var(--s4);margin-bottom:var(--s5)}
+.shead .n{font-family:var(--mono);font-size:var(--t-xs);font-weight:600;
+          color:var(--accent);letter-spacing:.14em;flex-shrink:0;padding-top:6px}
+.lede{font-size:var(--t-lg);color:var(--ink-2);max-width:var(--readw);line-height:1.62}
+.lede+.lede{margin-top:var(--s3)}
+.sub{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.14em;
+     text-transform:uppercase;color:var(--ink-3);margin-bottom:var(--s3)}
+
+/* Reveal-on-scroll. Opt-in per element, disabled under reduced motion. */
+.rv{opacity:0;transform:translateY(14px);
+    transition:opacity var(--slow) var(--ease), transform var(--slow) var(--ease)}
+.rv.in{opacity:1;transform:none}
+.rv[data-d="1"]{transition-delay:70ms} .rv[data-d="2"]{transition-delay:140ms}
+.rv[data-d="3"]{transition-delay:210ms} .rv[data-d="4"]{transition-delay:280ms}
+
+/* ============================================================= BANNER === */
+.banner{border-left:3px solid var(--accent);background:var(--accent-soft);
+        padding:var(--s4) var(--s5);margin-block:var(--s5);
+        display:flex;flex-direction:column;gap:var(--s2)}
+.banner .t{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.16em;
+           text-transform:uppercase;color:var(--accent);font-weight:640}
+.banner p{font-size:var(--t-sm);color:var(--ink-2);max-width:var(--readw)}
+.banner.stop{border-left-color:var(--bl);background:var(--bl-soft)}
+.banner.stop .t{color:var(--bl)}
+.banner.real{border-left-color:var(--real);background:var(--real-soft)}
+.banner.real .t{color:var(--real)}
+
+.note{font-size:var(--t-sm);color:var(--ink-2);position:relative;padding-left:18px;
+      margin-top:var(--s3);max-width:var(--readw)}
+.note::before{content:"\2192";position:absolute;left:0;top:0;color:var(--accent);
+              font-family:var(--mono)}
+
+/* ============================================================== CARD ==== */
+.grid{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(228px,1fr))}
+.card{background:var(--surface);padding:var(--s5);display:flex;flex-direction:column;
+      gap:var(--s2)}
+.card h3{font-size:var(--t-lg);font-weight:640}
+.card .k{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.12em;
+         text-transform:uppercase;color:var(--ink-3)}
+.card p{font-size:var(--t-sm);color:var(--ink-2)}
+
+.pill{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.1em;
+      padding:3px 9px;border:1px solid var(--line-2);color:var(--ink-2);
+      white-space:nowrap;display:inline-block}
+.pill.ex{border-color:var(--ex);background:var(--ex-soft);color:var(--ex);font-weight:640}
+.pill.dg{border-color:var(--dg);background:var(--dg-soft);color:var(--dg);font-weight:640}
+.pill.pd{border-color:var(--line-2);background:var(--pd-soft);color:var(--pd)}
+.pill.bl{border-color:var(--bl);background:var(--bl-soft);color:var(--bl);font-weight:640}
+.pill.real{border-color:var(--real);background:var(--real-soft);color:var(--real);font-weight:640}
+
+/* ============================================================= CHART ==== */
+.chart{background:var(--surface);border:1px solid var(--line);padding:var(--s5);
+       position:relative}
+.chart figcaption{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);
+                  align-items:baseline;margin-bottom:var(--s4)}
+.chart figcaption h3{font-size:var(--t-lg)}
+.chart .meta{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3);
+             letter-spacing:.04em}
+.chart .src{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3);
+            margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--line)}
+.cwrap{max-width:100%}
+@media (max-width:820px){
+  .cwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;
+         margin-inline:calc(var(--s3) * -1);padding-inline:var(--s3)}
+  .cwrap>svg{min-width:660px}
+}
+.axis{stroke:var(--line-2);stroke-width:1}
+.grid-l{stroke:var(--line);stroke-width:1;stroke-dasharray:2 5}
+.tick{fill:var(--ink-3);font-family:var(--mono);font-size:10.5px}
+.tick.b{fill:var(--ink-2)}
+.ser{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;
+     stroke-linecap:round}
+.dot{fill:var(--surface);stroke:var(--accent);stroke-width:2;
+     transition:r var(--fast) var(--spring)}
+.hit{fill:transparent;cursor:pointer}
+.hit:hover+.dot,.hit:focus-visible+.dot{r:7.5}
+.bar{fill:var(--ex);transition:fill var(--fast) var(--ease),opacity var(--fast)}
+.bar:hover{fill:var(--accent)}
+
+/* Tooltip. One element, moved and refilled; never N tooltips in the DOM. */
+#tip{position:fixed;z-index:120;pointer-events:none;opacity:0;
+     background:var(--surface-2);border:1px solid var(--line-2);
+     box-shadow:var(--shadow-3);padding:10px 13px;min-width:150px;max-width:280px;
+     font-size:var(--t-sm);transition:opacity var(--fast) var(--ease);
+     transform:translate(-50%,calc(-100% - 14px))}
+#tip.on{opacity:1}
+#tip .h{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.1em;
+        text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+#tip dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 12px}
+#tip dt{color:var(--ink-3);font-size:var(--t-xs)}
+#tip dd{margin:0;font-family:var(--mono);font-size:var(--t-xs);text-align:right;
+        color:var(--ink)}
+
+/* ========================================================== BOUNDARY ==== */
+.bnd{display:flex;flex-direction:column;gap:1px;background:var(--line);
+     border:1px solid var(--line)}
+.bs{background:var(--surface);display:grid;
+    grid-template-columns:28px minmax(0,1fr) auto;gap:var(--s2) var(--s4);
+    align-items:start;padding:var(--s4) var(--s5);text-align:left;width:100%;
+    border:0;border-left:2px solid transparent;font:inherit;color:inherit;
+    cursor:pointer;transition:background var(--base) var(--ease),
+    border-color var(--base) var(--ease)}
+.bs:hover{background:var(--surface-2)}
+.bs[aria-expanded="true"]{background:var(--surface-2);border-left-color:var(--accent)}
+.bs .rail{grid-row:1/span 3;position:relative;height:100%;min-height:26px}
+.bs .rail::before{content:"";position:absolute;left:50%;top:14px;bottom:-24px;
+                  width:1px;background:var(--line-2);translate:-50% 0}
+.bs:last-of-type .rail::before{display:none}
+.bs .rail i{position:absolute;left:50%;top:6px;translate:-50% 0;width:9px;height:9px;
+            border:1.5px solid var(--pd);background:var(--bg);border-radius:50%;
+            font-style:normal;display:block}
+.bs[data-state="EXERCISED"] .rail i{border-color:var(--ex);background:var(--ex);
+                                    box-shadow:0 0 10px -1px var(--ex)}
+.bs[data-state="DEGENERATE"] .rail i{border-color:var(--dg);background:var(--dg)}
+.bs[data-state="BLOCKED"] .rail i{border-color:var(--bl);background:var(--bl)}
+.bs .nm{font-weight:620;font-size:var(--t-md)}
+.bs .sp{grid-column:2;font-family:var(--mono);font-size:var(--t-xs);
+        color:var(--ink-3);word-break:break-word}
+.bs .stt{grid-column:3;grid-row:1}
+.bd{background:var(--sunk);padding:0 var(--s5) 0 calc(var(--s5) + 28px + var(--s4));
+    display:grid;grid-template-rows:0fr;
+    transition:grid-template-rows var(--base) var(--ease)}
+.bd[data-open="1"]{grid-template-rows:1fr;padding-block:var(--s4)}
+.bd>div{overflow:hidden;min-height:0}
+.bd ul{margin:0 0 var(--s3);padding-left:17px;font-size:var(--t-sm);color:var(--ink-2)}
+.bd li{margin-bottom:3px}
+.bd .n{font-size:var(--t-sm);color:var(--ink-3);max-width:var(--readw)}
+.stop-rule{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s5);
+           background:var(--bl-soft);border-block:1px solid var(--bl);
+           font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.12em;
+           text-transform:uppercase;color:var(--bl);font-weight:640}
+.stop-rule::before,.stop-rule::after{content:"";flex:1;height:1px;background:var(--bl);opacity:.4}
+
+/* =========================================================== EXPLORER === */
+.filters{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s4);
+         align-items:center;max-width:100%;min-width:0}
+.fgrp{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);
+      border:1px solid var(--line);max-width:100%}
+.fgrp button{background:var(--surface);border:0;color:var(--ink-3);font:inherit;
+             font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.08em;
+             padding:6px 11px;cursor:pointer;
+             transition:background var(--fast) var(--ease),color var(--fast) var(--ease)}
+.fgrp button:hover{color:var(--ink);background:var(--surface-2)}
+.fgrp button[aria-pressed="true"]{background:var(--accent);color:#07090C;font-weight:640}
+.flabel{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.12em;
+        text-transform:uppercase;color:var(--ink-3);margin-right:2px}
+.count{font-family:var(--mono);font-size:var(--t-xs);color:var(--ink-3);margin-left:auto}
+.count b{color:var(--accent);font-weight:640}
+
+.tscroll{overflow-x:auto;max-width:100%;border:1px solid var(--line);
+         background:var(--surface);-webkit-overflow-scrolling:touch}
+thead th{position:sticky;top:0;background:var(--surface-2);z-index:1;
+         font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.1em;
+         text-transform:uppercase;color:var(--ink-3);font-weight:500;
+         text-align:left;padding:10px 12px;border-bottom:1px solid var(--line-2);
+         white-space:nowrap}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr{transition:background var(--fast) var(--ease)}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr[hidden]{display:none}
+td.r,th.r{text-align:right}
+td.m{font-family:var(--mono);font-size:var(--t-xs);font-variant-numeric:tabular-nums}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:2px 6px;
+     border:1px solid var(--line-2);color:var(--ink-3)}
+.tag.p{border-color:var(--real);color:var(--real);background:var(--real-soft)}
+.tag.s{border-color:var(--dg);color:var(--dg);background:var(--dg-soft)}
+
+/* =========================================================== PIPELINE === */
+.flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;
+      font-family:var(--mono);font-size:var(--t-xs)}
+.flow .step{padding:7px 12px;border:1px solid var(--line-2);background:var(--surface);
+            color:var(--ink-2);position:relative;overflow:hidden}
+.flow .step.now{border-color:var(--ex);background:var(--ex-soft);color:var(--ex);font-weight:640}
+.flow .step.next{border-color:var(--dg);background:var(--dg-soft);color:var(--dg);font-weight:640}
+.flow .step.stop{border-color:var(--bl);background:var(--bl-soft);color:var(--bl);font-weight:640}
 .flow .arr{color:var(--ink-3)}
-.bnd{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.bs{background:var(--card);padding:12px 15px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 16px}
-.bs .nm{grid-column:1;grid-row:1;font-weight:600;font-size:13.5px}
-.bs .sp{grid-column:1;grid-row:2;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.06em;word-break:break-word}
-.bs .stt{grid-column:2;grid-row:1/span 4;align-self:start;justify-self:end;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;padding:3px 9px;border:1px solid var(--rule-2);white-space:nowrap}
-.bs .stt.ex{border-color:var(--hold);background:var(--hold-soft);color:var(--hold);font-weight:600}
-.bs .stt.dg{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);font-weight:600}
-.bs .stt.pd{border-color:var(--rule-2);background:var(--sunk);color:var(--ink-3)}
-.bs .stt.bl{border-color:var(--no);background:var(--no-soft);color:var(--no);font-weight:600}
-.bs ul{grid-column:1;grid-row:3;margin:5px 0 0;padding-left:16px;font-size:12.5px;color:var(--ink-2)}
-.bs ul li{margin-bottom:2px}
-.bs .bn{grid-column:1;grid-row:4;margin-top:5px;font-size:12.5px;color:var(--ink-3)}
-.bs.stop{border-left:3px solid var(--amber)}
-.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.lg{background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:4px}
-.lg .lk{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;font-weight:600}
-.lg .lv{font-size:12.5px;color:var(--ink-2)}
-.faq{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule)}
-.qa{background:var(--card);padding:13px 15px;display:flex;flex-direction:column;gap:5px}
-.qa .q{font-weight:600;font-size:13.5px}
-.qa .a{font-size:13px;color:var(--ink-2)}
-footer{border-top:1px solid var(--rule);padding-top:15px;font-size:12px;color:var(--ink-3);display:flex;flex-direction:column;gap:4px}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#pipe{width:100%;height:150px;display:block}
+
+/* ============================================================== FAQ ===== */
+.faq{display:flex;flex-direction:column;gap:1px;background:var(--line);
+     border:1px solid var(--line)}
+.qa{background:var(--surface)}
+.qa summary{padding:var(--s4) var(--s5);cursor:pointer;font-weight:600;
+            font-size:var(--t-md);list-style:none;display:flex;gap:var(--s3);
+            align-items:baseline;transition:background var(--fast) var(--ease)}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::before{content:"+";font-family:var(--mono);color:var(--accent);
+                    font-size:var(--t-lg);line-height:1;transition:rotate var(--base) var(--ease)}
+.qa[open] summary::before{rotate:45deg}
+.qa summary:hover{background:var(--surface-2)}
+.qa .a{padding:0 var(--s5) var(--s5) calc(var(--s5) + 20px);font-size:var(--t-sm);
+       color:var(--ink-2);max-width:var(--readw)}
+
+/* ============================================================ FOOTER ==== */
+footer{border-top:1px solid var(--line);padding-block:var(--s7);
+       font-size:var(--t-sm);color:var(--ink-3)}
+footer .row{display:flex;flex-wrap:wrap;gap:var(--s5);justify-content:space-between}
+footer b{color:var(--ink-2);font-weight:600}
+
+/* ========================================================= RESPONSIVE === */
+@media (max-width:900px){
+  :root{--s9:72px;--s8:56px}
+  .nav{gap:var(--s3)}
+  .nav ol{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent)}
+  .bs{grid-template-columns:20px minmax(0,1fr);gap:var(--s2)}
+  .bs .stt{grid-column:2;grid-row:auto;justify-self:start}
+  .bd{padding-left:calc(var(--s5) + 20px + var(--s2))}
+  .hero .lede{max-width:100%}
+}
+@media (max-height:820px),(max-width:620px){
+  .scroll-cue{display:none}
+}
+@media (max-width:620px){
+  :root{--t-4xl:clamp(40px,13vw,64px)}
+  .nav ol{display:none}
+  h1{max-width:none}
+  .metrics{grid-template-columns:1fr 1fr}
+  .metric .v{font-size:24px}
+  #field{opacity:.55}
+  .chart{padding:var(--s4) var(--s3)}
+}
+
+/* ===================================================== REDUCED MOTION === */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+                       transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .rv{opacity:1;transform:none}
+  .scroll-cue span{animation:none}
+  #field,#pipe{display:none}
+}
+
+/* =============================================================== PRINT == */
+@media print{
+  .nav,.prog,.scroll-cue,#field,#pipe,#tip,.filters{display:none!important}
+  body{background:#fff;color:#000}
+  section{padding-block:24px;break-inside:avoid}
+  .rv{opacity:1;transform:none}
+}
 </style>
 
-<div class="wrap">
+<noscript><style>
+/* Reveal-on-scroll is applied by script. Without script the page must still
+   show every figure, so the animated initial state is cancelled outright. */
+.rv{opacity:1!important;transform:none!important}
+#field,#pipe,.scroll-cue{display:none}
+</style></noscript>
 
-<header>
-  <div class="chips"><span class="chip warn">Prototype · observed panel</span><span class="chip">collected 2026-09-12</span><span class="chip">DEL-BOM</span><span class="chip">IndiGo 6E</span><span class="chip">Saver fare</span><span class="chip real">7/7 APW</span><span class="chip">methodology 2.1</span></div>
-  <h1>APIx — Airfare Index Engine</h1>
-  <p class="lede">A frozen-specification airfare index engine with a real-market evidence
-  pipeline, built against MoSPI problem statement 26056. We have collected and audited the
-  complete seven-bucket advance-purchase panel for DEL–BOM under a fixed collection protocol.
-  The engine is implemented and tested, but we <strong>deliberately do not publish a market
-  index yet</strong>, because the longitudinal evidence the methodology requires does not
-  exist.</p>
+<a class="skip" href="#evidence">Skip to the evidence</a>
+<nav class="nav" aria-label="Section navigation"><span class="brand"><i></i>APIx</span><ol><li><a href="#evidence">Evidence</a></li><li><a href="#confound">Confound</a></li><li><a href="#provenance">Provenance</a></li><li><a href="#boundary">Boundary</a></li><li><a href="#pending">Index status</a></li><li><a href="#engine">Engine</a></li><li><a href="#method">Method</a></li><li><a href="#limits">Limits</a></li><li><a href="#next">19 Sep</a></li></ol><span class="spacer"></span><span class="idx">INDEX PENDING</span></nav><div class="prog" role="presentation"></div>
+
+<main id="top">
+
+<header class="hero">
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <p class="eyebrow">MoSPI problem statement 26056 · methodology v2.1 frozen</p>
+    <h1>Airfare is the weakest measurement point in the <em>CPI&nbsp;basket</em>.</h1>
+    <p class="lede">APIx is the engine that measures it honestly — and refuses
+    to publish until the evidence exists.</p>
+
+    <div class="route">
+      <b>DEL-BOM</b><span class="arr">→</span>
+      <span>6E · Saver fare</span>
+      <span class="arr">·</span>
+      <span>collected 2026-09-12</span>
+      <span class="pill real">REAL_MARKET_OBSERVATION</span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric is-real"><span class="k">real observations</span><span class="v">35</span><span class="s">7/7 frozen APW buckets · 5 departure bands</span></div>
+      <div class="metric "><span class="k">collection plan</span><span class="v">100.0%</span><span class="s">35/35 slots — plan completion, not statistical coverage</span></div>
+      <div class="metric is-warn"><span class="k">exclusions audited</span><span class="v">122</span><span class="s">45/46 mechanically decidable reproduce the recorded verdict</span></div>
+      <div class="metric is-hold"><span class="k">APIx-L index</span><span class="v">PENDING</span><span class="s">spec C.1 needs matched t / t−7 · unlocks 2026-09-19</span></div>
+    </div>
+  </div>
+  <div class="scroll-cue" aria-hidden="true">scroll<span></span></div>
 </header>
 
-<div class="status">
-  <div class="st yes"><span class="lab">Observed</span>
-    <span class="val">35 real observations</span>
-    <span class="why">7/7 frozen APW buckets ·
-    5 departure bands · DEL-BOM ·
-    IndiGo 6E · collected 2026-09-12</span></div>
-  <div class="st yes"><span class="lab">Engine</span>
-    <span class="val">Implemented &amp; tested</span>
-    <span class="why">APIx-L: Jevons elementary → Young / Modified Laspeyres, verified end to
-    end over 14 consecutive publication dates <strong>of a controlled synthetic test fixture</strong>.
-    No real longitudinal index calculation has been executed. No ML in the index path.
-    <strong>APIx-TPD is specified (§M) but not implemented.</strong></span></div>
-  <div class="st no"><span class="lab">Index</span>
-    <span class="val">PENDING</span>
-    <span class="why">Frozen methodology requires matched <span class="mono">t / t−7</span>
-    evidence: §C.1 <span class="mono">I(c,t) = I(c,t−7)·J(c,t)</span>.
-    1 collection wave held ⇒ 0 matched
-    pairs. Unlock <strong>2026-09-19</strong>.</span></div>
-</div>
+<!-- ============================================================ 01 ==== -->
+<section id="evidence" class="wrap" aria-labelledby="h-evidence">
+  <div class="shead"><span class="n">01</span>
+    <h2 id="h-evidence">The observation</h2></div>
+  <p class="lede rv">35 fares, one route, one carrier, one
+  fare family, collected on 2026-09-12 inside a declared
+  21:00-22:00 window under a frozen protocol. All
+  7 advance-purchase buckets are present — T+1 through
+  T+60 — and every fare reconciles: base plus tax equals total,
+  35/35, in exact decimal.</p>
 
-<div class="warn">
-  <strong>No APIx market index value appears anywhere on this page.</strong>
-  <span>The advance-purchase profile below is <strong>descriptive cross-sectional evidence. It is
-  NOT a longitudinal airfare price index</strong>, and no figure on this page should be read as
-  airfare inflation.</span>
-</div>
+  <div class="banner rv">
+    <span class="t">Descriptive APW profile — NOT AN INDEX</span>
+    <p>Each bucket is a separate cross-section on a different travel date. Differences between buckets are not temporal price movements and are not inflation.</p>
+  </div>
 
-<!-- 2 APW -->
-<section>
-  <div class="sechead"><span class="n">01</span><h2>Descriptive APW profile — not an index</h2></div>
-  <div class="warn">
-    <strong>DESCRIPTIVE APW PROFILE — NOT AN INDEX.</strong>
-    <span>DESCRIPTIVE APW PROFILE - NOT AN INDEX. Each bucket is a separate cross-section on a different travel date. Differences between buckets are not temporal price movements and are not inflation.</span>
-  </div>
-  <p class="lede">Geometric mean of the five band fares at each advance-purchase distance.
-  These are computed with the <strong>same geometric-mean form §D.2 uses</strong>
-  (<span class="mono">exp(mean(ln p))</span>), so the arithmetic is the same family the index will
-  use on these observations later. <strong>They are not §D.2 relatives, and the index engine did
-  not produce them:</strong> §D.2 aggregates <em>price relatives</em> across a matched pair of
-  collection dates, which needs two waves. These are levels from a single wave, summarised by
-  <span class="mono">tools/analysis/build_panel_json.py</span>. No real observation has yet
-  entered <span class="mono">src/apix/statistics/</span> — see the
-  <a href="https://github.com/Rexy-5097/apix/blob/main/docs/capability-matrix.md">capability
-  matrix</a>.</p>
-  <div class="chartbox"><svg viewBox="0 0 880 330" role="img"
-     aria-label="Observed geometric-mean Saver fare by advance-purchase window">
-  <g stroke="var(--rule)" stroke-width="1"><line x1="84" y1="282.0" x2="852" y2="282.0"/><line x1="84" y1="220.0" x2="852" y2="220.0"/><line x1="84" y1="158.0" x2="852" y2="158.0"/><line x1="84" y1="96.0" x2="852" y2="96.0"/><line x1="84" y1="34.0" x2="852" y2="34.0"/></g>
-  <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink-3)"
-     text-anchor="end"><text x="75" y="286.0">5,929</text><text x="75" y="224.0">6,878</text><text x="75" y="162.0">7,826</text><text x="75" y="100.0">8,775</text><text x="75" y="38.0">9,723</text></g>
-  <polyline fill="none" stroke="var(--amber)" stroke-width="2.5" points="84.0,240.7 212.0,218.4 340.0,235.9 468.0,221.8 596.0,238.0 724.0,208.8 852.0,75.3"/>
-  <g fill="var(--amber)"><circle cx="84.0" cy="240.7" r="5"/><circle cx="212.0" cy="218.4" r="5"/><circle cx="340.0" cy="235.9" r="5"/><circle cx="468.0" cy="221.8" r="5"/><circle cx="596.0" cy="238.0" r="5"/><circle cx="724.0" cy="208.8" r="5"/><circle cx="852.0" cy="75.3" r="5"/></g>
-  <g font-family="IBM Plex Mono, monospace" font-size="11.5" font-weight="600"
-     fill="var(--ink)" text-anchor="middle"><text x="84.0" y="227.7">6,561</text><text x="212.0" y="205.4">6,903</text><text x="340.0" y="222.9">6,634</text><text x="468.0" y="208.8">6,850</text><text x="596.0" y="225.0">6,602</text><text x="724.0" y="195.8">7,049</text><text x="852.0" y="62.3">9,091</text></g>
-  <line x1="84" y1="282" x2="852" y2="282" stroke="var(--rule-2)" stroke-width="1.5"/>
-  <g font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink-2)"
-     text-anchor="middle"><text x="84.0" y="302">T+1</text><text x="212.0" y="302">T+3</text><text x="340.0" y="302">T+7</text><text x="468.0" y="302">T+15</text><text x="596.0" y="302">T+30</text><text x="724.0" y="302">T+45</text><text x="852.0" y="302">T+60</text></g>
-  <g font-family="IBM Plex Sans, sans-serif" font-size="10" fill="var(--ink-3)"
-     text-anchor="middle"><text x="84.0" y="316">13/09 Sun</text><text x="212.0" y="316">15/09 Tue</text><text x="340.0" y="316">19/09 Sat</text><text x="468.0" y="316">27/09 Sun</text><text x="596.0" y="316">12/10 Mon</text><text x="724.0" y="316">27/10 Tue</text><text x="852.0" y="316">11/11 Wed</text></g>
-</svg></div>
-  <div class="tscroll"><table>
-    <thead><tr><th>APW</th><th>travel date</th><th>day</th><th class="r">n</th>
-      <th class="r">geo mean ₹</th><th class="r">min</th><th class="r">max</th>
-      <th class="r">spread</th><th class="r">ratio vs T+1</th></tr></thead>
-    <tbody><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m r'>5</td><td class='m r'><strong>6,561</strong></td><td class='m r'>6,530</td><td class='m r'>6,688</td><td class='m r'>2.4%</td><td class='m r'>1.000</td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m r'>5</td><td class='m r'><strong>6,903</strong></td><td class='m r'>6,530</td><td class='m r'>8,158</td><td class='m r'>24.9%</td><td class='m r'>1.052</td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m r'>5</td><td class='m r'><strong>6,634</strong></td><td class='m r'>6,530</td><td class='m r'>6,898</td><td class='m r'>5.6%</td><td class='m r'>1.011</td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m r'>5</td><td class='m r'><strong>6,850</strong></td><td class='m r'>6,530</td><td class='m r'>7,160</td><td class='m r'>9.6%</td><td class='m r'>1.044</td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m r'>5</td><td class='m r'><strong>6,602</strong></td><td class='m r'>6,530</td><td class='m r'>6,898</td><td class='m r'>5.6%</td><td class='m r'>1.006</td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m r'>5</td><td class='m r'><strong>7,049</strong></td><td class='m r'>7,019</td><td class='m r'>7,169</td><td class='m r'>2.1%</td><td class='m r'>1.074</td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m r'>5</td><td class='m r'><strong>9,091</strong></td><td class='m r'>8,720</td><td class='m r'>9,665</td><td class='m r'>10.8%</td><td class='m r'>1.385</td></tr></tbody></table></div>
-  <div class="tiles">
-    <div class="tile"><span class="k">T+60 vs T+1 geo-mean</span>
-      <span class="v">+38.6%</span>
-      <span class="s">descriptive difference — not a price movement</span></div>
-    <div class="tile"><span class="k">widest within-bucket spread</span>
-      <span class="v">24.9%</span>
-      <span class="s">T+3, across the 5 bands</span></div>
-    <div class="tile good"><span class="k">frozen APW buckets observed</span>
-      <span class="v">7/7</span>
-      <span class="s">complete §A.3 vector</span></div>
-  </div>
-  <div class="warn">
-    <strong>The +38.6% is not airfare inflation.</strong>
-    <span>The T+60 observed APW geo-mean is 38.6% higher than the
-    T+1 observed APW geo-mean; <strong>this is descriptive and not a time-series
-    price movement</strong>. Each bucket sits on a different travel date, so date-specific and
-    seasonal effects are fully confounded with advance purchase. The T+60 travel date
-    (2026-11-11) falls days after Diwali; a return-travel peak is a
-    <strong>hypothesis this panel cannot test</strong>, not a finding.</span>
-  </div>
+  <figure class="chart rv" style="margin-top:var(--s5)">
+    <figcaption>
+      <h3>Fare by advance-purchase bucket</h3>
+      <span class="meta">₹ geometric mean, spec §D.2 log form · n=35</span>
+    </figcaption>
+    <div class="cwrap"><svg viewBox="0 0 940 380" class="apw-svg" role="img" aria-label="Geometric mean fare for each of the seven advance-purchase buckets, with the observed minimum and maximum in each"><line class="grid-l" x1="64" y1="319.9" x2="914" y2="319.9"/><text class="tick" x="54" y="323.4" text-anchor="end">6,000</text><line class="grid-l" x1="64" y1="182.7" x2="914" y2="182.7"/><text class="tick" x="54" y="186.2" text-anchor="end">8,000</text><line class="grid-l" x1="64" y1="45.4" x2="914" y2="45.4"/><text class="tick" x="54" y="48.9" text-anchor="end">10,000</text><line class="axis" x1="64" y1="318" x2="914" y2="318"/><line x1="124.7" y1="283.6" x2="124.7" y2="272.7" stroke="var(--line-3)" stroke-width="1.5"/><line x1="119.7" y1="272.7" x2="129.7" y2="272.7" stroke="var(--line-3)" stroke-width="1.5"/><line x1="119.7" y1="283.6" x2="129.7" y2="283.6" stroke="var(--line-3)" stroke-width="1.5"/><line x1="246.1" y1="283.6" x2="246.1" y2="171.8" stroke="var(--line-3)" stroke-width="1.5"/><line x1="241.1" y1="171.8" x2="251.1" y2="171.8" stroke="var(--line-3)" stroke-width="1.5"/><line x1="241.1" y1="283.6" x2="251.1" y2="283.6" stroke="var(--line-3)" stroke-width="1.5"/><line x1="367.6" y1="283.6" x2="367.6" y2="258.3" stroke="var(--line-3)" stroke-width="1.5"/><line x1="362.6" y1="258.3" x2="372.6" y2="258.3" stroke="var(--line-3)" stroke-width="1.5"/><line x1="362.6" y1="283.6" x2="372.6" y2="283.6" stroke="var(--line-3)" stroke-width="1.5"/><line x1="489.0" y1="283.6" x2="489.0" y2="240.3" stroke="var(--line-3)" stroke-width="1.5"/><line x1="484.0" y1="240.3" x2="494.0" y2="240.3" stroke="var(--line-3)" stroke-width="1.5"/><line x1="484.0" y1="283.6" x2="494.0" y2="283.6" stroke="var(--line-3)" stroke-width="1.5"/><line x1="610.4" y1="283.6" x2="610.4" y2="258.3" stroke="var(--line-3)" stroke-width="1.5"/><line x1="605.4" y1="258.3" x2="615.4" y2="258.3" stroke="var(--line-3)" stroke-width="1.5"/><line x1="605.4" y1="283.6" x2="615.4" y2="283.6" stroke="var(--line-3)" stroke-width="1.5"/><line x1="731.9" y1="250.0" x2="731.9" y2="239.7" stroke="var(--line-3)" stroke-width="1.5"/><line x1="726.9" y1="239.7" x2="736.9" y2="239.7" stroke="var(--line-3)" stroke-width="1.5"/><line x1="726.9" y1="250.0" x2="736.9" y2="250.0" stroke="var(--line-3)" stroke-width="1.5"/><line x1="853.3" y1="133.3" x2="853.3" y2="68.4" stroke="var(--line-3)" stroke-width="1.5"/><line x1="848.3" y1="68.4" x2="858.3" y2="68.4" stroke="var(--line-3)" stroke-width="1.5"/><line x1="848.3" y1="133.3" x2="858.3" y2="133.3" stroke="var(--line-3)" stroke-width="1.5"/><path class="ser" d="M124.7 281.4 L246.1 258.0 L367.6 276.5 L489.0 261.6 L610.4 278.6 L731.9 248.0 L853.3 107.8"/><circle class="hit" cx="124.7" cy="281.4" r="22" tabindex="0" role="button" data-apw="1" aria-label="T plus 1, geometric mean 6,561 rupees, travel date 2026-09-13, 5 observations, spread 2.4 percent"/><circle class="dot" cx="124.7" cy="281.4" r="5"/><text class="tick b" x="124.7" y="340" text-anchor="middle">T+1</text><text class="tick" x="124.7" y="356" text-anchor="middle">Sun</text><text class="tick" x="124.7" y="370" text-anchor="middle" opacity=".65">09-13</text><circle class="hit" cx="246.1" cy="258.0" r="22" tabindex="0" role="button" data-apw="3" aria-label="T plus 3, geometric mean 6,903 rupees, travel date 2026-09-15, 5 observations, spread 24.9 percent"/><circle class="dot" cx="246.1" cy="258.0" r="5"/><text class="tick b" x="246.1" y="340" text-anchor="middle">T+3</text><text class="tick" x="246.1" y="356" text-anchor="middle">Tue</text><text class="tick" x="246.1" y="370" text-anchor="middle" opacity=".65">09-15</text><circle class="hit" cx="367.6" cy="276.5" r="22" tabindex="0" role="button" data-apw="7" aria-label="T plus 7, geometric mean 6,634 rupees, travel date 2026-09-19, 5 observations, spread 5.6 percent"/><circle class="dot" cx="367.6" cy="276.5" r="5"/><text class="tick b" x="367.6" y="340" text-anchor="middle">T+7</text><text class="tick" x="367.6" y="356" text-anchor="middle">Sat</text><text class="tick" x="367.6" y="370" text-anchor="middle" opacity=".65">09-19</text><circle class="hit" cx="489.0" cy="261.6" r="22" tabindex="0" role="button" data-apw="15" aria-label="T plus 15, geometric mean 6,850 rupees, travel date 2026-09-27, 5 observations, spread 9.6 percent"/><circle class="dot" cx="489.0" cy="261.6" r="5"/><text class="tick b" x="489.0" y="340" text-anchor="middle">T+15</text><text class="tick" x="489.0" y="356" text-anchor="middle">Sun</text><text class="tick" x="489.0" y="370" text-anchor="middle" opacity=".65">09-27</text><circle class="hit" cx="610.4" cy="278.6" r="22" tabindex="0" role="button" data-apw="30" aria-label="T plus 30, geometric mean 6,602 rupees, travel date 2026-10-12, 5 observations, spread 5.6 percent"/><circle class="dot" cx="610.4" cy="278.6" r="5"/><text class="tick b" x="610.4" y="340" text-anchor="middle">T+30</text><text class="tick" x="610.4" y="356" text-anchor="middle">Mon</text><text class="tick" x="610.4" y="370" text-anchor="middle" opacity=".65">10-12</text><circle class="hit" cx="731.9" cy="248.0" r="22" tabindex="0" role="button" data-apw="45" aria-label="T plus 45, geometric mean 7,049 rupees, travel date 2026-10-27, 5 observations, spread 2.1 percent"/><circle class="dot" cx="731.9" cy="248.0" r="5"/><text class="tick b" x="731.9" y="340" text-anchor="middle">T+45</text><text class="tick" x="731.9" y="356" text-anchor="middle">Tue</text><text class="tick" x="731.9" y="370" text-anchor="middle" opacity=".65">10-27</text><circle class="hit" cx="853.3" cy="107.8" r="22" tabindex="0" role="button" data-apw="60" aria-label="T plus 60, geometric mean 9,091 rupees, travel date 2026-11-11, 5 observations, spread 10.8 percent"/><circle class="dot" cx="853.3" cy="107.8" r="5"/><text class="tick b" x="853.3" y="340" text-anchor="middle">T+60</text><text class="tick" x="853.3" y="356" text-anchor="middle">Wed</text><text class="tick" x="853.3" y="370" text-anchor="middle" opacity=".65">11-11</text><text class="tick" x="64" y="20">₹ geometric mean · whisker = observed min/max</text></svg></div>
+    <p class="src">Source: <span class="mono">data/panel.json → apw_profile</span>.
+    Seven separate cross-sections on seven different travel dates, plotted on an
+    ordinal axis. The T+60 bucket sits 38.6% above T+1 —
+    a descriptive difference between two cross-sections, <strong>not a price
+    movement and not airfare inflation</strong>.</p>
+  </figure>
+
+  <figure class="chart rv" style="margin-top:var(--s5)">
+    <figcaption>
+      <h3>Departure-band structure</h3>
+      <span class="meta">₹ geometric mean by 3-hour band, spec §B.2 · bands
+      2–6, anchored 00:00 IST</span>
+    </figcaption>
+    <div class="cwrap"><svg viewBox="0 0 940 260" role="img" aria-label="Geometric mean fare for each of the five contracted departure bands"><line class="grid-l" x1="64" y1="197.0" x2="914" y2="197.0"/><text class="tick" x="54" y="200.5" text-anchor="end">6,800</text><line class="grid-l" x1="64" y1="130.8" x2="914" y2="130.8"/><text class="tick" x="54" y="134.3" text-anchor="end">7,000</text><line class="grid-l" x1="64" y1="64.5" x2="914" y2="64.5"/><text class="tick" x="54" y="68.0" text-anchor="end">7,200</text><line class="grid-l" x1="64" y1="-1.8" x2="914" y2="-1.8"/><text class="tick" x="54" y="1.7" text-anchor="end">7,400</text><rect class="bar" x="104.8" y="61.8" width="88.4" height="144.2" tabindex="0" role="button" data-band="2" aria-label="Band 2, 06:00-08:59, geometric mean 7,208 rupees from 7 observations"/><text class="tick b" x="149.0" y="226" text-anchor="middle">band 2</text><text class="tick" x="149.0" y="241" text-anchor="middle" opacity=".7">06:00-08:59</text><rect class="bar" x="274.8" y="171.8" width="88.4" height="34.2" tabindex="0" role="button" data-band="3" aria-label="Band 3, 09:00-11:59, geometric mean 6,876 rupees from 7 observations"/><text class="tick b" x="319.0" y="226" text-anchor="middle">band 3</text><text class="tick" x="319.0" y="241" text-anchor="middle" opacity=".7">09:00-11:59</text><rect class="bar" x="444.8" y="91.4" width="88.4" height="114.6" tabindex="0" role="button" data-band="4" aria-label="Band 4, 12:00-14:59, geometric mean 7,119 rupees from 7 observations"/><text class="tick b" x="489.0" y="226" text-anchor="middle">band 4</text><text class="tick" x="489.0" y="241" text-anchor="middle" opacity=".7">12:00-14:59</text><rect class="bar" x="614.8" y="136.6" width="88.4" height="69.4" tabindex="0" role="button" data-band="5" aria-label="Band 5, 15:00-17:59, geometric mean 6,982 rupees from 7 observations"/><text class="tick b" x="659.0" y="226" text-anchor="middle">band 5</text><text class="tick" x="659.0" y="241" text-anchor="middle" opacity=".7">15:00-17:59</text><rect class="bar" x="784.8" y="98.1" width="88.4" height="107.9" tabindex="0" role="button" data-band="6" aria-label="Band 6, 18:00-20:59, geometric mean 7,098 rupees from 7 observations"/><text class="tick b" x="829.0" y="226" text-anchor="middle">band 6</text><text class="tick" x="829.0" y="241" text-anchor="middle" opacity=".7">18:00-20:59</text><line class="axis" x1="64" y1="206" x2="914" y2="206"/></svg></div>
+    <p class="src">Source: <span class="mono">data/panel.json → band_profile</span>.
+    Band spread across the day is 4.8% — an order of magnitude
+    smaller than the spread within a single bucket, which is why the collection
+    contract fixes one flight per band rather than sampling the day.</p>
+  </figure>
+
+  <h3 class="rv" style="margin-top:var(--s8)">Every observation, inspectable</h3>
+  <p class="lede rv" style="margin-bottom:var(--s4)">Filter by bucket, band or
+  evidence grade. Nothing is aggregated away.</p>
+  <div class="rv"><div class="filters"><span class="flabel">APW</span><span class="fgrp"><button data-f="apw" data-v="all" aria-pressed="true">all</button><button data-f="apw" data-v="1" aria-pressed="false">T+1</button><button data-f="apw" data-v="3" aria-pressed="false">T+3</button><button data-f="apw" data-v="7" aria-pressed="false">T+7</button><button data-f="apw" data-v="15" aria-pressed="false">T+15</button><button data-f="apw" data-v="30" aria-pressed="false">T+30</button><button data-f="apw" data-v="45" aria-pressed="false">T+45</button><button data-f="apw" data-v="60" aria-pressed="false">T+60</button></span><span class="flabel">Band</span><span class="fgrp"><button data-f="band" data-v="all" aria-pressed="true">all</button><button data-f="band" data-v="2" aria-pressed="false">2</button><button data-f="band" data-v="3" aria-pressed="false">3</button><button data-f="band" data-v="4" aria-pressed="false">4</button><button data-f="band" data-v="5" aria-pressed="false">5</button><button data-f="band" data-v="6" aria-pressed="false">6</button></span><span class="flabel">Evidence</span><span class="fgrp"><button data-f="ev" data-v="all" aria-pressed="true">all</button><button data-f="ev" data-v="PRIMARY_HASHED" aria-pressed="false">hashed</button><button data-f="ev" data-v="SECONDARY_CHAT_IMAGE" aria-pressed="false">chat image</button></span><span class="count" id="obs-count" aria-live="polite"></span></div><div class="tscroll"><table id="obs-table"><caption class="sr">All 35 real observations, filterable by advance-purchase bucket, departure band and evidence grade</caption><thead><tr><th>APW</th><th>travel date</th><th>dow</th><th>flight</th><th>dep</th><th class="r">band</th><th class="r">base ₹</th><th class="r">tax ₹</th><th class="r">total ₹</th><th>evidence</th></tr></thead><tbody><tr data-apw="1" data-band="2" data-ev="PRIMARY_HASHED"><td class="m">T+1</td><td class="m">2026-09-13</td><td class="m">Sun</td><td class="m">6E 6218</td><td class="m">06:05</td><td class="m r">2</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="1" data-band="3" data-ev="PRIMARY_HASHED"><td class="m">T+1</td><td class="m">2026-09-13</td><td class="m">Sun</td><td class="m">6E 6107</td><td class="m">09:30</td><td class="m r">3</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="1" data-band="4" data-ev="PRIMARY_HASHED"><td class="m">T+1</td><td class="m">2026-09-13</td><td class="m">Sun</td><td class="m">6E 6676</td><td class="m">12:00</td><td class="m r">4</td><td class="m r">5,215</td><td class="m r">1,473</td><td class="m r"><strong>6,688</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="1" data-band="5" data-ev="PRIMARY_HASHED"><td class="m">T+1</td><td class="m">2026-09-13</td><td class="m">Sun</td><td class="m">6E 864</td><td class="m">15:30</td><td class="m r">5</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="1" data-band="6" data-ev="PRIMARY_HASHED"><td class="m">T+1</td><td class="m">2026-09-13</td><td class="m">Sun</td><td class="m">6E 329</td><td class="m">18:00</td><td class="m r">6</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="3" data-band="2" data-ev="PRIMARY_HASHED"><td class="m">T+3</td><td class="m">2026-09-15</td><td class="m">Tue</td><td class="m">6E 6218</td><td class="m">06:05</td><td class="m r">2</td><td class="m r">6,615</td><td class="m r">1,543</td><td class="m r"><strong>8,158</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="3" data-band="3" data-ev="PRIMARY_HASHED"><td class="m">T+3</td><td class="m">2026-09-15</td><td class="m">Tue</td><td class="m">6E 6107</td><td class="m">09:30</td><td class="m r">3</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="3" data-band="4" data-ev="PRIMARY_HASHED"><td class="m">T+3</td><td class="m">2026-09-15</td><td class="m">Tue</td><td class="m">6E 6676</td><td class="m">12:00</td><td class="m r">4</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="3" data-band="5" data-ev="PRIMARY_HASHED"><td class="m">T+3</td><td class="m">2026-09-15</td><td class="m">Tue</td><td class="m">6E 864</td><td class="m">15:30</td><td class="m r">5</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="3" data-band="6" data-ev="PRIMARY_HASHED"><td class="m">T+3</td><td class="m">2026-09-15</td><td class="m">Tue</td><td class="m">6E 329</td><td class="m">18:00</td><td class="m r">6</td><td class="m r">5,415</td><td class="m r">1,483</td><td class="m r"><strong>6,898</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="7" data-band="2" data-ev="PRIMARY_HASHED"><td class="m">T+7</td><td class="m">2026-09-19</td><td class="m">Sat</td><td class="m">6E 6218</td><td class="m">06:05</td><td class="m r">2</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="7" data-band="3" data-ev="PRIMARY_HASHED"><td class="m">T+7</td><td class="m">2026-09-19</td><td class="m">Sat</td><td class="m">6E 6107</td><td class="m">09:30</td><td class="m r">3</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="7" data-band="4" data-ev="PRIMARY_HASHED"><td class="m">T+7</td><td class="m">2026-09-19</td><td class="m">Sat</td><td class="m">6E 6676</td><td class="m">12:00</td><td class="m r">4</td><td class="m r">5,215</td><td class="m r">1,473</td><td class="m r"><strong>6,688</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="7" data-band="5" data-ev="PRIMARY_HASHED"><td class="m">T+7</td><td class="m">2026-09-19</td><td class="m">Sat</td><td class="m">6E 864</td><td class="m">15:30</td><td class="m r">5</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="7" data-band="6" data-ev="PRIMARY_HASHED"><td class="m">T+7</td><td class="m">2026-09-19</td><td class="m">Sat</td><td class="m">6E 329</td><td class="m">18:00</td><td class="m r">6</td><td class="m r">5,415</td><td class="m r">1,483</td><td class="m r"><strong>6,898</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="15" data-band="2" data-ev="PRIMARY_HASHED"><td class="m">T+15</td><td class="m">2026-09-27</td><td class="m">Sun</td><td class="m">6E 6218</td><td class="m">06:05</td><td class="m r">2</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="15" data-band="3" data-ev="PRIMARY_HASHED"><td class="m">T+15</td><td class="m">2026-09-27</td><td class="m">Sun</td><td class="m">6E 6107</td><td class="m">09:30</td><td class="m r">3</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="15" data-band="4" data-ev="PRIMARY_HASHED"><td class="m">T+15</td><td class="m">2026-09-27</td><td class="m">Sun</td><td class="m">6E 6676</td><td class="m">12:00</td><td class="m r">4</td><td class="m r">5,665</td><td class="m r">1,495</td><td class="m r"><strong>7,160</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="15" data-band="5" data-ev="PRIMARY_HASHED"><td class="m">T+15</td><td class="m">2026-09-27</td><td class="m">Sun</td><td class="m">6E 864</td><td class="m">15:30</td><td class="m r">5</td><td class="m r">5,415</td><td class="m r">1,483</td><td class="m r"><strong>6,898</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="15" data-band="6" data-ev="PRIMARY_HASHED"><td class="m">T+15</td><td class="m">2026-09-27</td><td class="m">Sun</td><td class="m">6E 329</td><td class="m">18:00</td><td class="m r">6</td><td class="m r">5,665</td><td class="m r">1,495</td><td class="m r"><strong>7,160</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="30" data-band="2" data-ev="PRIMARY_HASHED"><td class="m">T+30</td><td class="m">2026-10-12</td><td class="m">Mon</td><td class="m">6E 6218</td><td class="m">06:05</td><td class="m r">2</td><td class="m r">5,415</td><td class="m r">1,483</td><td class="m r"><strong>6,898</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="30" data-band="3" data-ev="PRIMARY_HASHED"><td class="m">T+30</td><td class="m">2026-10-12</td><td class="m">Mon</td><td class="m">6E 6107</td><td class="m">09:30</td><td class="m r">3</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="30" data-band="4" data-ev="PRIMARY_HASHED"><td class="m">T+30</td><td class="m">2026-10-12</td><td class="m">Mon</td><td class="m">6E 6676</td><td class="m">12:00</td><td class="m r">4</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="30" data-band="5" data-ev="PRIMARY_HASHED"><td class="m">T+30</td><td class="m">2026-10-12</td><td class="m">Mon</td><td class="m">6E 864</td><td class="m">15:30</td><td class="m r">5</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="30" data-band="6" data-ev="PRIMARY_HASHED"><td class="m">T+30</td><td class="m">2026-10-12</td><td class="m">Mon</td><td class="m">6E 329</td><td class="m">18:00</td><td class="m r">6</td><td class="m r">5,065</td><td class="m r">1,465</td><td class="m r"><strong>6,530</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="45" data-band="2" data-ev="SECONDARY_CHAT_IMAGE"><td class="m">T+45</td><td class="m">2026-10-27</td><td class="m">Tue</td><td class="m">6E 6218</td><td class="m">06:05</td><td class="m r">2</td><td class="m r">5,530</td><td class="m r">1,489</td><td class="m r"><strong>7,019</strong></td><td><span class="tag s">CHAT IMG</span></td></tr><tr data-apw="45" data-band="3" data-ev="SECONDARY_CHAT_IMAGE"><td class="m">T+45</td><td class="m">2026-10-27</td><td class="m">Tue</td><td class="m">6E 6107</td><td class="m">09:30</td><td class="m r">3</td><td class="m r">5,530</td><td class="m r">1,489</td><td class="m r"><strong>7,019</strong></td><td><span class="tag s">CHAT IMG</span></td></tr><tr data-apw="45" data-band="4" data-ev="SECONDARY_CHAT_IMAGE"><td class="m">T+45</td><td class="m">2026-10-27</td><td class="m">Tue</td><td class="m">6E 6676</td><td class="m">12:30</td><td class="m r">4</td><td class="m r">5,530</td><td class="m r">1,489</td><td class="m r"><strong>7,019</strong></td><td><span class="tag s">CHAT IMG</span></td></tr><tr data-apw="45" data-band="5" data-ev="SECONDARY_CHAT_IMAGE"><td class="m">T+45</td><td class="m">2026-10-27</td><td class="m">Tue</td><td class="m">6E 864</td><td class="m">15:30</td><td class="m r">5</td><td class="m r">5,530</td><td class="m r">1,489</td><td class="m r"><strong>7,019</strong></td><td><span class="tag s">CHAT IMG</span></td></tr><tr data-apw="45" data-band="6" data-ev="SECONDARY_CHAT_IMAGE"><td class="m">T+45</td><td class="m">2026-10-27</td><td class="m">Tue</td><td class="m">6E 329</td><td class="m">18:30</td><td class="m r">6</td><td class="m r">5,673</td><td class="m r">1,496</td><td class="m r"><strong>7,169</strong></td><td><span class="tag s">CHAT IMG</span></td></tr><tr data-apw="60" data-band="2" data-ev="PRIMARY_HASHED"><td class="m">T+60</td><td class="m">2026-11-11</td><td class="m">Wed</td><td class="m">6E 6218</td><td class="m">06:05</td><td class="m r">2</td><td class="m r">7,600</td><td class="m r">1,592</td><td class="m r"><strong>9,192</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="60" data-band="3" data-ev="PRIMARY_HASHED"><td class="m">T+60</td><td class="m">2026-11-11</td><td class="m">Wed</td><td class="m">6E 6107</td><td class="m">09:30</td><td class="m r">3</td><td class="m r">7,150</td><td class="m r">1,570</td><td class="m r"><strong>8,720</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="60" data-band="4" data-ev="PRIMARY_HASHED"><td class="m">T+60</td><td class="m">2026-11-11</td><td class="m">Wed</td><td class="m">6E 324</td><td class="m">13:15</td><td class="m r">4</td><td class="m r">8,050</td><td class="m r">1,615</td><td class="m r"><strong>9,665</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="60" data-band="5" data-ev="PRIMARY_HASHED"><td class="m">T+60</td><td class="m">2026-11-11</td><td class="m">Wed</td><td class="m">6E 864</td><td class="m">15:30</td><td class="m r">5</td><td class="m r">7,600</td><td class="m r">1,592</td><td class="m r"><strong>9,192</strong></td><td><span class="tag p">HASHED</span></td></tr><tr data-apw="60" data-band="6" data-ev="PRIMARY_HASHED"><td class="m">T+60</td><td class="m">2026-11-11</td><td class="m">Wed</td><td class="m">6E 354</td><td class="m">19:15</td><td class="m r">6</td><td class="m r">7,150</td><td class="m r">1,570</td><td class="m r"><strong>8,720</strong></td><td><span class="tag p">HASHED</span></td></tr></tbody></table></div></div>
 </section>
 
-<!-- 2b confound -->
-<section>
-  <div class="sechead"><span class="n">02</span><h2>Lead time is confounded with travel date</h2></div>
-  <p class="lede">Advance-purchase buckets are not interchangeable time observations. In this panel lead time is confounded with travel date / day-of-week, so the APW profile is descriptive and is not an inflation measure.</p>
-  <div class="tscroll"><table>
-    <thead><tr><th>APW bucket</th><th class='r'>T+1</th><th class='r'>T+3</th><th class='r'>T+7</th><th class='r'>T+15</th><th class='r'>T+30</th><th class='r'>T+45</th><th class='r'>T+60</th></tr></thead>
-    <tbody><tr><td class="m">travel weekday</td>
-      <td class='m r'>Sun</td><td class='m r'>Tue</td><td class='m r'>Sat</td><td class='m r'>Sun</td><td class='m r'>Mon</td><td class='m r'>Tue</td><td class='m r'>Wed</td></tr></tbody>
-  </table></div>
-  <div class="tiles">
-    <div class="tile"><span class="k">buckets</span>
-      <span class="v">7</span><span class="s">advance-purchase windows</span></div>
-    <div class="tile bad"><span class="k">distinct weekdays</span>
-      <span class="v">5</span>
-      <span class="s">repeated: Sun x2, Tue x2</span></div>
-    <div class="tile bad"><span class="k">lead time isolated?</span>
-      <span class="v">NO</span><span class="s">confounded by construction</span></div>
+<!-- ============================================================ 02 ==== -->
+<section id="confound" class="wrap" aria-labelledby="h-confound">
+  <div class="shead"><span class="n">02</span>
+    <h2 id="h-confound">Why a naïve comparison is dangerous</h2></div>
+  <p class="lede rv">A single sector can vary two to four hundred percent within
+  a day. <strong>Most of that is not inflation — it is product mix</strong>:
+  booking horizon, fare family, departure time, baggage terms. An index built on
+  naive daily averages accumulates that as chain drift, which is a bias, not
+  noise. It does not average out with more data.</p>
+
+  <figure class="chart rv" style="margin-top:var(--s5)">
+    <figcaption>
+      <h3>Lead time is confounded with travel date</h3>
+      <span class="meta">5 distinct weekdays across
+      7 buckets</span>
+    </figcaption>
+    <div class="cwrap"><svg viewBox="0 0 940 250" role="img" aria-label="Each advance-purchase bucket plotted against the weekday of its travel date, showing that lead time is confounded with day of week"><line class="grid-l" x1="64" y1="42.4" x2="914" y2="42.4"/><text class="tick" x="54" y="45.92857142857143" text-anchor="end" fill="var(--ink-3)">Mon</text><line class="grid-l" x1="64" y1="67.3" x2="914" y2="67.3"/><text class="tick" x="54" y="70.78571428571428" text-anchor="end" fill="var(--accent)">Tue</text><line class="grid-l" x1="64" y1="92.1" x2="914" y2="92.1"/><text class="tick" x="54" y="95.64285714285714" text-anchor="end" fill="var(--ink-3)">Wed</text><line class="grid-l" x1="64" y1="117.0" x2="914" y2="117.0"/><text class="tick" x="54" y="120.5" text-anchor="end" fill="var(--ink-3)">Thu</text><line class="grid-l" x1="64" y1="141.9" x2="914" y2="141.9"/><text class="tick" x="54" y="145.35714285714286" text-anchor="end" fill="var(--ink-3)">Fri</text><line class="grid-l" x1="64" y1="166.7" x2="914" y2="166.7"/><text class="tick" x="54" y="170.21428571428572" text-anchor="end" fill="var(--ink-3)">Sat</text><line class="grid-l" x1="64" y1="191.6" x2="914" y2="191.6"/><text class="tick" x="54" y="195.07142857142858" text-anchor="end" fill="var(--accent)">Sun</text><line x1="124.7" y1="191.6" x2="124.7" y2="204" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 3"/><circle cx="124.7" cy="191.6" r="6" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" tabindex="0" role="img" aria-label="T plus 1 travels on 2026-09-13, a Sun, a weekday that repeats"/><text class="tick b" x="124.7" y="224" text-anchor="middle">T+1</text><line x1="246.1" y1="67.3" x2="246.1" y2="204" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 3"/><circle cx="246.1" cy="67.3" r="6" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" tabindex="0" role="img" aria-label="T plus 3 travels on 2026-09-15, a Tue, a weekday that repeats"/><text class="tick b" x="246.1" y="224" text-anchor="middle">T+3</text><line x1="367.6" y1="166.7" x2="367.6" y2="204" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 3"/><circle cx="367.6" cy="166.7" r="6" fill="var(--ex)" stroke="var(--bg)" stroke-width="2" tabindex="0" role="img" aria-label="T plus 7 travels on 2026-09-19, a Sat"/><text class="tick b" x="367.6" y="224" text-anchor="middle">T+7</text><line x1="489.0" y1="191.6" x2="489.0" y2="204" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 3"/><circle cx="489.0" cy="191.6" r="6" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" tabindex="0" role="img" aria-label="T plus 15 travels on 2026-09-27, a Sun, a weekday that repeats"/><text class="tick b" x="489.0" y="224" text-anchor="middle">T+15</text><line x1="610.4" y1="42.4" x2="610.4" y2="204" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 3"/><circle cx="610.4" cy="42.4" r="6" fill="var(--ex)" stroke="var(--bg)" stroke-width="2" tabindex="0" role="img" aria-label="T plus 30 travels on 2026-10-12, a Mon"/><text class="tick b" x="610.4" y="224" text-anchor="middle">T+30</text><line x1="731.9" y1="67.3" x2="731.9" y2="204" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 3"/><circle cx="731.9" cy="67.3" r="6" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" tabindex="0" role="img" aria-label="T plus 45 travels on 2026-10-27, a Tue, a weekday that repeats"/><text class="tick b" x="731.9" y="224" text-anchor="middle">T+45</text><line x1="853.3" y1="92.1" x2="853.3" y2="204" stroke="var(--line-2)" stroke-width="1" stroke-dasharray="2 3"/><circle cx="853.3" cy="92.1" r="6" fill="var(--ex)" stroke="var(--bg)" stroke-width="2" tabindex="0" role="img" aria-label="T plus 60 travels on 2026-11-11, a Wed"/><text class="tick b" x="853.3" y="224" text-anchor="middle">T+60</text><text class="tick" x="64" y="18" fill="var(--accent)">amber = weekday appears more than once</text></svg></div>
+    <p class="src">Source: <span class="mono">data/panel.json → confound</span>.
+    Advance-purchase buckets are not interchangeable time observations. In this panel lead time is confounded with travel date / day-of-week, so the APW profile is descriptive and is not an inflation measure.</p>
+  </figure>
+  <p class="note rv">Sun appears 2×, Tue appears 2×.
+  Because each bucket sits on its own travel date, the buckets are not
+  interchangeable time observations — so the profile above is descriptive and
+  <strong>is not a time-series</strong>.</p>
+</section>
+
+<!-- ============================================================ 03 ==== -->
+<section id="dispersion" class="wrap" aria-labelledby="h-disp">
+  <div class="shead"><span class="n">03</span>
+    <h2 id="h-disp">Within-bucket dispersion</h2></div>
+  <p class="lede rv">T+3 has the widest observed spread —
+  24.9%, against 10.8% for the
+  next widest bucket. <strong>The panel establishes the dispersion; it
+  does not establish its cause.</strong> No anomaly-detection definition is in
+  force, so this is reported as observed dispersion and <strong>not as an
+  anomaly</strong>.</p>
+  <div class="grid g2 rv" style="margin-top:var(--s5)">
+    <div class="card"><span class="k">cheapest in bucket</span>
+      <h3>6E 6107 · 09:30</h3>
+      <p class="mono">₹6,530 · band 3</p>
+      <p class="mono" style="font-size:var(--t-xs);color:var(--ink-3)">20260912-primary-indigo-direct-6E6107-20260915-Saver fare</p></div>
+    <div class="card"><span class="k">dearest in bucket</span>
+      <h3>6E 6218 · 06:05</h3>
+      <p class="mono">₹8,158 · band 2</p>
+      <p class="mono" style="font-size:var(--t-xs);color:var(--ink-3)">20260912-primary-indigo-direct-6E6218-20260915-Saver fare</p></div>
   </div>
-  <div class="warn">
-    <strong>This profile does not isolate the effect of advance purchase.</strong>
-    <span>Advance-purchase buckets are not interchangeable time observations. Separating lead
-    time from travel date needs the same cell observed at two collection dates seven days apart
-    — which is exactly what the matched <span class="mono">t / t−7</span> design does, and
-    exactly what one collection wave cannot provide.</span>
+  <p class="note rv">This is a <strong>cross-band</strong> spread across
+  5 flights on a single travel date. It is <em>not</em> within-band
+  dispersion, which is degenerate at n=1 in this panel — a different quantity,
+  and neither substitutes for the other.</p>
+</section>
+
+<!-- ============================================================ 04 ==== -->
+<section id="provenance" class="wrap" aria-labelledby="h-prov">
+  <div class="shead"><span class="n">04</span>
+    <h2 id="h-prov">Evidence, and where it is weaker</h2></div>
+  <p class="lede rv">Provenance is <strong>not uniform across the panel</strong>,
+  and the data model records that as a derived fact rather than a label someone
+  remembered to apply.</p>
+
+  <figure class="chart rv" style="margin-top:var(--s5)">
+    <figcaption><h3>Evidence grade</h3>
+      <span class="meta">n=35 · derived from artifact binding</span></figcaption>
+    <div class="cwrap"><svg viewBox="0 0 940 92" role="img" aria-label="Provenance split: 30 observations bound to hashed screenshots, 5 from chat images with no hashable bytes"><rect x="0" y="0" width="804.7" height="40" fill="var(--real)"/><rect x="805.7" y="0" width="134.3" height="40" fill="var(--dg)"/><text class="tick" x="12" y="26" fill="var(--bg)" font-weight="700">30 PRIMARY_HASHED</text><text class="tick" x="817.7" y="26" fill="var(--bg)" font-weight="700">5 SECONDARY</text><text class="tick" x="0" y="62" fill="var(--ink-2)">30 bound to a SHA-256 screenshot</text><text class="tick" x="805.7" y="62" fill="var(--dg)">5 arrived as chat images — no bytes hashed, capture times nominal</text><text class="tick" x="0" y="82" fill="var(--ink-3)">Derived from whether each run carries a content-addressed artifact, not from a label</text></svg></div>
+    <p class="src">The T+45 batch arrived as chat images rather than files, so no
+    bytes could be hashed and its capture times are <strong>placeholders, not
+    measurements</strong>. Those 5 rows are marked
+    <span class="tag s">CHAT IMG</span> in the table above. We say so before you ask.</p>
+  </figure>
+
+  <figure class="chart rv" style="margin-top:var(--s5)">
+    <figcaption><h3>Exclusion audit — 122 screenshots</h3>
+      <span class="meta">every excluded screenshot carries a reason and an id</span></figcaption>
+    <div class="cwrap"><svg viewBox="0 0 940 132" role="img" aria-label="Composition of the 122 excluded screenshots by recorded reason, and the subset the engine independently re-adjudicated"><rect x="0.0" y="0" width="515.2" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="NOT_EARLIEST_IN_BAND: 67 screenshots, not replayed"/><text class="tick" x="258.1" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">67</text><rect x="516.2" y="0" width="183.9" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="APW_MATCHES_NO_BUCKET: 24 screenshots, mechanically decidable and replayed"/><text class="tick" x="608.7" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">24</text><rect x="701.1" y="0" width="122.3" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="OUTSIDE_CONTRACTED_BANDS: 16 screenshots, mechanically decidable and replayed"/><text class="tick" x="762.8" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">16</text><rect x="824.4" y="0" width="60.6" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="DEP_TIME_NOT_READABLE: 8 screenshots, not replayed"/><text class="tick" x="855.2" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">8</text><rect x="886.1" y="0" width="45.2" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="OUTSIDE_CONTRACTED_BANDS: 6 screenshots, mechanically decidable and replayed"/><text class="tick" x="909.2" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">6</text><rect x="932.3" y="0" width="6.7" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="INSUFFICIENT_EVIDENCE: 1 screenshots, not replayed"/><line x1="354.4" y1="0" x2="354.4" y2="70" stroke="var(--accent)" stroke-width="2"/><text class="tick" x="362.4" y="64" fill="var(--accent)">46 mechanically decidable · 45 reproduce the recorded verdict</text><text class="tick" x="0" y="92" fill="var(--ink-3)">76 are collection-contract selection or unreadable-field records — the engine has no verdict on them</text><text class="tick" x="0" y="112" fill="var(--ink-3)">blue = re-adjudicated through the frozen §A.3 / §B.2 code · grey = not replayed</text></svg></div>
+    <p class="src">Source: <span class="mono">data/panel.json → exclusions, replay</span>.
+    Nothing was deleted. 45/46 mechanically decidable exclusions reproduce the recorded §A.3/§B.2 verdict with zero disagreements; 1 record is not mechanically testable because the required departure-time field is unavailable. All 35 accepted observations pass the corresponding checks with zero false rejections.</p>
+  </figure>
+
+  <div class="grid g3 rv" style="margin-top:var(--s5)">
+    <div class="card"><span class="k">replayed</span>
+      <h3 class="mono">45/46</h3>
+      <p>reproduce the recorded §A.3/§B.2 verdict</p></div>
+    <div class="card"><span class="k">disagreements</span>
+      <h3 class="mono">0</h3>
+      <p>a single one would invalidate the audit</p></div>
+    <div class="card"><span class="k">false rejections</span>
+      <h3 class="mono">0</h3>
+      <p>of 35 accepted observations — the control arm</p></div>
   </div>
+  <p class="note rv">76 further recorded exclusions are collection-contract selection or unreadable-field records. The engine has no verdict on them and none is claimed.</p>
+  <p class="note rv">9 observations fall outside their run's
+  declared window. Spec §A.5 keeps them in the store and out of the index —
+  stored and flagged, never discarded.</p>
 </section>
 
-<!-- 2c dispersion -->
-<section>
-  <div class="sechead"><span class="n">03</span><h2>Within-bucket dispersion</h2></div>
-  <p class="lede">T+3 has the highest observed within-bucket fare dispersion
-  (24.9%), against 10.8% for the next widest
-  bucket. <strong>The current panel establishes the dispersion; it does not establish its
-  cause.</strong> No anomaly-detection definition is in force, so this is reported as observed
-  dispersion and not as an anomaly.</p>
-  <div class="tscroll"><table>
-    <thead><tr><th>role</th><th>flight</th><th>dep</th><th class="r">band</th>
-      <th class="r">fare ₹</th><th>observation id</th></tr></thead>
-    <tbody>
-      <tr><td class="m">minimum</td><td class="m">6E 6107</td>
-        <td class="m">09:30</td>
-        <td class="m r">3</td>
-        <td class="m r"><strong>6,530</strong></td>
-        <td class="m">20260912-primary-indigo-direct-6E6107-20260915-Saver fare</td></tr>
-      <tr><td class="m">maximum</td><td class="m">6E 6218</td>
-        <td class="m">06:05</td>
-        <td class="m r">2</td>
-        <td class="m r"><strong>8,158</strong></td>
-        <td class="m">20260912-primary-indigo-direct-6E6218-20260915-Saver fare</td></tr>
-    </tbody></table></div>
-</section>
+<!-- ============================================================ 05 ==== -->
+<section id="boundary" class="wrap" aria-labelledby="h-bnd">
+  <div class="shead"><span class="n">05</span>
+    <h2 id="h-bnd">Real-data execution boundary</h2></div>
+  <p class="lede rv"><strong>Real market observations pass through APIx's admissibility, banding, key construction, deduplication and source-precedence stages. The pipeline stops at the longitudinal Jevons step because the required t-7 observation does not yet exist.</strong></p>
+  <p class="lede rv">6 stages exercised, 3 degenerate, 4 pending,
+  one blocked. Generated from the contract, stage by stage — select any stage for
+  the evidence behind its state.</p>
 
-<!-- 3 bands -->
-<section>
-  <div class="sechead"><span class="n">04</span><h2>Departure-band structure</h2></div>
-  <p class="lede">§B.2 anchors 3-hour bands at 00:00 IST. Bands [2, 3, 4, 5, 6] span the
-  commercial day and are the contracted set; one flight per band, always the earliest, never
-  chosen by price.</p>
-  <div class="tiles"><div class='tile'><span class='k'>band 2 · 06:00-08:59</span><span class='v'>7,208</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 3 · 09:00-11:59</span><span class='v'>6,876</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 4 · 12:00-14:59</span><span class='v'>7,119</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 5 · 15:00-17:59</span><span class='v'>6,982</span><span class='s'>n = 7</span></div><div class='tile'><span class='k'>band 6 · 18:00-20:59</span><span class='v'>7,098</span><span class='s'>n = 7</span></div></div>
-  <p class="note">Spread across bands is 4.8% — small next to the
-  +39% advance-purchase step, and pooled across APW, so it is confounded by the
-  T+60 level. Not a finding on its own.</p>
-</section>
+  <canvas id="pipe" aria-hidden="true"></canvas>
+  <p class="note rv">A diagram of the recorded workflow, animated so the order
+  reads at a glance. <strong>It is a visualisation, not a live process
+  monitor</strong> — nothing on this page polls or measures a running job, and
+  the packets stop exactly where the evidence stops.</p>
 
-<!-- 4 observations -->
-<section>
-  <div class="sechead"><span class="n">05</span><h2>Flight-level observations</h2></div>
-  <p class="lede">Every row is a real quote read off IndiGo's own website and verified against
-  its screenshot. <span class="mono">seen</span> is the capture time; the last column is the
-  evidence grade.</p>
-  <div class="tscroll"><table>
-    <thead><tr><th>APW</th><th>travel date</th><th>day</th><th>bd</th><th>flight</th><th>dep</th>
-      <th class="r">min</th><th class="r">base ₹</th><th class="r">tax+fees ₹</th>
-      <th class="r">total ₹</th><th>seen</th><th>evidence</th></tr></thead>
-    <tbody><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:54</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:56</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,215</td><td class='m r'>1,473</td><td class='m r'><strong>6,688</strong></td><td class='m'>21:02</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:57</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+1</td><td class='m'>2026-09-13</td><td class='m'>Sun</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>20:59</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>6,615</td><td class='m r'>1,543</td><td class='m r'><strong>8,158</strong></td><td class='m'>21:08</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:03</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:04</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:05</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+3</td><td class='m'>2026-09-15</td><td class='m'>Tue</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:07</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:10</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:11</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,215</td><td class='m r'>1,473</td><td class='m r'><strong>6,688</strong></td><td class='m'>21:13</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:12</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+7</td><td class='m'>2026-09-19</td><td class='m'>Sat</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:14</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:18</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:18</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>135</td><td class='m r'>5,665</td><td class='m r'>1,495</td><td class='m r'><strong>7,160</strong></td><td class='m'>21:20</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:20</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+15</td><td class='m'>2026-09-27</td><td class='m'>Sun</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,665</td><td class='m r'>1,495</td><td class='m r'><strong>7,160</strong></td><td class='m'>21:21</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>135</td><td class='m r'>5,415</td><td class='m r'>1,483</td><td class='m r'><strong>6,898</strong></td><td class='m'>21:46</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:39</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:00</td><td class='m r'>130</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:40</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:41</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+30</td><td class='m'>2026-10-12</td><td class='m'>Mon</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:00</td><td class='m r'>135</td><td class='m r'>5,065</td><td class='m r'>1,465</td><td class='m r'><strong>6,530</strong></td><td class='m'>21:43</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:30</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:31</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>4</td><td class='m'>6E 6676</td><td class='m'>12:30</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:32</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>145</td><td class='m r'>5,530</td><td class='m r'>1,489</td><td class='m r'><strong>7,019</strong></td><td class='m'>21:33</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+45</td><td class='m'>2026-10-27</td><td class='m'>Tue</td><td class='m'>6</td><td class='m'>6E 329</td><td class='m'>18:30</td><td class='m r'>145</td><td class='m r'>5,673</td><td class='m r'>1,496</td><td class='m r'><strong>7,169</strong></td><td class='m'>21:34</td><td><span class='pill p-hold'>CHAT IMG</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>2</td><td class='m'>6E 6218</td><td class='m'>06:05</td><td class='m r'>145</td><td class='m r'>7,600</td><td class='m r'>1,592</td><td class='m r'><strong>9,192</strong></td><td class='m'>22:09</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>3</td><td class='m'>6E 6107</td><td class='m'>09:30</td><td class='m r'>145</td><td class='m r'>7,150</td><td class='m r'>1,570</td><td class='m r'><strong>8,720</strong></td><td class='m'>22:05</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>4</td><td class='m'>6E 324</td><td class='m'>13:15</td><td class='m r'>145</td><td class='m r'>8,050</td><td class='m r'>1,615</td><td class='m r'><strong>9,665</strong></td><td class='m'>22:10</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>5</td><td class='m'>6E 864</td><td class='m'>15:30</td><td class='m r'>145</td><td class='m r'>7,600</td><td class='m r'>1,592</td><td class='m r'><strong>9,192</strong></td><td class='m'>22:10</td><td><span class='pill p-ok'>HASHED</span></td></tr><tr><td class='m'>T+60</td><td class='m'>2026-11-11</td><td class='m'>Wed</td><td class='m'>6</td><td class='m'>6E 354</td><td class='m'>19:15</td><td class='m r'>145</td><td class='m r'>7,150</td><td class='m r'>1,570</td><td class='m r'><strong>8,720</strong></td><td class='m'>22:08</td><td><span class='pill p-ok'>HASHED</span></td></tr></tbody></table></div>
-</section>
-
-<!-- 5 quality -->
-<section>
-  <div class="sechead"><span class="n">06</span><h2>Data quality</h2></div>
-  <div class="tiles">
-    <div class="tile good"><span class="k">valid observations</span>
-      <span class="v">35</span><span class="s">real market quotes</span></div>
-    <div class="tile"><span class="k">collection plan</span>
-      <span class="v">35 / 35</span>
-      <span class="s">7 frozen APW buckets x 5 bands</span></div>
-    <div class="tile good"><span class="k">plan completion</span>
-      <span class="v">100.0%</span>
-      <span class="s">slots filled — not coverage</span></div>
-    <div class="tile good"><span class="k">plan slots unfilled</span>
-      <span class="v">0</span><span class="s">none</span></div>
-    <div class="tile bad"><span class="k">statistical coverage</span>
-      <span class="v">n/a</span><span class="s">NOT ESTABLISHED — AMB-8 open</span></div>
-    <div class="tile good"><span class="k">reconciled</span>
-      <span class="v">35/35</span>
-      <span class="s">base + tax = total</span></div>
-    <div class="tile"><span class="k">artifacts</span>
-      <span class="v">6</span><span class="s">SHA-256 addressed</span></div>
-    <div class="tile bad"><span class="k">§A.5 window flags</span>
-      <span class="v">9</span><span class="s">stored + flagged</span></div>
-  </div>
-  <div class="warn">
-    <strong>100.0% is collection-plan completion, not statistical
-    coverage.</strong>
-    <span>It says the collector filled every slot the Day-1 contract asked for
-    (7 frozen APW buckets x 5 bands). It says <em>nothing</em> about spec §I's
-    <span class="mono">min_route_coverage</span>, whose denominator — "expected cells" — is
-    undefined. That is <strong>AMB-8, still open</strong>: no denominator has been chosen, so no
-    statistical coverage figure is computed here. AMB-8 OPEN: spec I gates on '60% of expected cells' and nothing defines an expected cell. No denominator has been chosen, so no statistical coverage figure is computed.</span>
-  </div>
-  <div class="warn">
-    <strong>The session breached its own declared window, and that is recorded rather than
-    smoothed.</strong>
-    <span>9 quotes fall outside the declared 21:00–22:00 IST window. Under §A.5
-    they are <em>stored and flagged, never discarded</em>, so the loader exits 2 — not a clean
-    bill. Widening the recorded window to cover them would have made the breach disappear, which
-    is why it was not done.</span>
-    <details><summary>see the 9 flags</summary>
-      <div class="det-body">observation 20260912-primary-indigo-direct-6E6218-20260913-Saver fare at 2026-09-12 20:54:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E6107-20260913-Saver fare at 2026-09-12 20:56:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E864-20260913-Saver fare at 2026-09-12 20:57:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E329-20260913-Saver fare at 2026-09-12 20:59:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E6218-20261111-Saver fare at 2026-09-12 22:09:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E6107-20261111-Saver fare at 2026-09-12 22:05:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E324-20261111-Saver fare at 2026-09-12 22:10:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E864-20261111-Saver fare at 2026-09-12 22:10:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard) | observation 20260912-primary-indigo-direct-6E354-20261111-Saver fare at 2026-09-12 22:08:00 is outside its run's declared window 2026-09-12 21:00:00..2026-09-12 22:00:00 (spec A.5 — flag, do not discard)</div></details>
-  </div>
-</section>
-
-<!-- 6 provenance -->
-<section>
-  <div class="sechead"><span class="n">07</span><h2>Provenance &amp; evidence</h2></div>
-  <p class="lede">Provenance is <strong>not uniform across the panel</strong>, and the data model
-  records that as a derived fact rather than a label someone remembered to apply. An observation
-  is <span class="mono">PRIMARY_HASHED</span> only if its run actually has a content-addressed
-  artifact bound to it.</p>
-  <div class="tiles">
-    <div class="tile good"><span class="k">PRIMARY_HASHED</span>
-      <span class="v">30</span>
-      <span class="s">bound to a SHA-256 screenshot</span></div>
-    <div class="tile hold"><span class="k">SECONDARY_CHAT_IMAGE</span>
-      <span class="v">5</span>
-      <span class="s">no bytes hashed; nominal capture time</span></div>
-  </div>
-  <p class="note">The T+45 batch arrived as chat images rather than files, so no bytes could be
-  hashed and its capture times are <strong>placeholders, not measurements</strong>. The collection
-  date was confirmed by the collector. Those five rows are marked <span class="mono">CHAT IMG</span>
-  in the table above and are counted separately here.</p>
-  <div class="rows"><div class='row'><span class='cnt'>30</span><span class='txt'><strong>run-20260912-primary</strong> · <span class='pill p-ok'>PRIMARY_HASHED</span><br><span class='mono' style='font-size:11.5px'>methodology 2.1 · basket 2026-Q3 · parser manual-1.0 · protocol acquisition-protocol-2G<br>frame DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30@primary<br>window declared 21:00-22:00</span><br><span style='font-size:12.5px;color:var(--ink-3)'>declared window primary 21:00-22:00; actual 20:54-22:10 (start -6 min, end +10 min)</span></span></div><div class='row'><span class='cnt'>5</span><span class='txt'><strong>run-20260912-primary-t45</strong> · <span class='pill p-hold'>SECONDARY_CHAT_IMAGE</span><br><span class='mono' style='font-size:11.5px'>methodology 2.1 · basket 2026-Q3 · parser manual-1.0 · protocol acquisition-protocol-2G<br>frame DEL-BOM/6E/AIRLINE_DIRECT/T7-T15-T21-T30@primary<br>window declared 21:00-22:00</span><br><span style='font-size:12.5px;color:var(--ink-3)'>PROVENANCE: supplied as chat images, not files. No raw artifact hashed; capture times nominal. Collection date 2026-09-12 CONFIRMED by collector -&gt; lead time 45, admissible under A.3.; declared window primary 21:00-22:00; actual 21:30-21:34 (start +30 min, end -26 min) | RECLASSIFIED to 2026-09-12 on collector confirmation; lead time 45, admissible under A.3</span></span></div></div>
-</section>
-
-<!-- exclusion audit -->
-<section>
-  <div class="sechead"><span class="n">08</span><h2>Exclusion audit — 122 screenshots</h2></div>
-  <p class="lede">Nothing was deleted. Every screenshot that did not become an observation carries
-  a reason, and the ids are listed so any one can be traced back.</p>
-  <div class="rows"><div class='row'><span class='cnt'>67</span><span class='txt'>NOT_EARLIEST_IN_BAND (contract selects earliest)<details><summary>67 screenshot ids</summary><div class='det-body'>s002, s003, s005, s006, s008, s009, s011, s012, s013, s017, s018, s020, s022, s023, s025, s026, s027, s033, s035, s036, s037, s040, s041, s044, s045, s046, s048, s049, s050, s056, s058, s059, s061, s062, s064, s067, s070, s072, s073, s076, s078, s079, s081, s082, s086, s088, s089, s092, s094, s095, s099, s100, s103, s104, s105, s106, s107, s109, s110, s111, s112, s113, s114, s120, s122, s123, s124</div></details></span></div><div class='row'><span class='cnt'>24</span><span class='txt'>APW_MATCHES_NO_BUCKET (T+68, spec A.3 exact match)<details><summary>24 screenshot ids</summary><div class='det-body'>s129, s130, s131, s132, s133, s134, s135, s136, s137, s138, s139, s140, s141, s142, s143, s144, s145, s146, s147, s148, s149, s150, s151, s152</div></details></span></div><div class='row'><span class='cnt'>16</span><span class='txt'>OUTSIDE_CONTRACTED_BANDS (band 7)<details><summary>16 screenshot ids</summary><div class='det-body'>s014, s015, s016, s030, s031, s032, s053, s055, s068, s069, s080, s097, s101, s116, s126, s127</div></details></span></div><div class='row'><span class='cnt'>8</span><span class='txt'>DEP_TIME_NOT_READABLE (not selected; did not affect any selection)<details><summary>8 screenshot ids</summary><div class='det-body'>s029, s052, s054, s066, s071, s085, s091, s096</div></details></span></div><div class='row'><span class='cnt'>6</span><span class='txt'>OUTSIDE_CONTRACTED_BANDS (band 1)<details><summary>6 screenshot ids</summary><div class='det-body'>s038, s042, s083, s098, s117, s118</div></details></span></div><div class='row'><span class='cnt'>1</span><span class='txt'>INSUFFICIENT_EVIDENCE (flight row scrolled off; no flight no. or times)<details><summary>1 screenshot ids</summary><div class='det-body'>s128</div></details></span></div></div>
-  <p class="note">Counts cover the 12-Sep file corpus. The T+45 batch arrived separately as 24
-  chat images: 5 selected, 14 not-earliest-in-band, 5 outside the contracted bands.</p>
-</section>
-
-<!-- real-data execution boundary -->
-<section>
-  <div class="sechead"><span class="n">09</span><h2>Real-data execution boundary</h2></div>
-  <p class="lede">How far the <strong>real</strong> observations actually travel through the
-  frozen code — reconstructed from this contract and run stage by stage through the frozen
-  functions named below. <strong>Real market observations pass through APIx's admissibility, banding, key construction, deduplication and source-precedence stages. The pipeline stops at the longitudinal Jevons step because the required t-7 observation does not yet exist.</strong> Only the named stages are
-  exercised; the elementary layer is <em>not</em> exercised as a whole.</p>
-  <div class="legend"><div class="lg"><span class="lk">EXERCISED</span><span class="lv">the frozen code path ran against the real panel and returned. It does NOT follow that the statistical property is meaningfully validated.</span></div><div class="lg"><span class="lk">DEGENERATE</span><span class="lv">the code executes, but the single-wave / single-source panel supplies too little variation for the property to be established.</span></div><div class="lg"><span class="lk">PENDING</span><span class="lv">the frozen methodology requires evidence that does not exist yet.</span></div><div class="lg"><span class="lk">BLOCKED</span><span class="lv">refused by a publication guard, by design.</span></div></div>
-  <div class="bnd"><div class="bs"><span class="nm">Canonical observation</span><span class="stt ex">EXERCISED</span><span class="sp">spec A.2, B.4 &middot; apix.schemas.observation.Observation</span><ul><li>35 of 35 rows rebuilt as canonical observations</li><li>35/35 derive the same fare class the store recorded (spec B.4, from entitlements, never the marketing label)</li></ul><span class="bn">Rebuilt from data/panel.json, not from the collection pipeline. The production loader still does not call the statistics layer.</span></div><div class="bs"><span class="nm">Admissibility</span><span class="stt ex">EXERCISED</span><span class="sp">spec A.3, A.6 &middot; apix.statistics.elementary.admissibility.filter_admissible</span><ul><li>window=None: 35 admissible, 0 excluded</li><li>with the runs' declared 21:00-22:00 window: 26 admissible, 9 excluded as OUTSIDE_COLLECTION_WINDOW</li><li>those 9 are exactly the 9 the store already flagged - the frozen A.5 check and the loader agree on which</li></ul><span class="bn">Two runs, because the methodology window's VALUE is OQ-1 OPEN. No single admissible count is normative until OQ-1 is closed. Spec A.5 keeps out-of-window quotes in the store and out of the index; both behaviours below are that rule, not a contradiction.</span></div><div class="bs"><span class="nm">Hour / band derivation</span><span class="stt ex">EXERCISED</span><span class="sp">spec B.2.2 &middot; apix.statistics.elementary.bands.hour_band</span><ul><li>35/35 derived bands equal the recorded band</li><li>5 distinct bands, all inside the contracted set [2, 3, 4, 5, 6]</li></ul><span class="bn">band = hour // 3 anchored 00:00 IST. Nothing is rounded into a band.</span></div><div class="bs"><span class="nm">Cell / parent / item keys</span><span class="stt ex">EXERCISED</span><span class="sp">spec B.2.1, B.2.2, E.4 &middot; apix.statistics.elementary.matching.cell_key_for / parent_key_for / item_key_for</span><ul><li>7 distinct cell keys, 7 distinct parent keys</li><li>item keys: 7 at Tier 1 (carrier, flight number), 5 at Tier 2 (carrier, band)</li><li>Tier 3 returns None - no within-cell item identity, which is the honest answer</li></ul><span class="bn">Key construction is exercised. It does not follow that any key has a counterpart to be matched against; see the matched-set stage.</span></div><div class="bs"><span class="nm">Exclusion replay</span><span class="stt ex">EXERCISED</span><span class="sp">spec A.3, B.2 &middot; replay through filter_admissible / APWBucket.from_lead_time / hour_band</span><ul><li>45/46 mechanically decidable exclusions reproduce the recorded §A.3/§B.2 verdict with zero disagreements</li><li>1 record is not mechanically testable because the required departure-time field is unavailable</li><li>All 35 accepted observations pass the corresponding checks with zero false rejections</li></ul><span class="bn">76 further exclusions are collection-contract selection or unreadable-field records. The engine has no verdict on them.</span></div><div class="bs"><span class="nm">Band price</span><span class="stt dg">DEGENERATE</span><span class="sp">spec B.2.3 &middot; apix.statistics.elementary.bands.band_price</span><ul><li>35 (cell, band) groups, every one of size 1</li><li>the geometric mean of a one-member set returns that member's fare unchanged, so no constructed price differs from an observed one</li></ul><span class="bn">A band price is meant to represent a departure-hour slot rather than a flight. With one flight per slot the construction cannot do that work.</span></div><div class="bs"><span class="nm">Within-band dispersion</span><span class="stt dg">DEGENERATE</span><span class="sp">spec B.2.3 &middot; apix.statistics.elementary.bands.log_dispersion</span><ul><li>returns [0.0] for every group, by the function's own rule for n &lt; 2</li><li>n = 1 in every (cell, band) group</li></ul><span class="bn">This zero means 'a one-flight band cannot have its price moved by dispersion'. It does NOT mean fares in this panel do not disperse - the T+3 bucket spreads 24.9% ACROSS bands on one travel date, which is a different quantity entirely.</span></div><div class="bs"><span class="nm">Source precedence</span><span class="stt dg">DEGENERATE</span><span class="sp">spec D.8.1 &middot; apix.statistics.elementary.sources.SourcePrecedence.rank</span><ul><li>1 distinct source in the panel: ['indigo-direct']</li><li>rank() returns (0, '') - a total order over one element</li><li>precedence version recorded on the runs: spike-single-source-v1</li></ul><span class="bn">select() is NOT reached: it returns the best source present in BOTH t and t-7, and there is no t-7. A one-source order cannot discriminate, so nothing here establishes that the precedence rule works.</span></div><div class="bs"><span class="nm">Deduplication</span><span class="stt ex">EXERCISED</span><span class="sp">spec D.4 &middot; apix.statistics.elementary.dedup.duplicate_key / deduplicate</span><ul><li>35 distinct duplicate keys built from 35 observations</li><li>35 retained, 0 duplicates observed</li></ul><span class="bn">Key construction is exercised; 0 duplicates were observed. The tie-break rule for identical timestamps is therefore NOT exercised - no collision occurred for it to resolve.</span></div><div class="bs stop"><span class="nm">Matched t / t-7</span><span class="stt pd">PENDING</span><span class="sp">spec D.1, D.8</span><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><span class="bn">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</span></div><div class="bs"><span class="nm">Jevons relative</span><span class="stt pd">PENDING</span><span class="sp">spec D.2</span><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><span class="bn">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</span></div><div class="bs"><span class="nm">Advance-cell / weekly chain</span><span class="stt pd">PENDING</span><span class="sp">spec C.1, F</span><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><span class="bn">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</span></div><div class="bs"><span class="nm">Higher aggregation</span><span class="stt pd">PENDING</span><span class="sp">spec E, G</span><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><span class="bn">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</span></div><div class="bs"><span class="nm">Publication</span><span class="stt bl">BLOCKED</span><span class="sp">spec H, R.3</span><ul><li>no APIx index value is computed, so none is published</li><li>apix_l_computable: False</li></ul><span class="bn">The guards refuse rather than inventing a level. That is the design.</span></div></div>
-  <p class="note">EXERCISED means the frozen code path ran against the real panel. It is not a validation claim, and no stage below the Jevons step is reached by real data at all.</p>
-  <p class="note">Within-<em>band</em> dispersion (above) is degenerate at n=1 and is
-  <strong>not</strong> the 24.9% figure in section 03. That one is a
-  within-<em>bucket</em>, <strong>cross-band</strong> spread across
-  5 flights on a single travel date.
-  Two different quantities; neither substitutes for the other.</p>
-  <p class="note">Reconstructed from <span class="mono">data/panel.json</span>.
+  <div class="rv" style="margin-top:var(--s5)"><div class="grid g2" style="margin-bottom:var(--s5)"><div class="card"><span class="k"><span class="pill ex">EXERCISED</span></span><p>the frozen code path ran against the real panel and returned. It does NOT follow that the statistical property is meaningfully validated.</p></div><div class="card"><span class="k"><span class="pill dg">DEGENERATE</span></span><p>the code executes, but the single-wave / single-source panel supplies too little variation for the property to be established.</p></div><div class="card"><span class="k"><span class="pill pd">PENDING</span></span><p>the frozen methodology requires evidence that does not exist yet.</p></div><div class="card"><span class="k"><span class="pill bl">BLOCKED</span></span><p>refused by a publication guard, by design.</p></div></div><div class="bnd"><button class="bs" data-state="EXERCISED" aria-expanded="false" aria-controls="bd-0" id="bt-0"><span class="rail"><i></i></span><span class="nm">Canonical observation</span><span class="pill ex stt">EXERCISED</span><span class="sp">spec A.2, B.4 &middot; apix.schemas.observation.Observation</span></button><div class="bd" id="bd-0" data-open="0" role="region" aria-labelledby="bt-0"><div><ul><li>35 of 35 rows rebuilt as canonical observations</li><li>35/35 derive the same fare class the store recorded (spec B.4, from entitlements, never the marketing label)</li></ul><p class="n">Rebuilt from data/panel.json, not from the collection pipeline. The production loader still does not call the statistics layer.</p></div></div><button class="bs" data-state="EXERCISED" aria-expanded="false" aria-controls="bd-1" id="bt-1"><span class="rail"><i></i></span><span class="nm">Admissibility</span><span class="pill ex stt">EXERCISED</span><span class="sp">spec A.3, A.6 &middot; apix.statistics.elementary.admissibility.filter_admissible</span></button><div class="bd" id="bd-1" data-open="0" role="region" aria-labelledby="bt-1"><div><ul><li>window=None: 35 admissible, 0 excluded</li><li>with the runs' declared 21:00-22:00 window: 26 admissible, 9 excluded as OUTSIDE_COLLECTION_WINDOW</li><li>those 9 are exactly the 9 the store already flagged - the frozen A.5 check and the loader agree on which</li></ul><p class="n">Two runs, because the methodology window's VALUE is OQ-1 OPEN. No single admissible count is normative until OQ-1 is closed. Spec A.5 keeps out-of-window quotes in the store and out of the index; both behaviours below are that rule, not a contradiction.</p></div></div><button class="bs" data-state="EXERCISED" aria-expanded="false" aria-controls="bd-2" id="bt-2"><span class="rail"><i></i></span><span class="nm">Hour / band derivation</span><span class="pill ex stt">EXERCISED</span><span class="sp">spec B.2.2 &middot; apix.statistics.elementary.bands.hour_band</span></button><div class="bd" id="bd-2" data-open="0" role="region" aria-labelledby="bt-2"><div><ul><li>35/35 derived bands equal the recorded band</li><li>5 distinct bands, all inside the contracted set [2, 3, 4, 5, 6]</li></ul><p class="n">band = hour // 3 anchored 00:00 IST. Nothing is rounded into a band.</p></div></div><button class="bs" data-state="EXERCISED" aria-expanded="false" aria-controls="bd-3" id="bt-3"><span class="rail"><i></i></span><span class="nm">Cell / parent / item keys</span><span class="pill ex stt">EXERCISED</span><span class="sp">spec B.2.1, B.2.2, E.4 &middot; apix.statistics.elementary.matching.cell_key_for / parent_key_for / item_key_for</span></button><div class="bd" id="bd-3" data-open="0" role="region" aria-labelledby="bt-3"><div><ul><li>7 distinct cell keys, 7 distinct parent keys</li><li>item keys: 7 at Tier 1 (carrier, flight number), 5 at Tier 2 (carrier, band)</li><li>Tier 3 returns None - no within-cell item identity, which is the honest answer</li></ul><p class="n">Key construction is exercised. It does not follow that any key has a counterpart to be matched against; see the matched-set stage.</p></div></div><button class="bs" data-state="EXERCISED" aria-expanded="false" aria-controls="bd-4" id="bt-4"><span class="rail"><i></i></span><span class="nm">Exclusion replay</span><span class="pill ex stt">EXERCISED</span><span class="sp">spec A.3, B.2 &middot; replay through filter_admissible / APWBucket.from_lead_time / hour_band</span></button><div class="bd" id="bd-4" data-open="0" role="region" aria-labelledby="bt-4"><div><ul><li>45/46 mechanically decidable exclusions reproduce the recorded §A.3/§B.2 verdict with zero disagreements</li><li>1 record is not mechanically testable because the required departure-time field is unavailable</li><li>All 35 accepted observations pass the corresponding checks with zero false rejections</li></ul><p class="n">76 further exclusions are collection-contract selection or unreadable-field records. The engine has no verdict on them.</p></div></div><button class="bs" data-state="DEGENERATE" aria-expanded="false" aria-controls="bd-5" id="bt-5"><span class="rail"><i></i></span><span class="nm">Band price</span><span class="pill dg stt">DEGENERATE</span><span class="sp">spec B.2.3 &middot; apix.statistics.elementary.bands.band_price</span></button><div class="bd" id="bd-5" data-open="0" role="region" aria-labelledby="bt-5"><div><ul><li>35 (cell, band) groups, every one of size 1</li><li>the geometric mean of a one-member set returns that member's fare unchanged, so no constructed price differs from an observed one</li></ul><p class="n">A band price is meant to represent a departure-hour slot rather than a flight. With one flight per slot the construction cannot do that work.</p></div></div><button class="bs" data-state="DEGENERATE" aria-expanded="false" aria-controls="bd-6" id="bt-6"><span class="rail"><i></i></span><span class="nm">Within-band dispersion</span><span class="pill dg stt">DEGENERATE</span><span class="sp">spec B.2.3 &middot; apix.statistics.elementary.bands.log_dispersion</span></button><div class="bd" id="bd-6" data-open="0" role="region" aria-labelledby="bt-6"><div><ul><li>returns [0.0] for every group, by the function's own rule for n &lt; 2</li><li>n = 1 in every (cell, band) group</li></ul><p class="n">This zero means 'a one-flight band cannot have its price moved by dispersion'. It does NOT mean fares in this panel do not disperse - the T+3 bucket spreads 24.9% ACROSS bands on one travel date, which is a different quantity entirely.</p></div></div><button class="bs" data-state="DEGENERATE" aria-expanded="false" aria-controls="bd-7" id="bt-7"><span class="rail"><i></i></span><span class="nm">Source precedence</span><span class="pill dg stt">DEGENERATE</span><span class="sp">spec D.8.1 &middot; apix.statistics.elementary.sources.SourcePrecedence.rank</span></button><div class="bd" id="bd-7" data-open="0" role="region" aria-labelledby="bt-7"><div><ul><li>1 distinct source in the panel: ['indigo-direct']</li><li>rank() returns (0, '') - a total order over one element</li><li>precedence version recorded on the runs: spike-single-source-v1</li></ul><p class="n">select() is NOT reached: it returns the best source present in BOTH t and t-7, and there is no t-7. A one-source order cannot discriminate, so nothing here establishes that the precedence rule works.</p></div></div><button class="bs" data-state="EXERCISED" aria-expanded="false" aria-controls="bd-8" id="bt-8"><span class="rail"><i></i></span><span class="nm">Deduplication</span><span class="pill ex stt">EXERCISED</span><span class="sp">spec D.4 &middot; apix.statistics.elementary.dedup.duplicate_key / deduplicate</span></button><div class="bd" id="bd-8" data-open="0" role="region" aria-labelledby="bt-8"><div><ul><li>35 distinct duplicate keys built from 35 observations</li><li>35 retained, 0 duplicates observed</li></ul><p class="n">Key construction is exercised; 0 duplicates were observed. The tie-break rule for identical timestamps is therefore NOT exercised - no collision occurred for it to resolve.</p></div></div><div class="stop-rule">real data stops here &mdash; spec C.1 needs a t&minus;7 wave</div><button class="bs" data-state="PENDING" aria-expanded="false" aria-controls="bd-9" id="bt-9"><span class="rail"><i></i></span><span class="nm">Matched t / t-7</span><span class="pill pd stt">PENDING</span><span class="sp">spec D.1, D.8</span></button><div class="bd" id="bd-9" data-open="0" role="region" aria-labelledby="bt-9"><div><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><p class="n">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</p></div></div><button class="bs" data-state="PENDING" aria-expanded="false" aria-controls="bd-10" id="bt-10"><span class="rail"><i></i></span><span class="nm">Jevons relative</span><span class="pill pd stt">PENDING</span><span class="sp">spec D.2</span></button><div class="bd" id="bd-10" data-open="0" role="region" aria-labelledby="bt-10"><div><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><p class="n">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</p></div></div><button class="bs" data-state="PENDING" aria-expanded="false" aria-controls="bd-11" id="bt-11"><span class="rail"><i></i></span><span class="nm">Advance-cell / weekly chain</span><span class="pill pd stt">PENDING</span><span class="sp">spec C.1, F</span></button><div class="bd" id="bd-11" data-open="0" role="region" aria-labelledby="bt-11"><div><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><p class="n">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</p></div></div><button class="bs" data-state="PENDING" aria-expanded="false" aria-controls="bd-12" id="bt-12"><span class="rail"><i></i></span><span class="nm">Higher aggregation</span><span class="pill pd stt">PENDING</span><span class="sp">spec E, G</span></button><div class="bd" id="bd-12" data-open="0" role="region" aria-labelledby="bt-12"><div><ul><li>1 collection wave(s), 0 matched pairs. Spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t).</li><li>first date that can supply a pair: 2026-09-19</li></ul><p class="n">Implemented and covered by the synthetic-fixture suite. Not reached by real data, which is an evidence condition and not a defect.</p></div></div><button class="bs" data-state="BLOCKED" aria-expanded="false" aria-controls="bd-13" id="bt-13"><span class="rail"><i></i></span><span class="nm">Publication</span><span class="pill bl stt">BLOCKED</span><span class="sp">spec H, R.3</span></button><div class="bd" id="bd-13" data-open="0" role="region" aria-labelledby="bt-13"><div><ul><li>no APIx index value is computed, so none is published</li><li>apix_l_computable: False</li></ul><p class="n">The guards refuse rather than inventing a level. That is the design.</p></div></div></div></div>
+  <p class="note rv">EXERCISED means the frozen code path ran against the real panel. It is not a validation claim, and no stage below the Jevons step is reached by real data at all.</p>
+  <p class="note rv">Reconstructed from <span class="mono">data/panel.json</span>.
   35/35 rebuilt observations derive the fare class the store recorded; the entitlement assumption changes no cell key.</p>
 </section>
 
-<!-- 7 methodology -->
-<section>
-  <div class="sechead"><span class="n">10</span><h2>Statistical methodology</h2></div>
-  <div class="flow">
+<!-- ============================================================ 06 ==== -->
+<section id="pending" class="wrap" aria-labelledby="h-pend">
+  <div class="shead"><span class="n">06</span>
+    <h2 id="h-pend">Why no index exists yet</h2></div>
+  <div class="banner stop rv">
+    <span class="t">APIx-L — PENDING, and that is the design</span>
+    <p>Methodology §C.1 is <strong>LOCKED</strong>:
+    <span class="mono">I(c,t) = I(c,t−7) × J(c,t)</span>. Every index value needs
+    a matched pair at <span class="mono">t</span> and <span class="mono">t−7</span>.
+    APIx holds 1 collection wave, which gives
+    0 matched pairs. So APIx-L is
+    <strong>not computable</strong> today, and the engine refuses rather than
+    inventing a level.</p>
+  </div>
+  <div class="flow rv" style="margin-top:var(--s5)">
+    <span class="step now">t = 2026-09-12</span><span class="arr">→</span>
+    <span class="step stop">needs t−7</span><span class="arr">→</span>
+    <span class="step stop">no counterpart wave</span><span class="arr">→</span>
+    <span class="step stop">publication blocked</span>
+  </div>
+  <p class="lede rv" style="margin-top:var(--s5)">This is not an unfinished
+  feature. Everything downstream is implemented and covered by the
+  fixture suite; what is missing is the evidence the formula requires. The first
+  date that can supply a matched pair is
+  <strong>2026-09-19</strong>.</p>
+  <p class="note rv">spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t). Have 1 collection wave(s); no t-7 counterpart exists.</p>
+</section>
+
+<!-- ============================================================ 07 ==== -->
+<section id="engine" class="wrap" aria-labelledby="h-eng">
+  <div class="shead"><span class="n">07</span>
+    <h2 id="h-eng">The engine, on a controlled test fixture</h2></div>
+  <div class="banner rv">
+    <span class="t">Not market data — controlled synthetic test fixture</span>
+    <p>The engine is demonstrated on a <strong>controlled synthetic test
+    fixture</strong>, in index points on a base of 100, with no currency figures
+    anywhere. It is rendered to its own file,
+    <span class="mono">data/engine-validation.html</span>, and a test asserts it
+    never merges into this page. <strong>Nothing on that page is an airfare
+    observation, and nothing on it is an APIx index value.</strong></p>
+  </div>
+  <p class="lede rv">It exists to show that the engine computes, chains and
+  <em>refuses</em> correctly — not to say anything about prices. Run it yourself:</p>
+  <div class="chart rv" style="margin-top:var(--s4)">
+    <p class="mono" style="color:var(--accent)">python tools/analysis/engine_demo.py</p>
+    <p class="src">Matched sets at t and t−7 · Jevons relatives · chaining across
+    14 consecutive publication dates · and the engine raising rather than
+    inventing a level when fed a state dated after the period being published.
+    Every value there is synthetic test data.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 08 ==== -->
+<section id="method" class="wrap" aria-labelledby="h-meth">
+  <div class="shead"><span class="n">08</span>
+    <h2 id="h-meth">Methodology</h2></div>
+  <div class="flow rv">
     <span class="step now">raw observation</span><span class="arr">→</span>
     <span class="step now">admissibility §A.6</span><span class="arr">→</span>
+    <span class="step now">band / key §B.2</span><span class="arr">→</span>
     <span class="step now">dedup §D.4</span><span class="arr">→</span>
-    <span class="step now">clean panel</span><span class="arr">→</span>
     <span class="step next">Jevons §D.2</span><span class="arr">→</span>
+    <span class="step next">advance-cell §E</span><span class="arr">→</span>
     <span class="step next">Young / Mod. Laspeyres §F</span><span class="arr">→</span>
-    <span class="step next">APIx</span>
+    <span class="step stop">publication §H</span>
   </div>
-  <p class="lede"><strong>Green steps run on today's data. Amber steps are implemented and
-  invariant-tested but have no input yet</strong>, because every one of them consumes a price
-  <em>relative</em>, and a relative needs two collection waves. <strong>Green here means
-  &ldquo;runs on today's data&rdquo;, which is the same thing section 09 calls EXERCISED — not
-  &ldquo;validated&rdquo;.</strong> Three of those stages are degenerate on a single wave; section
-  09 names which.</p>
-  <div class="rows">
-    <div class="row"><span class="cnt">§D.2</span><span class="txt"><strong>Jevons elementary
-      aggregation.</strong> Geometric mean of matched price relatives within a cell, computed in
-      logs — the log form is normative, not a numerical convenience. Matches MoSPI's own
-      elementary aggregator for CPI.</span></div>
-    <div class="row"><span class="cnt">§F</span><span class="txt"><strong>Young / Modified
-      Laspeyres.</strong> Weighted aggregation above the elementary level. Route weights are
-      <strong>specified</strong> to use DGCA city-pair passenger volumes; that source is
-      <strong>not yet secured</strong>, and with one route <strong>no route weighting is
-      exercised</strong>.</span></div>
-    <div class="row"><span class="cnt">§M</span><span class="txt"><strong>APIx-TPD —
-      SPECIFIED, NOT IMPLEMENTED.</strong> A quote-level Time Product Dummy hedonic regression,
-      designed as a <em>parallel</em> estimator never chained into APIx-L. The specification
-      exists; <strong>the estimator is not implemented</strong>
-      (<span class="mono">src/apix/statistics/tpd/</span> is an empty package). The design intent
-      — publishing the gap between the two estimators — is a future deliverable, not a present
-      one.</span></div>
-    <div class="row"><span class="cnt">§N</span><span class="txt"><strong>Uncertainty —
-      NOT IMPLEMENTED.</strong> No bootstrap or confidence-interval estimator exists
-      (<span class="mono">src/apix/statistics/uncertainty/</span> is an empty package), and
-      <strong>no confidence interval is reported anywhere in APIx</strong>. Beyond the missing
-      code, the current collection design does not record the admissible-flight universe per
-      band, so it does not yet carry the sampling-design information a conventional uncertainty
-      estimator would need. Dispersion is reported instead, which assumes nothing.</span></div>
-  </div>
-</section>
-
-<!-- 8 index engine -->
-<section>
-  <div class="sechead"><span class="n">11</span><h2>Index engine status</h2></div>
-  <div class="tiles">
-    <div class="tile good"><span class="k">APIx-L engine</span><span class="v">READY</span>
-      <span class="s">implemented + invariant-tested</span></div>
-    <div class="tile bad"><span class="k">APIx-L value</span><span class="v">PENDING</span>
-      <span class="s">needs a 2nd collection wave</span></div>
-    <div class="tile bad"><span class="k">APIx-TPD</span><span class="v">NOT IMPLEMENTED</span>
-      <span class="s">specified §M; estimator absent. Panel is also
-      35 quotes of 1,500 required</span></div>
-    <div class="tile bad"><span class="k">uncertainty / CI</span>
-      <span class="v">NOT IMPLEMENTED</span>
-      <span class="s">no estimator; no CI reported anywhere</span></div>
-    <div class="tile hold"><span class="k">unlocks on</span>
-      <span class="v" style="font-size:17px">2026-09-19</span>
-      <span class="s">exactly t−7 from the held wave</span></div>
-  </div>
-  <div class="warn">
-    <strong>The absent index value is a property of the methodology, not a software failure.</strong>
-    <span>spec C.1 LOCKED: I(c,t) = I(c,t-7) x J(c,t). Have 1 collection wave(s); no t-7 counterpart exists. Producing a number anyway would require either changing the
-    frozen formula or treating APW buckets as if they were time-series observations. Both are
-    refused: the APW buckets are seven <em>different products</em> observed at one instant, not one
-    product observed seven times.</span>
+  <p class="note rv">Blue runs on today's data — the same thing section 05 calls
+  EXERCISED, which is <strong>not</strong> "validated". Amber is implemented and
+  invariant-tested but has no input yet, because every one of those steps
+  consumes a price <em>relative</em>, and a relative needs two collection waves.</p>
+  <div class="faq rv" style="margin-top:var(--s5)">
+    <details class="qa"><summary>Jevons at the elementary level (§D.2)</summary>
+      <div class="a">The geometric mean of matched price relatives, computed in
+      logs — the normative form, so the descriptive summary on this page and the
+      engine cannot drift into different arithmetic. MoSPI's own elementary
+      aggregator for the CPI.</div></details>
+    <details class="qa"><summary>Advance-purchase stratification (§A.3)</summary>
+      <div class="a">Seven frozen buckets, assigned by <strong>exact</strong> lead
+      time. A quote whose lead time matches no bucket is inadmissible and is never
+      rounded into the nearest one. That rule rejected 24 T+68 screenshots, and
+      the replay in section 04 re-derived all 24 independently.</div></details>
+    <details class="qa"><summary>The matched set (§D.1, §D.8)</summary>
+      <div class="a">Items present in <em>both</em> t and t−7. A tier ladder
+      relaxes item identity from flight number to departure slot when schedules
+      move, and a Tier-3 cell publishes a declared unit value and forms no matched
+      set at all. None of this is reached by real data yet.</div></details>
+    <details class="qa"><summary>Weekly chaining (§C.1, LOCKED)</summary>
+      <div class="a"><span class="mono">I(c,t) = I(c,t−7) × J(c,t)</span>. The
+      level holds between weekly links and moves once per link. A seven-day
+      relative applied daily would compound sevenfold; the suite asserts that
+      compounded value as forbidden.</div></details>
+    <details class="qa"><summary>What the engine refuses to do</summary>
+      <div class="a">Publish without a matched pair; publish without a declared
+      coverage denominator (AMB-8); weight a multi-carrier route without declared
+      shares (AMB-9); admit a quote whose lead time matches no frozen bucket.
+      Four independent guards, none of which may be weakened to obtain a
+      number.</div></details>
   </div>
 </section>
 
-<!-- 9 benchmark -->
-<section>
-  <div class="sechead"><span class="n">12</span><h2>Official reference — MoSPI</h2></div>
-  <p class="lede">Pulled first-hand from the Dataset Link named in the problem statement:
-  <span class="mono">MoSPI eSankhyiki api.mospi.gov.in/api/cpi/getItemIndex</span>, item <em>Air Fare (normal): Economy Class(adult)</em>.
-  Role: <span class="mono">REFERENCE_ONLY</span> —
-  <span class="mono">is_apix_input = False</span>.</p>
-  <div class="tiles"><div class='tile'><span class='k'>base 2010 · per year</span><span class='v'>n/a</span><span class='s'>1 point — no rate computable</span></div><div class='tile'><span class='k'>base 2012 · per year</span><span class='v'>+6.52%</span><span class='s'>103.0 → 206.3 over 11 yrs</span></div></div>
-  <div class="tscroll" style="max-height:330px"><table>
-    <thead><tr><th>period</th><th>base</th><th class="r">index</th><th class="r">y/y</th></tr></thead>
-    <tbody><tr><td class='m'>2014-Dec</td><td class='m'>2010</td><td class='m r'>133.9</td><td class='m r'>&mdash;</td></tr><tr><td class='m'>2014-Dec</td><td class='m'>2012</td><td class='m r'>103.0</td><td class='m r'>&mdash;</td></tr><tr><td class='m'>2015-Dec</td><td class='m'>2012</td><td class='m r'>77.1</td><td class='m r'>-25.15%</td></tr><tr><td class='m'>2016-Dec</td><td class='m'>2012</td><td class='m r'>88.0</td><td class='m r'>14.14%</td></tr><tr><td class='m'>2017-Dec</td><td class='m'>2012</td><td class='m r'>75.7</td><td class='m r'>-13.98%</td></tr><tr><td class='m'>2018-Dec</td><td class='m'>2012</td><td class='m r'>79.5</td><td class='m r'>5.02%</td></tr><tr><td class='m'>2019-Dec</td><td class='m'>2012</td><td class='m r'>71.9</td><td class='m r'>-9.56%</td></tr><tr><td class='m'>2020-Dec</td><td class='m'>2012</td><td class='m r'>164.2</td><td class='m r'>128.37%</td></tr><tr><td class='m'>2021-Dec</td><td class='m'>2012</td><td class='m r'>204.2</td><td class='m r'>24.36%</td></tr><tr><td class='m'>2022-Dec</td><td class='m'>2012</td><td class='m r'>241.7</td><td class='m r'>18.36%</td></tr><tr><td class='m'>2023-Dec</td><td class='m'>2012</td><td class='m r'>196.2</td><td class='m r'>-18.82%</td></tr><tr><td class='m'>2024-Dec</td><td class='m'>2012</td><td class='m r'>203.1</td><td class='m r'>3.52%</td></tr><tr><td class='m'>2025-Dec</td><td class='m'>2012</td><td class='m r'>206.3</td><td class='m r'>1.58%</td></tr></tbody></table></div>
-  <div class="warn">
-    <strong>This reference cannot validate the current panel, and claiming otherwise would be the
-    easiest overstatement in the project.</strong>
-    <span>It is a <em>monthly, All-India index number</em> with no route, no carrier, no flight and
-    no rupee fare. The panel is <em>one day, one route, one carrier, in rupees</em>. No overlapping
-    unit exists, so no comparison is meaningful yet. Growth is computed <strong>within a base year
-    only</strong> — MoSPI publishes Dec 2014 under both base 2010 and base 2012 during the
-    rebasing overlap, and dividing one by the other is a units error rather than a rate of
-    change.</span>
+<!-- ============================================================ 09 ==== -->
+<section id="limits" class="wrap" aria-labelledby="h-lim">
+  <div class="shead"><span class="n">09</span>
+    <h2 id="h-lim">What is not established</h2></div>
+  <p class="lede rv">Stated here rather than discovered later.</p>
+  <div class="grid g2 rv" style="margin-top:var(--s5)">
+    <div class="card"><span class="k">AMB-8 · open</span>
+      <h3>Statistical coverage NOT ESTABLISHED</h3>
+      <p>AMB-8 OPEN: spec I gates on '60% of expected cells' and nothing defines an expected cell. No denominator has been chosen, so no statistical coverage figure is computed.</p>
+      <p><strong>100.0% is collection-plan completion</strong>
+      — 35/35 slots — and is a different
+      quantity from statistical coverage.</p></div>
+    <div class="card"><span class="k">AMB-9 · open</span>
+      <h3>Carrier weighting blocked</h3>
+      <p>Spec §G.3/§G.5 carry no carrier term in the within-route weight formula.
+      At one carrier the allocation is mathematically degenerate; beyond one
+      carrier <span class="mono">within_route_weights</span> raises rather than
+      guessing. An owner ruling is required before any carrier expansion.</p></div>
+    <div class="card"><span class="k">OQ-1 · open</span>
+      <h3>Collection window value not fixed</h3>
+      <p>§A.5 locks the <em>rule</em> that all collection runs inside a fixed
+      daily window; the window's published value is not yet fixed. So no single
+      admissible count is normative — 9 observations sit outside
+      the runs' declared window and are flagged, not discarded.</p></div>
+    <div class="card"><span class="k">§M · specified only</span>
+      <h3>APIx-TPD NOT IMPLEMENTED</h3>
+      <p>The quote-level Time Product Dummy estimator is specified in §M and the
+      package is empty — a test fails the build if that stops being true. The
+      panel also holds 35 quotes against a
+      <span class="mono">min_quotes_window</span> of
+      1,500. Both are true and both are stated.</p></div>
+    <div class="card"><span class="k">uncertainty</span>
+      <h3>No interval is reported</h3>
+      <p>The bootstrap is specified and not implemented, and the collection design
+      does not yet record the admissible-flight universe per band, so it does not
+      carry the sampling-design information an interval would need. Observed
+      dispersion is reported instead, which assumes nothing.</p></div>
+    <div class="card"><span class="k">scope</span>
+      <h3>National representativeness not established</h3>
+      <p>One route of the DGCA city-pair frame, one carrier, one channel, one day.
+      Route and carrier weighting are implemented and <strong>not exercised</strong>.
+      MoSPI has not endorsed APIx.</p></div>
   </div>
 </section>
 
-<!-- 10 scale -->
-<section>
-  <div class="sechead"><span class="n">13</span><h2>Scale-up architecture</h2></div>
-  <p class="lede">DEL–BOM and IndiGo are <strong>current sample values, not architecture</strong>.
-  The statistics layer never hard-codes a route or carrier; the cell key is
-  <span class="mono">route × carrier × day_of_week × APW × fare_class × channel</span>, and the
-  panel expands along every one of those axes without a schema change.</p>
-  <div class="tscroll"><table>
-    <thead><tr><th>axis</th><th>today</th><th>target</th><th>what it unlocks</th></tr></thead>
-    <tbody>
-      <tr><td>collection waves</td><td class="m">1</td><td class="m">30+ daily</td><td>the index itself — weekly Jevons links</td></tr>
-      <tr><td>routes</td><td class="m">1</td><td class="m">8–10 top DGCA pairs</td><td>route weights, §F aggregation</td></tr>
-      <tr><td>carriers</td><td class="m">1</td><td class="m">5 PS-named</td><td>carrier allocation (AMB-9)</td></tr>
-      <tr><td>sources</td><td class="m">1 airline-direct</td><td class="m">+ OTA, + NDC/licensed feed</td><td>source precedence §D.8, independence §B.6</td></tr>
-      <tr><td>APW</td><td class="m">7</td><td class="m">7</td><td class="m">already complete</td></tr>
-      <tr><td>quotes / window</td><td class="m">35</td><td class="m">1,500</td><td>APIx-TPD hedonic estimator</td></tr>
-    </tbody></table></div>
-</section>
-
-<!-- 11 limitations -->
-<section>
-  <div class="sechead"><span class="n">14</span><h2>Limitations — what is not established</h2></div>
-  <div class="tscroll"><table>
-    <thead><tr><th>claim</th><th>status</th><th>what it would take</th></tr></thead>
-    <tbody>
-      <tr><td>APIx-L index value</td><td><span class="pill p-no">NOT COMPUTABLE</span></td><td>a 2nd collection wave exactly 7 days later (§C.1)</td></tr>
-      <tr><td>APIx-TPD estimate</td><td><span class="pill p-no">NOT COMPUTABLE</span></td><td class="m">min_quotes_window = 1,500; panel has 35</td></tr>
-      <tr><td>30-day back-test</td><td><span class="pill p-no">NOT PERFORMED</span></td><td>daily fare history that does not exist and cannot be reconstructed</td></tr>
-      <tr><td>Advance-purchase elasticity</td><td><span class="pill p-no">NOT ESTIMATED</span></td><td>travel-date effects separated from lead time</td></tr>
-      <tr><td>National representativeness</td><td><span class="pill p-no">NO</span></td><td>1 route of 2,186 DGCA city pairs (source: DGCA city-pair traffic, 66,453 rows); 1 carrier &mdash; the carrier universe is an open owner ruling (5 PS-named vs 9 scheduled operators), so no denominator is asserted</td></tr>
-      <tr><td>Route weights (§G)</td><td><span class="pill p-hold">NOT EXERCISED</span></td><td>≥2 routes + DGCA city-pair volumes</td></tr>
-      <tr><td>Carrier allocation</td><td><span class="pill p-hold">OPEN — AMB-9</span></td><td>owner ruling; moot at one carrier</td></tr>
-      <tr><td>Coverage denominator</td><td><span class="pill p-hold">OPEN — AMB-8</span></td><td>owner ruling on expected cells</td></tr>
-      <tr><td>Intraday effect (OQ-1)</td><td><span class="pill p-hold">DEFERRED</span></td><td>paired 09:00 / 21:00 runs — not collected</td></tr>
-      <tr><td>Fare 4-way split (§A.4)</td><td><span class="pill p-hold">OPEN — AMB-12</span></td><td>IndiGo renders one aggregated "Taxes &amp; Fees" line at this step</td></tr>
-      <tr><td>Collection → store → analysis pipeline</td><td><span class="pill p-ok">DEMONSTRATED</span></td><td>— on real data, with hashed evidence</td></tr>
-      <tr><td>Advance-purchase measurement</td><td><span class="pill p-ok">DEMONSTRATED</span></td><td>— all 7 frozen APW buckets</td></tr>
-      <tr><td>Index engine</td><td><span class="pill p-ok">IMPLEMENTED + TESTED</span></td><td>— awaiting input, not implementation</td></tr>
-    </tbody></table></div>
-</section>
-
-<!-- 12 roadmap -->
-<section>
-  <div class="sechead"><span class="n">15</span><h2>Validation roadmap</h2></div>
-  <p class="lede">The 30-day back-test the problem statement asks for is <strong>not performed
-  and not simulated</strong>. This is the route to it.</p>
-  <div class="flow">
+<!-- ============================================================ 10 ==== -->
+<section id="next" class="wrap" aria-labelledby="h-next">
+  <div class="shead"><span class="n">10</span>
+    <h2 id="h-next">2026-09-19</h2></div>
+  <p class="lede rv">Seven days after the wave we hold. Same route, same carrier,
+  same five bands, same selection rule, same window — because every one of those
+  is part of the cell key, and a cell that changes has no counterpart to match
+  against.</p>
+  <div class="flow rv" style="margin-top:var(--s5)">
+    <span class="step now">wave 1 · 2026-09-12</span><span class="arr">→</span>
     <span class="step next">wave 2 · 2026-09-19</span><span class="arr">→</span>
-    <span class="step">first Jevons relative</span><span class="arr">→</span>
-    <span class="step">30-day rolling panel</span><span class="arr">→</span>
-    <span class="step">APIx daily series</span><span class="arr">→</span>
-    <span class="step">aggregate to monthly</span><span class="arr">→</span>
-    <span class="step">compare vs MoSPI</span>
+    <span class="step next">matched t / t−7</span><span class="arr">→</span>
+    <span class="step next">first real Jevons relative</span><span class="arr">→</span>
+    <span class="step next">first real index calculation</span>
   </div>
-  <div class="rows">
-    <div class="row"><span class="cnt">1</span><span class="txt"><strong>Second wave, 2026-09-19.</strong>
-      The same five flights, the same window. Produces the first genuine matched pair and the
-      first real Jevons relative. ~30 minutes of collection.</span></div>
-    <div class="row"><span class="cnt">2</span><span class="txt"><strong>30 consecutive days.</strong>
-      Builds the rolling panel. A missed day costs <em>two</em> weekly links, because the index
-      compares t against t−7.</span></div>
-    <div class="row"><span class="cnt">3</span><span class="txt"><strong>Validation metrics.</strong>
-      MAE, RMSE, correlation, directional agreement, turning-point agreement, bootstrap
-      intervals — each reported with its <em>n</em>, and against the monthly MoSPI reference only
-      once the APIx series is itself aggregated to monthly.</span></div>
-    <div class="row"><span class="cnt">4</span><span class="txt"><strong>Expand the frame.</strong>
-      Routes and carriers along the axes in §10, which is what makes the weights layer and the
-      carrier allocation live questions rather than theoretical ones.</span></div>
-  </div>
+  <p class="note rv">A 7-day shift preserves the travel date's weekday for all
+  7 buckets, which is why the cell keys line up. No future value is
+  predicted here — the procedure is written down, and whether it produces a
+  result is a question for the data.</p>
+  <p class="note rv">Reaching a first index value clears none of AMB-8, AMB-9 or
+  OQ-1. A first index value is a first index value; it is not a published index.</p>
 </section>
 
-<!-- FAQ -->
-<section>
-  <div class="sechead"><span class="n">16</span><h2>Anticipated questions</h2></div>
-  <div class="faq">
-    <div class="qa"><span class="q">Why don't you show an index value?</span>
-      <span class="a">Because the locked longitudinal specification requires matched observations
-      at t and t−7. One collection wave cannot produce a legitimate time-series relative, and
-      changing the formula to manufacture one is the single thing the frozen methodology
-      forbids.</span></div>
-    <div class="qa"><span class="q">Then what have you actually demonstrated?</span>
-      <span class="a">A complete real-data path: compliant collection, extraction verified against
-      source evidence, canonicalisation, deduplication, admissibility, hash-addressed provenance
-      and an auditable exclusion trail — plus an index engine that is implemented and
-      invariant-tested and is waiting on input, not on code.</span></div>
-    <div class="qa"><span class="q">Why only IndiGo and DEL–BOM?</span>
-      <span class="a">Compliance, not convenience. Of 14 sources audited, IndiGo is the only one
-      carrying an affirmative, quoted permission for the collection mode used. DEL–BOM is India's
-      densest domestic pair. The architecture is route- and carrier-agnostic throughout.</span></div>
-    <div class="qa"><span class="q">Why not just use MoSPI's published airfare index?</span>
-      <span class="a">It is a monthly All-India reference index, not route-level raw fare
-      observations. It is the validation target, and it is exactly what this project exists to
-      complement at higher frequency and finer granularity.</span></div>
-    <div class="qa"><span class="q">Why Saver rather than the cheapest visible fare?</span>
-      <span class="a">The frozen contract standardises the fare family so a hand-baggage-only
-      Lite fare is never pooled with a checked-baggage product. Canonical fare class is derived
-      from entitlements, never from the marketing label.</span></div>
-    <div class="qa"><span class="q">Why exclude later, cheaper flights in the same band?</span>
-      <span class="a">The protocol takes the earliest qualifying flight in each departure band.
-      Selecting by price would make the index measure its own selection rule, and no downstream
-      test could detect or undo that.</span></div>
-    <div class="qa"><span class="q">Why is T+60 so much higher?</span>
-      <span class="a">It is an observed cross-sectional difference, not a causal estimate. Each
-      APW sits on a different travel date, so seasonality and date effects are confounded with
-      lead time. The post-Diwali hypothesis is plausible and untested.</span></div>
-    <div class="qa"><span class="q">What happens after the hackathon?</span>
-      <span class="a">Run the same collection longitudinally from 2026-09-19,
-      expand routes and carriers, bring in DGCA weights, then perform the 30-day validation and
-      begin regular index computation.</span></div>
-  </div>
-</section>
+</main>
 
-<footer>
-  <p><strong>Provenance.</strong> 35 observations across
-  2 run(s) · 6 content-addressed artifacts ·
-  122 screenshots excluded with a recorded reason ·
-  <span class="mono">verify()</span> internally consistent.</p>
-  <p><strong>Versions.</strong> methodology 2.1 ·
-  basket 2026-Q3 ·
-  parser manual-1.0 ·
-  collector manual ·
-  protocol acquisition-protocol-2G ·
-  source precedence spike-single-source-v1</p>
-  <p><strong>Data classes are never mixed.</strong> Every fare on this page is
-  <span class="mono">REAL_MARKET_OBSERVATION</span>; the MoSPI series is an official reference.
-  <span class="mono">synthetic_data_present = False</span>.</p>
-  <p>Generated from <span class="mono">data/collection/collection.sqlite3</span> via
-  <span class="mono">data/panel.json</span> — every <strong>statistical</strong> figure is
-  derived from that contract. Contextual frame figures (the DGCA city-pair count, scale-up
-  targets) are typed and carry their source inline.</p>
+<footer class="wrap">
+  <div class="row">
+    <div>
+      <p><b>APIx</b> · quality-adjusted airfare price index for India ·
+      MoSPI problem statement 26056</p>
+      <p>Every statistical figure on this page is generated from
+      <span class="mono">data/panel.json</span>; contextual frame figures are
+      typed and name their source inline.</p>
+    </div>
+    <div>
+      <p><b>data class</b> REAL_MARKET_OBSERVATION ·
+      synthetic_data_present = False</p>
+      <p><b>version vector</b> methodology 2.1 ·
+      basket 2026-Q3 ·
+      protocol acquisition-protocol-2G ·
+      precedence spike-single-source-v1</p>
+      <p><b>generated from</b> data/collection/collection.sqlite3</p>
+    </div>
+  </div>
 </footer>
-</div>
+
+<div id="tip" role="status" aria-live="polite"></div>
+<script type="application/json" id="apix-data">{"apw":[{"apw":1,"n":5,"geomean":6561.3,"min":6530.0,"max":6688.0,"spread_pct":2.4,"travel_date":"2026-09-13","day_of_week":"Sun"},{"apw":3,"n":5,"geomean":6902.55,"min":6530.0,"max":8158.0,"spread_pct":24.9,"travel_date":"2026-09-15","day_of_week":"Tue"},{"apw":7,"n":5,"geomean":6633.64,"min":6530.0,"max":6898.0,"spread_pct":5.6,"travel_date":"2026-09-19","day_of_week":"Sat"},{"apw":15,"n":5,"geomean":6849.76,"min":6530.0,"max":7160.0,"spread_pct":9.6,"travel_date":"2026-09-27","day_of_week":"Sun"},{"apw":30,"n":5,"geomean":6601.99,"min":6530.0,"max":6898.0,"spread_pct":5.6,"travel_date":"2026-10-12","day_of_week":"Mon"},{"apw":45,"n":5,"geomean":7048.75,"min":7019.0,"max":7169.0,"spread_pct":2.1,"travel_date":"2026-10-27","day_of_week":"Tue"},{"apw":60,"n":5,"geomean":9090.99,"min":8720.0,"max":9665.0,"spread_pct":10.8,"travel_date":"2026-11-11","day_of_week":"Wed"}],"bands":[{"band":2,"window":"06:00-08:59","n":7,"geomean":7208.07},{"band":3,"window":"09:00-11:59","n":7,"geomean":6876.01},{"band":4,"window":"12:00-14:59","n":7,"geomean":7118.71},{"band":5,"window":"15:00-17:59","n":7,"geomean":6982.46},{"band":6,"window":"18:00-20:59","n":7,"geomean":7098.49}],"obs":[{"apw":1,"band":2,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":1,"band":3,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":1,"band":4,"total":6688.0,"ev":"PRIMARY_HASHED"},{"apw":1,"band":5,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":1,"band":6,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":3,"band":2,"total":8158.0,"ev":"PRIMARY_HASHED"},{"apw":3,"band":3,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":3,"band":4,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":3,"band":5,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":3,"band":6,"total":6898.0,"ev":"PRIMARY_HASHED"},{"apw":7,"band":2,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":7,"band":3,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":7,"band":4,"total":6688.0,"ev":"PRIMARY_HASHED"},{"apw":7,"band":5,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":7,"band":6,"total":6898.0,"ev":"PRIMARY_HASHED"},{"apw":15,"band":2,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":15,"band":3,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":15,"band":4,"total":7160.0,"ev":"PRIMARY_HASHED"},{"apw":15,"band":5,"total":6898.0,"ev":"PRIMARY_HASHED"},{"apw":15,"band":6,"total":7160.0,"ev":"PRIMARY_HASHED"},{"apw":30,"band":2,"total":6898.0,"ev":"PRIMARY_HASHED"},{"apw":30,"band":3,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":30,"band":4,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":30,"band":5,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":30,"band":6,"total":6530.0,"ev":"PRIMARY_HASHED"},{"apw":45,"band":2,"total":7019.0,"ev":"SECONDARY_CHAT_IMAGE"},{"apw":45,"band":3,"total":7019.0,"ev":"SECONDARY_CHAT_IMAGE"},{"apw":45,"band":4,"total":7019.0,"ev":"SECONDARY_CHAT_IMAGE"},{"apw":45,"band":5,"total":7019.0,"ev":"SECONDARY_CHAT_IMAGE"},{"apw":45,"band":6,"total":7169.0,"ev":"SECONDARY_CHAT_IMAGE"},{"apw":60,"band":2,"total":9192.0,"ev":"PRIMARY_HASHED"},{"apw":60,"band":3,"total":8720.0,"ev":"PRIMARY_HASHED"},{"apw":60,"band":4,"total":9665.0,"ev":"PRIMARY_HASHED"},{"apw":60,"band":5,"total":9192.0,"ev":"PRIMARY_HASHED"},{"apw":60,"band":6,"total":8720.0,"ev":"PRIMARY_HASHED"}],"apwOrder":[1,3,7,15,30,45,60],"pipeline":[{"label":"collect","done":true,"stop":false},{"label":"parse","done":true,"stop":false},{"label":"normalise","done":true,"stop":false},{"label":"admissibility","done":true,"stop":false},{"label":"band / key","done":true,"stop":false},{"label":"dedup","done":true,"stop":false},{"label":"build panel","done":true,"stop":false},{"label":"matched t / t-7","done":false,"stop":true},{"label":"Jevons","done":false,"stop":false},{"label":"index","done":false,"stop":false}]}</script>
+<script>
+(function(){
+"use strict";
+var RM = matchMedia('(prefers-reduced-motion: reduce)');
+var D = null;
+try { D = JSON.parse(document.getElementById('apix-data').textContent); } catch(e) { D = null; }
+
+/* ---------------------------------------------------------------- tooltip */
+var tip = document.getElementById('tip');
+function showTip(html, x, y){
+  if(!tip) return;
+  tip.innerHTML = html;
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+  tip.classList.add('on');
+}
+function hideTip(){ if(tip) tip.classList.remove('on'); }
+function rows(pairs){
+  var s = '<dl>';
+  for(var i=0;i<pairs.length;i++){
+    s += '<dt>'+pairs[i][0]+'</dt><dd>'+pairs[i][1]+'</dd>';
+  }
+  return s + '</dl>';
+}
+function inr(v){ return '₹' + Number(v).toLocaleString('en-IN'); }
+
+/* ------------------------------------------------------- reveal on scroll */
+var rv = document.querySelectorAll('.rv');
+if(RM.matches || !('IntersectionObserver' in window)){
+  rv.forEach(function(el){ el.classList.add('in'); });
+} else {
+  var ro = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target); }
+    });
+  }, {rootMargin:'0px 0px -12% 0px', threshold:.08});
+  rv.forEach(function(el){ ro.observe(el); });
+}
+
+/* ------------------------------------------- scroll progress + section spy */
+var nav = document.querySelector('.nav');
+var prog = document.querySelector('.prog');
+var links = [].slice.call(document.querySelectorAll('.nav a[href^="#"]'));
+var targets = links.map(function(a){
+  return document.getElementById(a.getAttribute('href').slice(1));
+});
+var ticking = false;
+function onScroll(){
+  if(ticking) return; ticking = true;
+  requestAnimationFrame(function(){
+    var y = window.scrollY;
+    if(nav) nav.dataset.stuck = y > 24 ? '1' : '0';
+    var h = document.documentElement.scrollHeight - innerHeight;
+    if(prog) prog.style.width = (h > 0 ? (y / h) * 100 : 0) + '%';
+    var best = -1;
+    for(var i=0;i<targets.length;i++){
+      if(targets[i] && targets[i].getBoundingClientRect().top <= innerHeight * 0.38) best = i;
+    }
+    links.forEach(function(a,i){
+      if(i === best) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current');
+    });
+    ticking = false;
+  });
+}
+addEventListener('scroll', onScroll, {passive:true});
+addEventListener('resize', onScroll, {passive:true});
+onScroll();
+
+/* ------------------------------------------------------ boundary accordion */
+document.querySelectorAll('.bs').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var open = btn.getAttribute('aria-expanded') === 'true';
+    var body = document.getElementById(btn.getAttribute('aria-controls'));
+    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    if(body) body.dataset.open = open ? '0' : '1';
+  });
+});
+
+/* --------------------------------------------------------- APW chart hover */
+if(D && D.apw){
+  var byApw = {};
+  D.apw.forEach(function(p){ byApw[p.apw] = p; });
+  document.querySelectorAll('.hit[data-apw]').forEach(function(h){
+    function show(ev){
+      var p = byApw[h.dataset.apw]; if(!p) return;
+      var r = h.getBoundingClientRect();
+      showTip('<div class="h">T+'+p.apw+' · '+p.day_of_week+' '+p.travel_date+'</div>' +
+        rows([['geometric mean', inr(p.geomean)],
+              ['observed min', inr(p.min)],
+              ['observed max', inr(p.max)],
+              ['spread', p.spread_pct+'%'],
+              ['observations', p.n]]),
+        r.left + r.width/2, r.top);
+    }
+    h.addEventListener('mouseenter', show);
+    h.addEventListener('focus', show);
+    h.addEventListener('mouseleave', hideTip);
+    h.addEventListener('blur', hideTip);
+  });
+}
+
+/* -------------------------------------------------------- band chart hover */
+if(D && D.bands){
+  var byBand = {};
+  D.bands.forEach(function(b){ byBand[b.band] = b; });
+  document.querySelectorAll('.bar[data-band]').forEach(function(el){
+    function show(){
+      var b = byBand[el.dataset.band]; if(!b) return;
+      var r = el.getBoundingClientRect();
+      showTip('<div class="h">Band '+b.band+' · '+b.window+'</div>' +
+        rows([['geometric mean', inr(b.geomean)], ['observations', b.n]]),
+        r.left + r.width/2, r.top);
+    }
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('focus', show);
+    el.addEventListener('mouseleave', hideTip);
+    el.addEventListener('blur', hideTip);
+  });
+}
+
+/* ---------------------------------------------------- observation explorer */
+(function(){
+  var table = document.getElementById('obs-table');
+  if(!table) return;
+  var rowsEl = [].slice.call(table.querySelectorAll('tbody tr'));
+  var out = document.getElementById('obs-count');
+  var state = {apw:'all', band:'all', ev:'all'};
+  function apply(){
+    var shown = 0;
+    rowsEl.forEach(function(tr){
+      var ok = (state.apw === 'all' || tr.dataset.apw === state.apw) &&
+               (state.band === 'all' || tr.dataset.band === state.band) &&
+               (state.ev  === 'all' || tr.dataset.ev  === state.ev);
+      tr.hidden = !ok; if(ok) shown++;
+    });
+    if(out) out.innerHTML = '<b>' + shown + '</b> of ' + rowsEl.length + ' observations';
+  }
+  document.querySelectorAll('.fgrp button[data-f]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var f = b.dataset.f, v = b.dataset.v;
+      state[f] = v;
+      b.parentNode.querySelectorAll('button').forEach(function(o){
+        o.setAttribute('aria-pressed', o === b ? 'true' : 'false');
+      });
+      apply();
+    });
+  });
+  apply();
+})();
+
+/* ============================================ WebGL real-observation field
+   35 nodes, one per real observation. Every axis is a recorded field:
+       x  advance-purchase bucket index   (lead time)
+       y  payable fare, min-max normalised (price)
+       z  departure band                  (time of day)
+   colour  evidence grade (hashed screenshot vs chat image)
+   Nothing is encoded that is not in panel.json. If WebGL is unavailable the
+   canvas is removed and the page loses only decoration.                     */
+(function(){
+  var cv = document.getElementById('field');
+  if(!cv || !D || !D.obs || RM.matches){ if(cv) cv.remove(); return; }
+  var gl = null;
+  try { gl = cv.getContext('webgl', {alpha:true, antialias:true, depth:true}); } catch(e){}
+  if(!gl){ cv.remove(); return; }
+
+  var VS = 'attribute vec3 p; attribute vec3 c; attribute float s;' +
+    'uniform mat4 mvp; varying vec3 vc; varying float vs;' +
+    'void main(){ vec4 q = mvp * vec4(p,1.0); gl_Position = q;' +
+    ' float d = clamp(1.8 / max(q.w,0.35), 0.25, 2.4);' +
+    ' gl_PointSize = s * d; vc = c; vs = d; }';
+  var FS = 'precision mediump float; varying vec3 vc; varying float vs;' +
+    'void main(){ vec2 d = gl_PointCoord - vec2(0.5);' +
+    ' float r = length(d); if(r > 0.5) discard;' +
+    ' float core = smoothstep(0.5, 0.06, r);' +
+    ' float halo = smoothstep(0.5, 0.28, r) * 0.5;' +
+    ' gl_FragColor = vec4(vc, core * 0.9 + halo * 0.35); }';
+
+  function sh(t, src){
+    var o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o);
+    return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null;
+  }
+  var vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS);
+  if(!vs || !fs){ cv.remove(); return; }
+  var pr = gl.createProgram();
+  gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
+  if(!gl.getProgramParameter(pr, gl.LINK_STATUS)){ cv.remove(); return; }
+  gl.useProgram(pr);
+
+  var obs = D.obs;
+  var apws = D.apwOrder;
+  var fares = obs.map(function(o){ return o.total; });
+  var flo = Math.min.apply(null, fares), fhi = Math.max.apply(null, fares);
+  var P = [], C = [], S = [];
+  var PRIM = [0.37, 0.83, 0.63], SEC = [0.94, 0.66, 0.24];
+  obs.forEach(function(o){
+    var xi = apws.indexOf(o.apw);
+    var x = (xi / Math.max(apws.length - 1, 1) - 0.5) * 3.4;
+    var y = ((o.total - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.5;
+    var z = ((o.band - 2) / 4 - 0.5) * 2.2;
+    P.push(x, y, z);
+    var c = (o.ev === 'PRIMARY_HASHED') ? PRIM : SEC;
+    C.push(c[0], c[1], c[2]);
+    S.push(o.ev === 'PRIMARY_HASHED' ? 13.0 : 17.0);
+  });
+  // Faint lattice joining each bucket's five band observations: the grid is
+  // the collection plan, so the shape is evidence of the plan being filled.
+  var LP = [], LC = [];
+  apws.forEach(function(a){
+    var g = obs.filter(function(o){ return o.apw === a; })
+               .sort(function(m,n){ return m.band - n.band; });
+    for(var i=0;i<g.length-1;i++){
+      [g[i], g[i+1]].forEach(function(o){
+        var xi = apws.indexOf(o.apw);
+        LP.push((xi / Math.max(apws.length-1,1) - 0.5) * 3.4,
+                ((o.total - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.5,
+                ((o.band - 2) / 4 - 0.5) * 2.2);
+        LC.push(0.30, 0.42, 0.54);
+      });
+    }
+  });
+
+  function buf(data){
+    var b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    return b;
+  }
+  var bP = buf(P), bC = buf(C), bS = buf(S), bLP = buf(LP), bLC = buf(LC);
+  var aP = gl.getAttribLocation(pr,'p'), aC = gl.getAttribLocation(pr,'c'),
+      aS = gl.getAttribLocation(pr,'s'), uM = gl.getUniformLocation(pr,'mvp');
+
+  function bind(b, loc, n){
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, n, gl.FLOAT, false, 0, 0);
+  }
+  function mul(a, b){
+    var o = new Float32Array(16);
+    for(var i=0;i<4;i++) for(var j=0;j<4;j++){
+      var s = 0; for(var k=0;k<4;k++) s += a[k*4+j] * b[i*4+k];
+      o[i*4+j] = s;
+    }
+    return o;
+  }
+  function persp(fov, asp, n, f){
+    var t = 1 / Math.tan(fov/2);
+    return new Float32Array([t/asp,0,0,0, 0,t,0,0, 0,0,(f+n)/(n-f),-1, 0,0,2*f*n/(n-f),0]);
+  }
+  function view(ang, dist, lift){
+    var c = Math.cos(ang), s = Math.sin(ang);
+    var ex = s*dist, ey = lift, ez = c*dist;
+    var zx = ex, zy = ey, zz = ez, L = Math.hypot(zx,zy,zz);
+    zx/=L; zy/=L; zz/=L;
+    var xx = zz, xy = 0, xz = -zx, L2 = Math.hypot(xx,xy,xz);
+    xx/=L2; xy/=L2; xz/=L2;
+    var yx = zy*xz - zz*xy, yy = zz*xx - zx*xz, yz = zx*xy - zy*xx;
+    return new Float32Array([
+      xx,yx,zx,0, xy,yy,zy,0, xz,yz,zz,0,
+      -(xx*ex+xy*ey+xz*ez), -(yx*ex+yy*ey+yz*ez), -(zx*ex+zy*ey+zz*ez), 1]);
+  }
+
+  var running = true, t0 = performance.now(), raf = 0, pointer = 0, target = 0;
+  cv.addEventListener('pointermove', function(e){
+    target = (e.clientX / innerWidth - 0.5) * 0.7;
+  }, {passive:true});
+
+  function size(){
+    var dpr = Math.min(devicePixelRatio || 1, 2);
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if(cv.width !== (w*dpr|0) || cv.height !== (h*dpr|0)){
+      cv.width = w*dpr|0; cv.height = h*dpr|0;
+    }
+    gl.viewport(0, 0, cv.width, cv.height);
+  }
+  function frame(now){
+    if(!running) return;
+    size();
+    pointer += (target - pointer) * 0.045;
+    var ang = (now - t0) * 0.000085 + pointer;
+    var mvp = mul(persp(1.02, cv.width / Math.max(cv.height,1), 0.1, 60),
+                  view(ang, 5.0, 1.15));
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    gl.uniformMatrix4fv(uM, false, mvp);
+    if(LP.length){
+      bind(bLP, aP, 3); bind(bLC, aC, 3);
+      gl.disableVertexAttribArray(aS); gl.vertexAttrib1f(aS, 1.0);
+      gl.drawArrays(gl.LINES, 0, LP.length/3);
+    }
+    bind(bP, aP, 3); bind(bC, aC, 3); bind(bS, aS, 1);
+    gl.drawArrays(gl.POINTS, 0, P.length/3);
+    raf = requestAnimationFrame(frame);
+  }
+  // Only animate while the hero is actually on screen.
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting && !running){
+        running = true; t0 = performance.now(); raf = requestAnimationFrame(frame);
+      }
+      else if(!e.isIntersecting && running){ running = false; cancelAnimationFrame(raf); }
+    });
+  }, {threshold:0.01});
+  io.observe(cv);
+  raf = requestAnimationFrame(frame);
+  addEventListener('resize', size, {passive:true});
+})();
+
+/* ====================================== pipeline flow (2D, documented) ====
+   A diagram of the workflow recorded in the repository, animated so the
+   ORDER of the stages reads at a glance. It is a visualisation of a
+   documented sequence, NOT a live process monitor: nothing here polls,
+   measures or reports a running job.                                       */
+(function(){
+  var cv = document.getElementById('pipe');
+  if(!cv || RM.matches){ if(cv) cv.remove(); return; }
+  var ctx = cv.getContext('2d');
+  if(!ctx){ cv.remove(); return; }
+  var stages = (D && D.pipeline) || [];
+  if(!stages.length){ cv.remove(); return; }
+  var dots = [], running = true, raf = 0;
+  for(var i=0;i<26;i++) dots.push({t: i/26, v: 0.00042 + Math.random()*0.00022});
+
+  function draw(){
+    if(!running) return;
+    var dpr = Math.min(devicePixelRatio || 1, 2);
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if(cv.width !== (w*dpr|0)){ cv.width = w*dpr|0; cv.height = h*dpr|0; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+    var n = stages.length, pad = 18, y = h*0.52;
+    var step = (w - pad*2) / Math.max(n-1,1);
+    var cs = getComputedStyle(document.documentElement);
+    var line = cs.getPropertyValue('--line-2').trim() || '#2A3742';
+    var ink  = cs.getPropertyValue('--ink-3').trim() || '#6C7E8E';
+    var acc  = cs.getPropertyValue('--accent').trim() || '#F0A93C';
+    var stop = cs.getPropertyValue('--bl').trim() || '#F0887C';
+
+    ctx.strokeStyle = line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w-pad, y); ctx.stroke();
+
+    for(var i=0;i<n;i++){
+      var x = pad + step*i, s = stages[i];
+      ctx.beginPath(); ctx.arc(x, y, s.stop ? 6 : 4, 0, Math.PI*2);
+      ctx.fillStyle = s.stop ? stop : (s.done ? acc : line);
+      ctx.fill();
+      ctx.fillStyle = s.stop ? stop : ink;
+      ctx.font = '500 9.5px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.save(); ctx.translate(x, y + 20); ctx.rotate(-Math.PI/9);
+      ctx.fillText(s.label, 0, 0); ctx.restore();
+    }
+    // Packets travel only as far as the stop stage — the animation obeys the
+    // same boundary the statistics do.
+    var stopAt = 1;
+    for(var k=0;k<n;k++) if(stages[k].stop){ stopAt = k/Math.max(n-1,1); break; }
+    dots.forEach(function(d){
+      d.t += d.v * 16;
+      if(d.t > stopAt) d.t = 0;
+      var x = pad + (w - pad*2) * d.t;
+      var a = Math.min(1, Math.sin(d.t/stopAt * Math.PI) * 1.6);
+      ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI*2);
+      ctx.fillStyle = acc; ctx.globalAlpha = a * 0.75; ctx.fill(); ctx.globalAlpha = 1;
+    });
+    raf = requestAnimationFrame(draw);
+  }
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting && !running){ running = true; raf = requestAnimationFrame(draw); }
+      else if(!e.isIntersecting && running){ running = false; cancelAnimationFrame(raf); }
+    });
+  }, {threshold:0.05});
+  io.observe(cv);
+  raf = requestAnimationFrame(draw);
+})();
+})();
+</script>
