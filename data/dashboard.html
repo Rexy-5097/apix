@@ -14,7 +14,10 @@ because the frozen methodology requires evidence that does not exist yet.">
   --surface:#0E141B; --surface-2:#141C25; --sunk:#0A1016;
   --line:#1B242E; --line-2:#2A3742; --line-3:#3D4C5A;
 
-  --ink:#EEF3F8; --ink-2:#A8B8C6; --ink-3:#6C7E8E; --ink-4:#47576544;
+  /* ink-3 sits on --surface more often than on --bg, and carries 11-12.5px
+     metadata. #6C7E8E measured 4.42:1 there; this clears AA on all three
+     grounds (surface 4.85, bg 5.23, sunk 5.01). */
+  --ink:#EEF3F8; --ink-2:#A8B8C6; --ink-3:#728595; --ink-4:#47576544;
 
   /* APIx signature. One accent, used sparingly enough that it still means
      something when it appears. */
@@ -47,7 +50,7 @@ because the frozen methodology requires evidence that does not exist yet.">
   --t-xl:clamp(20px,2.2vw,26px);
   --t-2xl:clamp(28px,3.4vw,42px);
   --t-3xl:clamp(38px,6vw,78px);
-  --t-4xl:clamp(48px,9vw,124px);
+  --t-4xl:clamp(44px,6.6vw,96px);
 
   /* Space scale, 4px base. */
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
@@ -94,7 +97,7 @@ body{
 }
 h1,h2,h3,h4{font-family:var(--disp); margin:0; text-wrap:balance; letter-spacing:-.022em}
 h1{font-size:var(--t-4xl); font-weight:680; line-height:.94; letter-spacing:-.04em;
-   max-width:13ch; text-wrap:balance}
+   max-width:15ch; text-wrap:balance}
 h2{font-size:var(--t-2xl); font-weight:640; line-height:1.06}
 h3{font-size:var(--t-xl);  font-weight:620; line-height:1.15}
 p{margin:0}
@@ -152,8 +155,16 @@ svg{display:block}
 
 /* ============================================================= HERO ===== */
 .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
-      justify-content:center;padding:96px 0 var(--s7);overflow:hidden}
-#field{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.9}
+      justify-content:center;padding:84px 0 var(--s6);overflow:hidden}
+#field{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.62;
+       -webkit-mask-image:radial-gradient(115% 90% at 78% 52%,#000 42%,transparent 78%);
+       mask-image:radial-gradient(115% 90% at 78% 52%,#000 42%,transparent 78%)}
+@media (min-width:1000px){
+  /* Right half only: the headline gets clean ground, the lattice gets room. */
+  #field{left:38%;width:62%;opacity:.85;
+         -webkit-mask-image:linear-gradient(90deg,transparent,#000 26%,#000 88%,transparent);
+         mask-image:linear-gradient(90deg,transparent,#000 26%,#000 88%,transparent)}
+}
 .hero>.wrap{position:relative;z-index:1}
 .hero .eyebrow{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.22em;
                text-transform:uppercase;color:var(--accent);margin-bottom:var(--s4)}
@@ -179,7 +190,7 @@ svg{display:block}
 /* ============================================================ METRICS === */
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
          gap:1px;background:var(--line);border:1px solid var(--line);
-         margin-top:var(--s7)}
+         margin-top:var(--s6)}
 .metric{background:var(--surface);padding:var(--s4) var(--s4) var(--s5);
         display:flex;flex-direction:column;gap:5px;position:relative;
         transition:background var(--base) var(--ease)}
@@ -204,10 +215,17 @@ section+section{border-top:1px solid var(--line)}
 .sub{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.14em;
      text-transform:uppercase;color:var(--ink-3);margin-bottom:var(--s3)}
 
-/* Reveal-on-scroll. Opt-in per element, disabled under reduced motion. */
-.rv{opacity:0;transform:translateY(14px);
-    transition:opacity var(--slow) var(--ease), transform var(--slow) var(--ease)}
-.rv.in{opacity:1;transform:none}
+/* Reveal-on-scroll, as progressive enhancement.
+   Content is visible by DEFAULT. The hidden initial state applies only under
+   `html.js`, a class a tiny inline script sets during head parse. If script is
+   disabled, blocked by a Content-Security-Policy, or throws before that line,
+   the class never lands and every figure renders.
+   `<noscript>` alone does NOT cover this: it applies when scripting is
+   disabled, not when a script is present but prevented from running. */
+.rv{opacity:1;transform:none}
+.js .rv{opacity:0;transform:translateY(14px);
+        transition:opacity var(--slow) var(--ease), transform var(--slow) var(--ease)}
+.js .rv.in{opacity:1;transform:none}
 .rv[data-d="1"]{transition-delay:70ms} .rv[data-d="2"]{transition-delay:140ms}
 .rv[data-d="3"]{transition-delay:210ms} .rv[data-d="4"]{transition-delay:280ms}
 
@@ -231,7 +249,7 @@ section+section{border-top:1px solid var(--line)}
 /* ============================================================== CARD ==== */
 .grid{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
 .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.g3{grid-template-columns:repeat(auto-fit,minmax(228px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(196px,1fr))}
 .card{background:var(--surface);padding:var(--s5);display:flex;flex-direction:column;
       gap:var(--s2)}
 .card h3{font-size:var(--t-lg);font-weight:640}
@@ -398,6 +416,10 @@ footer .row{display:flex;flex-wrap:wrap;gap:var(--s5);justify-content:space-betw
 footer b{color:var(--ink-2);font-weight:600}
 
 /* ========================================================= RESPONSIVE === */
+@media (max-width:1000px){
+  /* 3+1 leaves an empty cell that reads as a broken card; 2x2 never does. */
+  .metrics{grid-template-columns:1fr 1fr}
+}
 @media (max-width:900px){
   :root{--s9:72px;--s8:56px}
   .nav{gap:var(--s3)}
@@ -407,7 +429,10 @@ footer b{color:var(--ink-2);font-weight:600}
   .bd{padding-left:calc(var(--s5) + 20px + var(--s2))}
   .hero .lede{max-width:100%}
 }
-@media (max-height:820px),(max-width:620px){
+/* The metrics row now sits near the bottom of the hero by design, so the
+   absolutely-positioned cue collides with it on any normal laptop. It is
+   decoration; it yields to the evidence. */
+@media (max-height:1040px),(max-width:620px){
   .scroll-cue{display:none}
 }
 @media (max-width:620px){
@@ -424,7 +449,7 @@ footer b{color:var(--ink-2);font-weight:600}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
                        transition-duration:.001ms!important;scroll-behavior:auto!important}
-  .rv{opacity:1;transform:none}
+  .js .rv{opacity:1;transform:none}
   .scroll-cue span{animation:none}
   #field,#pipe{display:none}
 }
@@ -438,10 +463,9 @@ footer b{color:var(--ink-2);font-weight:600}
 }
 </style>
 
+<script>document.documentElement.className += " js";</script>
 <noscript><style>
-/* Reveal-on-scroll is applied by script. Without script the page must still
-   show every figure, so the animated initial state is cancelled outright. */
-.rv{opacity:1!important;transform:none!important}
+/* The canvases are decoration and need script to draw anything at all. */
 #field,#pipe,.scroll-cue{display:none}
 </style></noscript>
 
@@ -597,7 +621,7 @@ footer b{color:var(--ink-2);font-weight:600}
   <figure class="chart rv" style="margin-top:var(--s5)">
     <figcaption><h3>Exclusion audit — 122 screenshots</h3>
       <span class="meta">every excluded screenshot carries a reason and an id</span></figcaption>
-    <div class="cwrap"><svg viewBox="0 0 940 132" role="img" aria-label="Composition of the 122 excluded screenshots by recorded reason, and the subset the engine independently re-adjudicated"><rect x="0.0" y="0" width="515.2" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="NOT_EARLIEST_IN_BAND: 67 screenshots, not replayed"/><text class="tick" x="258.1" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">67</text><rect x="516.2" y="0" width="183.9" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="APW_MATCHES_NO_BUCKET: 24 screenshots, mechanically decidable and replayed"/><text class="tick" x="608.7" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">24</text><rect x="701.1" y="0" width="122.3" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="OUTSIDE_CONTRACTED_BANDS: 16 screenshots, mechanically decidable and replayed"/><text class="tick" x="762.8" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">16</text><rect x="824.4" y="0" width="60.6" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="DEP_TIME_NOT_READABLE: 8 screenshots, not replayed"/><text class="tick" x="855.2" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">8</text><rect x="886.1" y="0" width="45.2" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="OUTSIDE_CONTRACTED_BANDS: 6 screenshots, mechanically decidable and replayed"/><text class="tick" x="909.2" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">6</text><rect x="932.3" y="0" width="6.7" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="INSUFFICIENT_EVIDENCE: 1 screenshots, not replayed"/><line x1="354.4" y1="0" x2="354.4" y2="70" stroke="var(--accent)" stroke-width="2"/><text class="tick" x="362.4" y="64" fill="var(--accent)">46 mechanically decidable · 45 reproduce the recorded verdict</text><text class="tick" x="0" y="92" fill="var(--ink-3)">76 are collection-contract selection or unreadable-field records — the engine has no verdict on them</text><text class="tick" x="0" y="112" fill="var(--ink-3)">blue = re-adjudicated through the frozen §A.3 / §B.2 code · grey = not replayed</text></svg></div>
+    <div class="cwrap"><svg viewBox="0 0 940 132" role="img" aria-label="Composition of the 122 excluded screenshots by recorded reason, and the subset the engine independently re-adjudicated"><rect x="0.0" y="0" width="183.9" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="APW_MATCHES_NO_BUCKET: 24 screenshots, mechanically decidable and replayed"/><text class="tick" x="92.5" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">24</text><rect x="184.9" y="0" width="122.3" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="OUTSIDE_CONTRACTED_BANDS: 16 screenshots, mechanically decidable and replayed"/><text class="tick" x="246.6" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">16</text><rect x="308.2" y="0" width="45.2" height="46" fill="var(--ex)" tabindex="0" role="img" aria-label="OUTSIDE_CONTRACTED_BANDS: 6 screenshots, mechanically decidable and replayed"/><text class="tick" x="331.3" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">6</text><rect x="354.4" y="0" width="515.2" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="NOT_EARLIEST_IN_BAND: 67 screenshots, not replayed"/><text class="tick" x="612.5" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">67</text><rect x="870.7" y="0" width="60.6" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="DEP_TIME_NOT_READABLE: 8 screenshots, not replayed"/><text class="tick" x="901.5" y="28" text-anchor="middle" fill="var(--bg)" font-weight="700">8</text><rect x="932.3" y="0" width="6.7" height="46" fill="var(--line-2)" tabindex="0" role="img" aria-label="INSUFFICIENT_EVIDENCE: 1 screenshots, not replayed"/><line x1="354.4" y1="0" x2="354.4" y2="70" stroke="var(--accent)" stroke-width="2"/><text class="tick" x="362.4" y="64" fill="var(--accent)">46 mechanically decidable · 45 reproduce the recorded verdict</text><text class="tick" x="0" y="92" fill="var(--ink-3)">76 are collection-contract selection or unreadable-field records — the engine has no verdict on them</text><text class="tick" x="0" y="112" fill="var(--ink-3)">blue = re-adjudicated through the frozen §A.3 / §B.2 code · grey = not replayed</text></svg></div>
     <p class="src">Source: <span class="mono">data/panel.json → exclusions, replay</span>.
     Nothing was deleted. 45/46 mechanically decidable exclusions reproduce the recorded §A.3/§B.2 verdict with zero disagreements; 1 record is not mechanically testable because the required departure-time field is unavailable. All 35 accepted observations pass the corresponding checks with zero false rejections.</p>
   </figure>
@@ -857,7 +881,10 @@ function rows(pairs){
   }
   return s + '</dl>';
 }
-function inr(v){ return '₹' + Number(v).toLocaleString('en-IN'); }
+// Whole rupees, matching the axis labels and the observation table. The
+// contract keeps full precision; only the display rounds, and it rounds in
+// exactly one place so two surfaces cannot disagree.
+function inr(v){ return '₹' + Math.round(Number(v)).toLocaleString('en-IN'); }
 
 /* ------------------------------------------------------- reveal on scroll */
 var rv = document.querySelectorAll('.rv');
@@ -1035,23 +1062,38 @@ if(D && D.bands){
     P.push(x, y, z);
     var c = (o.ev === 'PRIMARY_HASHED') ? PRIM : SEC;
     C.push(c[0], c[1], c[2]);
-    S.push(o.ev === 'PRIMARY_HASHED' ? 13.0 : 17.0);
+    S.push(o.ev === 'PRIMARY_HASHED' ? 19.0 : 25.0);
   });
-  // Faint lattice joining each bucket's five band observations: the grid is
-  // the collection plan, so the shape is evidence of the plan being filled.
+  // The lattice IS the collection plan: 7 advance-purchase buckets x 5
+  // departure bands, every cell filled. Joining along BOTH axes is what makes
+  // it read as a grid rather than as scattered points — across bands within a
+  // bucket, and across buckets within a band. A gap in this mesh would be a
+  // slot the collector did not fill, so the shape carries the same information
+  // as the 35/35 figure beside it.
   var LP = [], LC = [];
-  apws.forEach(function(a){
+  function at(o){
+    var xi = apws.indexOf(o.apw);
+    return [(xi / Math.max(apws.length - 1, 1) - 0.5) * 3.4,
+            ((o.total - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.5,
+            ((o.band - 2) / 4 - 0.5) * 2.2];
+  }
+  function edge(a, b){
+    var p = at(a), q = at(b);
+    LP.push(p[0], p[1], p[2], q[0], q[1], q[2]);
+    LC.push(0.16, 0.24, 0.34, 0.16, 0.24, 0.34);
+  }
+  var bandsSeen = [];
+  obs.forEach(function(o){ if(bandsSeen.indexOf(o.band) < 0) bandsSeen.push(o.band); });
+  bandsSeen.sort(function(m,n){ return m - n; });
+  apws.forEach(function(a){                       // rungs: bands within a bucket
     var g = obs.filter(function(o){ return o.apw === a; })
                .sort(function(m,n){ return m.band - n.band; });
-    for(var i=0;i<g.length-1;i++){
-      [g[i], g[i+1]].forEach(function(o){
-        var xi = apws.indexOf(o.apw);
-        LP.push((xi / Math.max(apws.length-1,1) - 0.5) * 3.4,
-                ((o.total - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.5,
-                ((o.band - 2) / 4 - 0.5) * 2.2);
-        LC.push(0.30, 0.42, 0.54);
-      });
-    }
+    for(var i=0;i<g.length-1;i++) edge(g[i], g[i+1]);
+  });
+  bandsSeen.forEach(function(b){                  // rails: buckets within a band
+    var g = obs.filter(function(o){ return o.band === b; })
+               .sort(function(m,n){ return apws.indexOf(m.apw) - apws.indexOf(n.apw); });
+    for(var i=0;i<g.length-1;i++) edge(g[i], g[i+1]);
   });
 
   function buf(data){
@@ -1113,7 +1155,7 @@ if(D && D.bands){
     pointer += (target - pointer) * 0.045;
     var ang = (now - t0) * 0.000085 + pointer;
     var mvp = mul(persp(1.02, cv.width / Math.max(cv.height,1), 0.1, 60),
-                  view(ang, 5.0, 1.15));
+                  view(ang, 4.1, 0.95));
     gl.clearColor(0,0,0,0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.BLEND);

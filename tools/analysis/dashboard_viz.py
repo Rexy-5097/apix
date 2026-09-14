@@ -245,6 +245,15 @@ def exclusion_chart(exclusions: list[dict], replayed: int, decidable: int) -> st
     ]
     x = 0.0
     mech = {"APW_MATCHES_NO_BUCKET", "OUTSIDE_CONTRACTED_BANDS"}
+
+    # Replayed groups first, so the marker at `decidable` falls exactly on the
+    # boundary between them and the rest. Ordered by size the blue segments
+    # scatter and the marker then implies a split the bar does not contain --
+    # a graphic that contradicts itself is worse than no graphic at all.
+    exclusions = sorted(
+        exclusions,
+        key=lambda e: (not any(e["reason"].startswith(m) for m in mech), -e["count"]),
+    )
     for e in exclusions:
         w = iw * e["count"] / total
         is_mech = any(e["reason"].startswith(m) for m in mech)
@@ -336,7 +345,10 @@ function rows(pairs){
   }
   return s + '</dl>';
 }
-function inr(v){ return '₹' + Number(v).toLocaleString('en-IN'); }
+// Whole rupees, matching the axis labels and the observation table. The
+// contract keeps full precision; only the display rounds, and it rounds in
+// exactly one place so two surfaces cannot disagree.
+function inr(v){ return '₹' + Math.round(Number(v)).toLocaleString('en-IN'); }
 
 /* ------------------------------------------------------- reveal on scroll */
 var rv = document.querySelectorAll('.rv');
@@ -514,23 +526,38 @@ if(D && D.bands){
     P.push(x, y, z);
     var c = (o.ev === 'PRIMARY_HASHED') ? PRIM : SEC;
     C.push(c[0], c[1], c[2]);
-    S.push(o.ev === 'PRIMARY_HASHED' ? 13.0 : 17.0);
+    S.push(o.ev === 'PRIMARY_HASHED' ? 19.0 : 25.0);
   });
-  // Faint lattice joining each bucket's five band observations: the grid is
-  // the collection plan, so the shape is evidence of the plan being filled.
+  // The lattice IS the collection plan: 7 advance-purchase buckets x 5
+  // departure bands, every cell filled. Joining along BOTH axes is what makes
+  // it read as a grid rather than as scattered points — across bands within a
+  // bucket, and across buckets within a band. A gap in this mesh would be a
+  // slot the collector did not fill, so the shape carries the same information
+  // as the 35/35 figure beside it.
   var LP = [], LC = [];
-  apws.forEach(function(a){
+  function at(o){
+    var xi = apws.indexOf(o.apw);
+    return [(xi / Math.max(apws.length - 1, 1) - 0.5) * 3.4,
+            ((o.total - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.5,
+            ((o.band - 2) / 4 - 0.5) * 2.2];
+  }
+  function edge(a, b){
+    var p = at(a), q = at(b);
+    LP.push(p[0], p[1], p[2], q[0], q[1], q[2]);
+    LC.push(0.16, 0.24, 0.34, 0.16, 0.24, 0.34);
+  }
+  var bandsSeen = [];
+  obs.forEach(function(o){ if(bandsSeen.indexOf(o.band) < 0) bandsSeen.push(o.band); });
+  bandsSeen.sort(function(m,n){ return m - n; });
+  apws.forEach(function(a){                       // rungs: bands within a bucket
     var g = obs.filter(function(o){ return o.apw === a; })
                .sort(function(m,n){ return m.band - n.band; });
-    for(var i=0;i<g.length-1;i++){
-      [g[i], g[i+1]].forEach(function(o){
-        var xi = apws.indexOf(o.apw);
-        LP.push((xi / Math.max(apws.length-1,1) - 0.5) * 3.4,
-                ((o.total - flo) / Math.max(fhi - flo, 1) - 0.5) * 1.5,
-                ((o.band - 2) / 4 - 0.5) * 2.2);
-        LC.push(0.30, 0.42, 0.54);
-      });
-    }
+    for(var i=0;i<g.length-1;i++) edge(g[i], g[i+1]);
+  });
+  bandsSeen.forEach(function(b){                  // rails: buckets within a band
+    var g = obs.filter(function(o){ return o.band === b; })
+               .sort(function(m,n){ return apws.indexOf(m.apw) - apws.indexOf(n.apw); });
+    for(var i=0;i<g.length-1;i++) edge(g[i], g[i+1]);
   });
 
   function buf(data){
@@ -592,7 +619,7 @@ if(D && D.bands){
     pointer += (target - pointer) * 0.045;
     var ang = (now - t0) * 0.000085 + pointer;
     var mvp = mul(persp(1.02, cv.width / Math.max(cv.height,1), 0.1, 60),
-                  view(ang, 5.0, 1.15));
+                  view(ang, 4.1, 0.95));
     gl.clearColor(0,0,0,0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.BLEND);
