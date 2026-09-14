@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470"
+     role="img" aria-labelledby="t d">
+  <title id="t">APIx system architecture</title>
+  <desc id="d">Collection feeds evidence, which becomes canonical observations, which pass
+  validation into the statistical layer, which reaches a publication guard. The guard is
+  the last stage and it currently refuses to publish.</desc>
+  <style>
+    .bg{fill:#F6F4F0}
+    .box{fill:#FFFFFF;stroke:#DFDAD2;stroke-width:1.5;rx:10}
+    .nm{font:600 17px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#16181C}
+    .sub{font:400 12.5px 'IBM Plex Mono',ui-monospace,monospace;fill:#5E646B}
+    .cap{font:500 11px 'IBM Plex Mono',ui-monospace,monospace;fill:#5E646B;
+         letter-spacing:.12em;text-transform:uppercase}
+    .arrow{stroke:#CAC4BA;stroke-width:1.5;fill:none;marker-end:url(#a)}
+    .guard{fill:#F6E4E1;stroke:#A63A2C;stroke-width:1.5;rx:10}
+    .guardnm{font:600 17px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#A63A2C}
+    .guardsub{font:400 12.5px 'IBM Plex Mono',ui-monospace,monospace;fill:#A63A2C}
+    .note{font:400 12.5px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#5E646B}
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9" fill="none" stroke="#CAC4BA" stroke-width="1.6"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1000" height="470"/>
+  <text class="cap" x="48" y="44">APIx · system architecture</text>
+
+  <g transform="translate(48,70)">
+    <rect class="box" width="240" height="76"/>
+    <text class="nm" x="22" y="33">Collection</text>
+    <text class="sub" x="22" y="56">compliance gate · attempts</text>
+  </g>
+  <path class="arrow" d="M288,108 L352,108"/>
+
+  <g transform="translate(352,70)">
+    <rect class="box" width="240" height="76"/>
+    <text class="nm" x="22" y="33">Evidence</text>
+    <text class="sub" x="22" y="56">screenshots · hashes</text>
+  </g>
+  <path class="arrow" d="M592,108 L656,108"/>
+
+  <g transform="translate(656,70)">
+    <rect class="box" width="296" height="76"/>
+    <text class="nm" x="22" y="33">Canonical observations</text>
+    <text class="sub" x="22" y="56">spec A.2, B.4 · 35 real rows</text>
+  </g>
+  <path class="arrow" d="M804,146 L804,190"/>
+
+  <g transform="translate(656,190)">
+    <rect class="box" width="296" height="76"/>
+    <text class="nm" x="22" y="33">Validation</text>
+    <text class="sub" x="22" y="56">admissibility · dedup · source</text>
+  </g>
+  <path class="arrow" d="M656,228 L596,228"/>
+
+  <g transform="translate(300,190)">
+    <rect class="box" width="296" height="76"/>
+    <text class="nm" x="22" y="33">Statistical layer</text>
+    <text class="sub" x="22" y="56">deterministic · no ML in path</text>
+  </g>
+  <path class="arrow" d="M448,266 L448,312"/>
+
+  <g transform="translate(300,312)">
+    <rect class="guard" width="296" height="82"/>
+    <text class="guardnm" x="22" y="34">Publication guard</text>
+    <text class="guardsub" x="22" y="57">spec H, R.3 — refusing</text>
+  </g>
+
+  <text class="note" x="48" y="352">The guard is a stage, not a</text>
+  <text class="note" x="48" y="371">postscript. It is the reason</text>
+  <text class="note" x="48" y="390">no index value exists yet.</text>
+
+  <text class="cap" x="640" y="352">Statistics calculates.</text>
+  <text class="cap" x="640" y="372">ML explains.</text>
+  <text class="note" x="640" y="396">Enforced by tests/test_architecture.py</text>
+</svg>

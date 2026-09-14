@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900"
+     role="img" aria-labelledby="t d">
+  <title id="t">APIx — Airfare Price Index Engine for India</title>
+  <desc id="d">Repository and social preview card. MoSPI problem statement 26056. Auditable
+  evidence pipeline. Statistical integrity by design. Current state: 35 real observations,
+  seven of seven advance-purchase buckets, index pending.</desc>
+  <style>
+    .wordmark{font:800 196px 'Plus Jakarta Sans',ui-sans-serif,'Segoe UI',system-ui,sans-serif;
+              fill:#16181C;letter-spacing:-0.055em}
+    .lede{font:500 54px 'Plus Jakarta Sans',ui-sans-serif,'Segoe UI',system-ui,sans-serif;
+          fill:#16181C;letter-spacing:-0.025em}
+    .sub{font:400 27px 'IBM Plex Mono',ui-monospace,Consolas,monospace;fill:#5E646B;
+         letter-spacing:0.045em}
+    .stat{font:500 25px 'IBM Plex Mono',ui-monospace,Consolas,monospace;fill:#16181C;
+          letter-spacing:0.04em}
+    .statlab{font:400 19px 'IBM Plex Mono',ui-monospace,Consolas,monospace;fill:#5E646B;
+             letter-spacing:0.14em}
+    .chip{font:500 23px 'IBM Plex Mono',ui-monospace,Consolas,monospace;fill:#A63A2C;
+          letter-spacing:0.14em}
+  </style>
+
+  <rect width="1600" height="900" fill="#F6F4F0"/>
+  <rect x="0" y="0" width="1600" height="10" fill="#B87413"/>
+
+  <!-- wordmark -->
+  <rect x="120" y="196" width="34" height="34" rx="9" fill="#B87413"/>
+  <text class="wordmark" x="176" y="252">APIx</text>
+
+  <text class="lede" x="122" y="360">Airfare Price Index Engine for India</text>
+
+  <text class="sub" x="122" y="424">MoSPI PS 26056 &#183; Auditable evidence pipeline &#183;
+    Statistical integrity by design</text>
+
+  <line x1="122" y1="520" x2="1478" y2="520" stroke="#DFDAD2" stroke-width="1.5"/>
+
+  <!-- true current state, nothing more -->
+  <g transform="translate(122,576)">
+    <text class="statlab" x="0" y="0">REAL OBSERVATIONS</text>
+    <text class="stat" x="0" y="44">35 &#183; DEL&#8211;BOM</text>
+  </g>
+  <g transform="translate(470,576)">
+    <text class="statlab" x="0" y="0">APW BUCKETS</text>
+    <text class="stat" x="0" y="44">7 / 7 frozen</text>
+  </g>
+  <g transform="translate(790,576)">
+    <text class="statlab" x="0" y="0">EXCLUSIONS AUDITED</text>
+    <text class="stat" x="0" y="44">122</text>
+  </g>
+  <g transform="translate(1120,576)">
+    <text class="statlab" x="0" y="0">METHODOLOGY</text>
+    <text class="stat" x="0" y="44">v2.1 frozen</text>
+  </g>
+
+  <rect x="122" y="686" width="292" height="52" rx="26" fill="#F6E4E1"
+        stroke="#A63A2C" stroke-width="1.5"/>
+  <circle cx="152" cy="712" r="7" fill="#A63A2C"/>
+  <text class="chip" x="172" y="720">INDEX PENDING</text>
+
+  <text class="sub" x="440" y="720">No index value is published — the frozen methodology
+    requires matched t&#8722;7 evidence</text>
+
+  <text class="statlab" x="122" y="820">NOT NATIONALLY REPRESENTATIVE &#183; NOT PRODUCTION-READY
+    &#183; 1 ROUTE &#183; 1 CARRIER &#183; 1 COLLECTION WAVE</text>
+</svg>

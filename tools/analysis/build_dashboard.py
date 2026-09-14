@@ -40,10 +40,14 @@ OUT = ROOT / "data" / "dashboard.html"
 
 #: CDN libraries. Every one is feature-detected in the page script; none is
 #: required for the content to render. Pinned so the artifact stays stable.
+#: Vendored beside the artifact, not fetched. A jury laptop on conference wifi
+#: -- or none -- must get the same page as one on a good connection, and a CDN
+#: is a runtime dependency the demo cannot control. Provenance, versions and
+#: licences: data/vendor/README.md.
 LIBS = (
-    "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js",
-    "https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js",
+    "vendor/gsap.min.js",
+    "vendor/ScrollTrigger.min.js",
+    "vendor/lenis.min.js",
 )
 
 #: Chapter id -> label. The dot navigation is generated from this, so a chapter
@@ -362,8 +366,6 @@ methodology requires evidence that does not exist yet.">
      responsive rule below the tablet breakpoint never fires on real hardware. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONT_HREF}">
 <style>{CSS}</style>
 <script>document.documentElement.className += " js";</script>

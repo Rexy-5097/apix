@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" width="1000" height="620"
+     role="img" aria-labelledby="t d">
+  <title id="t">APIx real-data execution boundary</title>
+  <desc id="d">Fourteen pipeline stages. Nine are reached by real market data: six exercised
+  and three degenerate on a single-wave panel. Four are pending because the t minus 7
+  observation does not exist, and publication is blocked.</desc>
+  <style>
+    .bg{fill:#F6F4F0}
+    .row{fill:#FFFFFF;stroke:#DFDAD2;stroke-width:1.4;rx:8}
+    .rowpast{fill:#F2EFEA;stroke:#E3DED6;stroke-width:1.4;rx:8}
+    .nm{font:600 15px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#16181C}
+    .nmpast{font:600 15px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#6F757D}
+    .spec{font:400 11.5px 'IBM Plex Mono',ui-monospace,monospace;fill:#5E646B}
+    .cap{font:500 11px 'IBM Plex Mono',ui-monospace,monospace;fill:#5E646B;letter-spacing:.12em}
+    .pill{rx:100}
+    .pilltx{font:500 10.5px 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.1em}
+    .rule{stroke:#A63A2C;stroke-width:2;stroke-dasharray:7 5}
+    .stop{font:700 13px 'IBM Plex Mono',ui-monospace,monospace;fill:#A63A2C;letter-spacing:.16em}
+    .why{font:400 12.5px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#5E646B}
+  </style>
+  <rect class="bg" width="1000" height="620"/>
+  <text class="cap" x="48" y="40">APIx · REAL-DATA EXECUTION BOUNDARY</text>
+  <text class="why" x="48" y="62">Real market observations enter at the top. The pipeline stops where the evidence stops.</text>
+
+  <!-- reached: 6 exercised, 3 degenerate -->
+  <g transform="translate(48,84)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Canonical observation</text>
+    <text class="spec" x="330" y="22">spec A.2, B.4</text>
+    <rect class="pill" x="772" y="8" width="118" height="19" fill="#E2EAF3"/>
+    <text class="pilltx" x="788" y="21.5" fill="#2E5C8A">EXERCISED</text>
+  </g>
+  <g transform="translate(48,126)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Admissibility</text>
+    <text class="spec" x="330" y="22">spec A.3, A.6</text>
+    <rect class="pill" x="772" y="8" width="118" height="19" fill="#E2EAF3"/>
+    <text class="pilltx" x="788" y="21.5" fill="#2E5C8A">EXERCISED</text>
+  </g>
+  <g transform="translate(48,168)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Hour / band derivation</text>
+    <text class="spec" x="330" y="22">spec B.2.2</text>
+    <rect class="pill" x="772" y="8" width="118" height="19" fill="#E2EAF3"/>
+    <text class="pilltx" x="788" y="21.5" fill="#2E5C8A">EXERCISED</text>
+  </g>
+  <g transform="translate(48,210)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Cell / parent / item keys</text>
+    <text class="spec" x="330" y="22">spec B.2.1, B.2.2, E.4</text>
+    <rect class="pill" x="772" y="8" width="118" height="19" fill="#E2EAF3"/>
+    <text class="pilltx" x="788" y="21.5" fill="#2E5C8A">EXERCISED</text>
+  </g>
+  <g transform="translate(48,252)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Exclusion replay</text>
+    <text class="spec" x="330" y="22">spec A.3, B.2</text>
+    <rect class="pill" x="772" y="8" width="118" height="19" fill="#E2EAF3"/>
+    <text class="pilltx" x="788" y="21.5" fill="#2E5C8A">EXERCISED</text>
+  </g>
+  <g transform="translate(48,294)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Band price</text>
+    <text class="spec" x="330" y="22">spec B.2.3</text>
+    <rect class="pill" x="766" y="8" width="124" height="19" fill="#F3E7D4"/>
+    <text class="pilltx" x="780" y="21.5" fill="#8A5109">DEGENERATE</text>
+  </g>
+  <g transform="translate(48,336)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Within-band dispersion</text>
+    <text class="spec" x="330" y="22">spec B.2.3</text>
+    <rect class="pill" x="766" y="8" width="124" height="19" fill="#F3E7D4"/>
+    <text class="pilltx" x="780" y="21.5" fill="#8A5109">DEGENERATE</text>
+  </g>
+  <g transform="translate(48,378)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Source precedence</text>
+    <text class="spec" x="330" y="22">spec D.8.1</text>
+    <rect class="pill" x="766" y="8" width="124" height="19" fill="#F3E7D4"/>
+    <text class="pilltx" x="780" y="21.5" fill="#8A5109">DEGENERATE</text>
+  </g>
+  <g transform="translate(48,420)">
+    <rect class="row" width="904" height="34"/><text class="nm" x="16" y="23">Deduplication</text>
+    <text class="spec" x="330" y="22">spec D.4</text>
+    <rect class="pill" x="772" y="8" width="118" height="19" fill="#E2EAF3"/>
+    <text class="pilltx" x="788" y="21.5" fill="#2E5C8A">EXERCISED</text>
+  </g>
+
+  <!-- the boundary -->
+  <line class="rule" x1="48" y1="470" x2="952" y2="470"/>
+  <rect x="48" y="458" width="214" height="24" fill="#F6F4F0"/>
+  <text class="stop" x="56" y="475">STOP — NO t−7 YET</text>
+
+  <!-- past the boundary -->
+  <g transform="translate(48,494)">
+    <rect class="rowpast" width="904" height="28"/><text class="nmpast" x="16" y="19">Matched t / t−7</text>
+    <text class="spec" x="330" y="18">spec D.1, D.8</text>
+    <rect class="pill" x="784" y="5" width="106" height="18" fill="#EAE7E1"/>
+    <text class="pilltx" x="802" y="17.5" fill="#5E646B">PENDING</text>
+  </g>
+  <g transform="translate(48,528)">
+    <rect class="rowpast" width="904" height="28"/><text class="nmpast" x="16" y="19">Jevons relative</text>
+    <text class="spec" x="330" y="18">spec D.2</text>
+    <rect class="pill" x="784" y="5" width="106" height="18" fill="#EAE7E1"/>
+    <text class="pilltx" x="802" y="17.5" fill="#5E646B">PENDING</text>
+  </g>
+  <g transform="translate(48,562)">
+    <rect class="rowpast" width="440" height="28"/><text class="nmpast" x="16" y="19">Advance-cell / weekly chain</text>
+    <rect class="pill" x="320" y="5" width="106" height="18" fill="#EAE7E1"/>
+    <text class="pilltx" x="338" y="17.5" fill="#5E646B">PENDING</text>
+  </g>
+  <g transform="translate(512,562)">
+    <rect class="rowpast" width="200" height="28"/><text class="nmpast" x="16" y="19">Higher aggregation</text>
+  </g>
+  <g transform="translate(736,562)">
+    <rect x="0" y="0" width="216" height="28" fill="#F6E4E1" stroke="#A63A2C" stroke-width="1.4" rx="8"/>
+    <text x="16" y="19" font-family="'Plus Jakarta Sans',system-ui,sans-serif" font-size="15"
+          font-weight="600" fill="#A63A2C">Publication</text>
+    <rect class="pill" x="112" y="5" width="94" height="18" fill="#A63A2C"/>
+    <text class="pilltx" x="126" y="17.5" fill="#F6E4E1">BLOCKED</text>
+  </g>
+</svg>

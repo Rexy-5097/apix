@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" width="1000" height="420"
+     role="img" aria-labelledby="t d">
+  <title id="t">APIx current state versus next collection wave</title>
+  <desc id="d">Today one collection wave of 35 observations reaches the execution boundary and
+  stops. A second wave supplies the matched t minus 7 counterpart the frozen methodology
+  requires, which is what makes a first real longitudinal relative possible.</desc>
+  <style>
+    .bg{fill:#F6F4F0}
+    .panel{fill:#FFFFFF;stroke:#DFDAD2;stroke-width:1.5;rx:12}
+    .hd{font:500 11px 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.14em;fill:#5E646B}
+    .step{fill:#F2EFEA;stroke:#E3DED6;stroke-width:1.2;rx:8}
+    .stepnm{font:600 14px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#16181C}
+    .arrow{stroke:#CAC4BA;stroke-width:1.5;fill:none;marker-end:url(#a)}
+    .stop{font:700 12px 'IBM Plex Mono',ui-monospace,monospace;fill:#A63A2C;letter-spacing:.14em}
+    .note{font:400 12.5px 'Plus Jakarta Sans',system-ui,sans-serif;fill:#5E646B}
+    .date{font:600 13px 'IBM Plex Mono',ui-monospace,monospace;fill:#8A5109}
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9" fill="none" stroke="#CAC4BA" stroke-width="1.6"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1000" height="420"/>
+
+  <!-- CURRENT -->
+  <g transform="translate(48,44)">
+    <rect class="panel" width="430" height="330"/>
+    <text class="hd" x="24" y="36">CURRENT — ONE WAVE HELD</text>
+
+    <g transform="translate(24,60)">
+      <rect class="step" width="382" height="42"/>
+      <text class="stepnm" x="16" y="26">35 observations · 7/7 APW buckets</text>
+    </g>
+    <path class="arrow" d="M215,110 L215,132"/>
+    <g transform="translate(24,132)">
+      <rect class="step" width="382" height="42"/>
+      <text class="stepnm" x="16" y="26">Single-wave processing</text>
+    </g>
+    <path class="arrow" d="M215,182 L215,204"/>
+    <g transform="translate(24,204)">
+      <rect x="0" y="0" width="382" height="42" fill="#F6E4E1" stroke="#A63A2C"
+            stroke-width="1.4" rx="8"/>
+      <text class="stop" x="16" y="26">EXECUTION BOUNDARY</text>
+    </g>
+    <text class="note" x="24" y="286">No matched pair exists, so no relative,</text>
+    <text class="note" x="24" y="305">no index, and the guard refuses.</text>
+  </g>
+
+  <!-- NEXT -->
+  <g transform="translate(522,44)">
+    <rect class="panel" width="430" height="330"/>
+    <text class="hd" x="24" y="36">NEXT WAVE — WHAT UNBLOCKS IT</text>
+
+    <g transform="translate(24,60)">
+      <rect class="step" width="382" height="42"/>
+      <text class="stepnm" x="16" y="26">Second collection wave</text>
+      <text class="date" x="300" y="26">2026-09-19</text>
+    </g>
+    <path class="arrow" d="M215,110 L215,132"/>
+    <g transform="translate(24,132)">
+      <rect class="step" width="382" height="42"/>
+      <text class="stepnm" x="16" y="26">Matched t / t−7</text>
+    </g>
+    <path class="arrow" d="M215,182 L215,204"/>
+    <g transform="translate(24,204)">
+      <rect class="step" width="382" height="42"/>
+      <text class="stepnm" x="16" y="26">First real longitudinal relative</text>
+    </g>
+    <text class="note" x="24" y="286">The date is not a forecast — it is the first</text>
+    <text class="note" x="24" y="305">day a t−7 counterpart can exist at all.</text>
+  </g>
+</svg>

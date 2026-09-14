@@ -28,12 +28,9 @@ network costs the page its personality and none of its content.
 
 from __future__ import annotations
 
-#: One display family, one technical family. No third.
-FONT_HREF = (
-    "https://fonts.googleapis.com/css2"
-    "?family=Plus+Jakarta+Sans:wght@400;500;600;700;800"
-    "&family=IBM+Plex+Mono:wght@400;500&display=swap"
-)
+#: One display family, one technical family. No third. Self-hosted: see
+#: data/vendor/README.md for the exact request these faces were cut from.
+FONT_HREF = "vendor/fonts.css"
 
 #: Semantic classes for the four execution-boundary states. EXERCISED is
 #: deliberately not the success colour: "the code ran" is a weaker claim than
