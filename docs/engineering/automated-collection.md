@@ -9,6 +9,7 @@
 > | Automated collection layer (rules, normalisation, store, evidence) | **implemented and tested** |
 > | IndiGo adapter — fixture mode | **works, on SYNTHETIC pages only** |
 > | IndiGo adapter — live mode | **implemented, refused by the compliance gate, has never run** |
+> | IndiGo NDC API — sandbox / fixture | **gate, credentials and index boundary built; request model UNCONFIRMED, no request ever sent** — [indigo-ndc.md](indigo-ndc.md) |
 > | Other airline adapters | not implemented |
 > | OTA adapters | not implemented |
 >
