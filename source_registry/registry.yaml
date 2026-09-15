@@ -850,3 +850,82 @@ reference_sources:
       found in this audit. OQ-7 remains open and spec G.4's equal weights stand
       as the declared v1 choice with a sensitivity band. Nothing here changes
       that, and no curve may be invented.
+
+  # ── Added 2026-09-15. The first reference source APIx acquires automatically ──
+  - reference_id: alliance_air_domestic_tariff
+    purpose: >-
+      Published tax/fee/charge structure, and evidence toward AMB-11 (whether
+      user_development_fee takes departure UDF only, or departure + arrival).
+      Secondary use: a cross-check on the base/tax decomposition of manually
+      collected fares.
+    publisher: "Alliance Air Aviation Limited (wholly government-owned)"
+    availability: PUBLISHED
+    acquisition: AUTOMATED_IMPLEMENTED
+    acquisition_tool: "tools/analysis/pull_alliance_tariff.py"
+    output: "data/reference/alliance_air_tariff.json"
+    canonical_url: "https://www.allianceair.in/tariffsheet"
+    granularity: >-
+      Sector x 18 declared basic-fare levels, one-way, economy. NO flight, NO
+      departure time, NO travel date, NO advance-purchase window.
+    frequency: "Re-issued with an effective date; 01SEP26 at the time of writing"
+    machine_readability: "PDF; 92 of 92 sector rows parse, 2 flagged suspect"
+    robots_status: NO_ROBOTS_FILE
+    robots_note: >-
+      allianceair.in serves its SPA for any path and plone.allianceair.in returns
+      HTTP 404 for /robots.txt, so no directive exists either way [DIRECT
+      2026-09-15]. Per this register's rule of construction that grants nothing.
+    tos_status: UNCLEAR
+    tos_evidence: >-
+      Both published Terms and Conditions PDFs read in full 2026-09-15 [DIRECT],
+      25 pages and ~54,000 characters each. They are CONDITIONS OF CARRIAGE and
+      contain no website-use or automated-access provision of any kind: zero
+      occurrences of robot, spider, scrape, crawl, data mining or harvest, and
+      the single "mechanical" hit concerns aircraft failures. Silence, not
+      permission.
+    evidence_date: "2026-09-15"
+    gating_note: >-
+      Deliberately a reference_source, NOT an entry under `sources`. The
+      automation_gate governs collection of OBSERVATIONS from a source's fare
+      search. This is retrieval of a PUBLISHED DOCUMENT at a fixed URL, the same
+      activity as the DGCA and eSankhyiki reference fetches above. It is not,
+      and must never be described as, automated airfare acquisition.
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      A declared tariff structure is not a spec A.1 displayed, transactable
+      offer, and this register's own INADMISSIBLE definition names "declared
+      tariff categories" explicitly. With no flight, departure time, travel date
+      or lead time it cannot be assigned an APW bucket (A.3), banded (B.2.2) or
+      keyed to a cell. It can NEVER become an Observation.
+    data_rights: RETENTION_UNKNOWN
+    data_rights_basis: >-
+      No reuse grant and no prohibition; the conditions of carriage do not
+      address retention or republication. The adapter stores retrieval metadata,
+      a SHA-256 and the parsed structure, and does not redistribute the document.
+    enforcement: >-
+      tests/test_reference_tariff.py asserts the boundary structurally: the
+      adapter lives OUTSIDE src/apix/ so the statistics layer cannot import it,
+      no module under src/apix/ imports it, the record declares is_apix_input
+      false, and no observation-shaped key appears at any nesting depth.
+    amb11_evidence: >-
+      Quoted verbatim from the 01SEP26 sheet [DIRECT]: "** Arrival UDF will be
+      charged from all stations to Delhi (DEL), Mumbai (BOM), Jaipur (JAI) and
+      Guwahati (GAU)". Positive evidence that UDF is NOT departure-only at those
+      airports. DEL and BOM are both endpoints of the APIx pilot route.
+    does_not_resolve: >-
+      AMB-11. One carrier's tariff sheet is evidence about that carrier, and the
+      ruling is a methodology decision owned by @Rexy-5097. It says nothing
+      about how any other carrier renders the fee, nor about what a results page
+      DISPLAYS, which is what spec A.4 governs.
+    known_extraction_gap: >-
+      Table 2, the station-level fee grid (Development Fee, CUTE Fee, User
+      Development Fee, PSF, Aviation Security Fee), is NOT machine-extractable
+      from this document: its text layer interleaves adjacent rows at character
+      level. Three strategies were tried and are recorded in the output. NO
+      station-level fee figure is published, because emitting one would mean
+      guessing which column a number belongs to. To close it, read the values by
+      eye and record them as a hand-verified table with its own provenance.
+    verification_still_required: >-
+      Alliance Air does not serve DEL-BOM, so these sectors do not overlap the
+      pilot route. Before the fee structure is used to validate any collected
+      fare, confirm Alliance Air's published charges are representative of the
+      carriers APIx actually measures — they are a different carrier class.
