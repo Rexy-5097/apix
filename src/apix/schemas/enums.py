@@ -202,6 +202,19 @@ class CollectionOutcome(Enum):
     #: Recorded separately from SOURCE_UNAVAILABLE because it is a *policy*
     #: event with a compliance meaning, not a transient outage.
     CAPTCHA_OR_ANTIBOT_STOP = "CAPTCHA_OR_ANTIBOT_STOP"
+    #: The compliance gate refused the source, so **no request was ever made**.
+    #:
+    #: Distinct from every other member, and the distinction is the point. A
+    #: permission refusal is not a thin market, not an outage and not a parser
+    #: bug: the cell WAS expected and we were simply not authorised to look at
+    #: it. Recording it as ``NO_FLIGHT`` would remove the cell from the spec I
+    #: denominator and make a lack of authorisation look like an absence of
+    #: service -- the exact misreading spec H.1 exists to prevent.
+    #:
+    #: Classified as a collector failure because the absence is **ours**. A
+    #: scheduler run over a register where nothing is cleared therefore reports
+    #: total coverage loss attributed to us, which is the truthful picture.
+    PERMISSION_BLOCKED = "PERMISSION_BLOCKED"
 
     @property
     def excludes_cell_from_expectation(self) -> bool:
@@ -225,6 +238,7 @@ class CollectionOutcome(Enum):
             CollectionOutcome.SOURCE_UNAVAILABLE,
             CollectionOutcome.PARSER_FAILURE,
             CollectionOutcome.CAPTCHA_OR_ANTIBOT_STOP,
+            CollectionOutcome.PERMISSION_BLOCKED,
         )
 
     @property

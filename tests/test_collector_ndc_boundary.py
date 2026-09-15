@@ -347,12 +347,33 @@ def test_cli_ndc_fixture_is_blocked_pending_official_schema(
     assert not (tmp_path / "s").exists()
 
 
-def test_cli_ndc_sandbox_is_refused_while_the_register_lacks_the_channel(
-    cli, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+def test_cli_ndc_sandbox_is_refused_against_the_real_register(
+    cli, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:  # type: ignore[no-untyped-def]
-    code = cli.main([*NDC_ARGS, "--mode", "sandbox", "--store", str(tmp_path / "s")])
-    assert code == 3
-    assert "'indigo_ndc' is not in" in capsys.readouterr().err
+    """Refused against the REAL register, whatever that register currently says.
+
+    This previously asserted the refusal reason was ``'indigo_ndc' is not in the
+    source registry`` -- true only while the channel was absent from the file.
+    The source audit added ``indigo_ndc`` (AUTOMATION_ALLOWED_WITH_PERMISSION),
+    so the gate chain now advances one barrier and refuses on ABSENT CREDENTIALS
+    instead. Both are refusals; pinning the exact reason made this test depend on
+    which pull request had landed.
+
+    What must hold in every register state is the OUTCOME: exit 3, nothing
+    requested, nothing written. Credentials are cleared first so a developer
+    holding real UAT keys gets the same result as CI.
+    """
+    for var in REQUIRED_ENV:
+        monkeypatch.delenv(var, raising=False)
+    store = tmp_path / "s"
+    code = cli.main([*NDC_ARGS, "--mode", "sandbox", "--store", str(store)])
+    err = capsys.readouterr().err
+
+    assert code == 3, "sandbox against the real register must be refused"
+    assert "REFUSED BY THE COMPLIANCE GATE" in err
+    assert not store.exists(), "a refused run must write nothing"
+    # The reason must be one of the two legitimate barriers, never a clearance.
+    assert "credentials=ABSENT" in err or "is not in" in err
 
 
 def test_cli_ndc_sandbox_without_keys_names_the_variables(
