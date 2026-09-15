@@ -13,6 +13,12 @@
     # Refused today -- IndiGo is AUTOMATION_PROHIBITED -- and nothing is requested.
     python tools/collection/collect_auto.py --mode live --apw 7
 
+    # INDIGO NDC (official API). Sandbox needs the register entry indigo_ndc and keys
+    # issued by IndiGo's developer registration, in INDIGO_NDC_* environment variables.
+    # Exits 5 today: the official request model is unconfirmed, so nothing is sent.
+    python tools/collection/collect_auto.py --source indigo-ndc --mode sandbox \\
+        --collection-date 2026-09-15 --travel-date 2026-09-22 --apw 7
+
 The collector writes into its own store (default ``data/collection-automated/``,
 gitignored), never into the manual study's ``data/collection/``, and its runs are
 labelled ``@fixture`` / ``@automated-trial`` so they are never index input.
@@ -23,13 +29,15 @@ does not compute an index.
 
 Exit codes: ``0`` clean -- ``1`` configuration error -- ``2`` integrity problems
 or not loaded -- ``3`` refused by the compliance gate (nothing requested, nothing
-written) -- ``4`` stopped by an access challenge.
+written) -- ``4`` stopped by an access challenge -- ``5`` blocked pending official
+source documentation (nothing requested, nothing written).
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import date, time
@@ -47,8 +55,14 @@ from apix.ingestion.collectors.contract import (
     band_window,
     ist_now,
     parse_apw,
+    validate_travel_date_apw,
 )
-from apix.ingestion.collectors.gate import CollectionMode, evaluate_live_gate, find_source
+from apix.ingestion.collectors.gate import (
+    CollectionMode,
+    evaluate_live_gate,
+    evaluate_sandbox_gate,
+    find_source,
+)
 from apix.ingestion.collectors.indigo.fixture import FixtureError, FixtureIndigoAdapter
 from apix.ingestion.collectors.runner import COLLECTOR_VERSION, RunReport, run_collection
 from apix.ingestion.store import open_store
@@ -58,6 +72,11 @@ REPO = Path(__file__).resolve().parents[2]
 REGISTRY = REPO / "source_registry" / "registry.yaml"
 WINDOWS = REPO / "source_registry" / "collection-windows.yaml"
 DEFAULT_STORE = REPO / "data" / "collection-automated"
+
+#: CLI source name -> source_id in registry.yaml.
+SOURCES = {"indigo": "indigo", "indigo-ndc": "indigo_ndc"}
+
+EXIT_OK, EXIT_CONFIG, EXIT_INTEGRITY, EXIT_GATE, EXIT_STOPPED, EXIT_BLOCKED = 0, 1, 2, 3, 4, 5
 
 
 def git_sha() -> str:
@@ -91,13 +110,19 @@ def build_config(args: argparse.Namespace) -> CollectionConfig:
         "window_end": end,
         "min_interval_seconds": args.min_interval,
     }
-    if args.apw:
-        return CollectionConfig.for_apw(
-            args.source, args.collection_date, parse_apw(args.apw), contract, **common
-        )
-    return CollectionConfig(
-        args.source, args.collection_date, (args.travel_date,), contract, **common
-    )  # type: ignore[arg-type]
+    source = SOURCES[args.source]
+    if args.travel_date and args.apw:
+        buckets = parse_apw(args.apw)
+        if len(buckets) != 1:
+            raise ConfigError("--travel-date takes exactly one --apw value to check it against")
+        validate_travel_date_apw(args.collection_date, args.travel_date, buckets[0])
+    if args.travel_date:
+        return CollectionConfig(
+            source, args.collection_date, (args.travel_date,), contract, **common
+        )  # type: ignore[arg-type]
+    return CollectionConfig.for_apw(
+        source, args.collection_date, parse_apw(args.apw), contract, **common
+    )
 
 
 def validation_summary(report: RunReport, store_root: Path) -> dict[str, object]:
@@ -123,11 +148,11 @@ def validation_summary(report: RunReport, store_root: Path) -> dict[str, object]
 
 
 def render(report: RunReport, validation: dict[str, object] | None) -> str:
-    label = (
-        "FIXTURE -- SYNTHETIC PAGES, NOT MARKET DATA, NO REQUEST MADE"
-        if report.mode is CollectionMode.FIXTURE
-        else "LIVE"
-    )
+    label = {
+        CollectionMode.FIXTURE: "FIXTURE -- SYNTHETIC PAGES, NOT MARKET DATA, NO REQUEST MADE",
+        CollectionMode.SANDBOX: "SANDBOX -- OFFICIAL API TEST ENVIRONMENT, NOT MARKET PRICES",
+        CollectionMode.LIVE: "LIVE",
+    }[report.mode]
     lines = [
         f"RUN      {report.run.run_id}",
         f"MODE     {label}",
@@ -181,24 +206,85 @@ def render(report: RunReport, validation: dict[str, object] | None) -> str:
     return "\n".join(lines)
 
 
+def run_indigo_ndc(args: argparse.Namespace) -> int:
+    """IndiGo NDC: gate and credentials are checked; no request model exists yet."""
+    from apix.ingestion.collectors.indigo.ndc import (
+        NDC_BLOCKER,
+        REQUIRED_ENV,
+        CredentialError,
+        NdcCredentials,
+        credentials_present,
+    )
+
+    print("SOURCE: INDIGO NDC (official API channel, not the goindigo.in website)")
+    print(f"MODE: {args.mode.upper()}")
+    if args.mode == "fixture":
+        print(
+            "BLOCKED: no IndiGo NDC fixture exists. It must be derived from IndiGo's official "
+            f"AirShopping schema or sample responses; {NDC_BLOCKER}.",
+            file=sys.stderr,
+        )
+        return EXIT_BLOCKED
+
+    registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    try:
+        entry = find_source(registry, SOURCES[args.source])
+    except KeyError:
+        print(
+            "REFUSED BY THE COMPLIANCE GATE -- nothing was requested, nothing was written.\n"
+            f"  - {SOURCES[args.source]!r} is not in {REGISTRY.relative_to(REPO)}",
+            file=sys.stderr,
+        )
+        return EXIT_GATE
+    present = credentials_present(os.environ)
+    decision = (
+        evaluate_live_gate(entry)
+        if args.mode == "live"
+        else evaluate_sandbox_gate(entry, credentials_present=present)
+    )
+    if not decision.allowed:
+        print(
+            "REFUSED BY THE COMPLIANCE GATE -- nothing was requested, nothing was written.",
+            file=sys.stderr,
+        )
+        for failure in decision.failures:
+            print(f"  - {failure}", file=sys.stderr)
+        if not present:
+            print(f"  credentials are read only from: {', '.join(REQUIRED_ENV)}", file=sys.stderr)
+        return EXIT_GATE
+    try:
+        creds = NdcCredentials.from_env(os.environ)
+    except CredentialError as exc:
+        print(f"CREDENTIAL ERROR -- nothing was requested.\n  {exc}", file=sys.stderr)
+        return EXIT_CONFIG
+    print(f"ENDPOINT: {creds.base_url}   CREDENTIALS: present ({creds!r})")
+    print(f"BLOCKED: {NDC_BLOCKER}.", file=sys.stderr)
+    return EXIT_BLOCKED
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    p.add_argument("--source", default="indigo", choices=["indigo"])
+    p.add_argument("--source", default="indigo", choices=sorted(SOURCES))
     p.add_argument("--origin", default="DEL")
     p.add_argument("--destination", default="BOM")
-    dates = p.add_mutually_exclusive_group(required=True)
-    dates.add_argument("--travel-date", type=date.fromisoformat)
-    dates.add_argument("--apw", help="comma-separated lead times from the frozen vector")
+    p.add_argument("--travel-date", type=date.fromisoformat)
+    p.add_argument(
+        "--apw",
+        help="comma-separated lead times from the frozen vector; with --travel-date, "
+        "exactly one value, which must match it",
+    )
     p.add_argument("--collection-date", type=date.fromisoformat, default=None)
-    p.add_argument("--mode", required=True, choices=["fixture", "live"])
+    p.add_argument("--mode", required=True, choices=["fixture", "live", "sandbox"])
     p.add_argument("--fixture", type=Path, help="SYNTHETIC fixture file (fixture mode)")
     p.add_argument("--store", type=Path, default=DEFAULT_STORE)
     p.add_argument("--window", default="primary")
     p.add_argument("--min-interval", type=float, default=30.0)
     p.add_argument("--headless", action="store_true", help="live mode only")
     args = p.parse_args(argv)
+    if not args.travel_date and not args.apw:
+        p.error("give --travel-date, --apw, or both")
     if args.collection_date is None:
         args.collection_date = ist_now().date()
 
@@ -213,6 +299,16 @@ def main(argv: list[str] | None = None) -> int:
             "they will be collected and then excluded by spec A.3",
             file=sys.stderr,
         )
+
+    if args.source == "indigo-ndc":
+        return run_indigo_ndc(args)
+    if args.mode == "sandbox":
+        print(
+            "SANDBOX mode applies only to official API sources such as --source indigo-ndc; "
+            "the goindigo.in website has no sandbox.",
+            file=sys.stderr,
+        )
+        return EXIT_CONFIG
 
     registry_entry = None
     adapter: SourceAdapter
