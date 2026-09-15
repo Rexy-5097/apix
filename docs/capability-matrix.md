@@ -175,6 +175,7 @@ supplies too little variation for the property to be established.
 | API | `src/apix/api/server.py`, `src/apix/api/payloads.py` | `tests/test_api.py` |
 | Exports | `src/apix/export/exports.py` | `tests/test_exports.py` |
 | Platform console | `tools/analysis/build_platform.py` → `data/platform.html` | `tests/test_platform_page.py` |
+| Console motion layer | `tools/analysis/platform_motion.py` | `tests/test_platform_page.py` |
 | Publication | `src/apix/statistics/index/publication.py` | `tests/test_pipeline_14_day.py` |
 
 ---

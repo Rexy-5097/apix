@@ -3,6 +3,9 @@
 <title>APIx — Platform Console</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
+<meta name="description" content="APIx platform console: acquisition boundary, scheduler,
+source health, period series, lead-time profile, provenance and API for MoSPI PS 26056.
+35 real observations, zero automated fares, no published index.">
 <link rel="stylesheet" href="vendor/fonts.css">
 <style>
 /* ============================================================== TOKENS === */
@@ -736,9 +739,12 @@ html.rail-flat .rail-panel:first-child{border-top:0}
 }
 
 .pf{max-width:1180px;margin:0 auto;padding:0 20px}
-.pf-hero{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+.pf-hero{padding:56px 0 30px;border-bottom:1px solid var(--line)}
 .pf-hero .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber-ink)}
-.pf-hero h1{font-size:clamp(34px,5vw,58px);line-height:1.02;margin:10px 0 12px;letter-spacing:-.025em}
+.pf-mark{font-family:var(--mono);font-size:13px;letter-spacing:.42em;color:var(--ink-2);margin:0 0 14px}
+.pf-hero h1{font-size:clamp(32px,4.8vw,56px);line-height:1.04;margin:8px 0 14px;letter-spacing:-.028em;max-width:24ch}
+.pf-hero h1 .line-mask{display:block;overflow:hidden}
+.pf-hero h1 .line-mask>span{display:block}
 .pf-hero p{max-width:62ch;color:var(--ink-2);font-size:17px;margin:0}
 .pf-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:26px 0 0}
 .pf-status div{background:var(--card);padding:14px 16px}
@@ -746,9 +752,14 @@ html.rail-flat .rail-panel:first-child{border-top:0}
 .pf-status b.s{font-size:15px;line-height:1.35;padding-top:4px}
 .pf-status span{font-size:12px;color:var(--ink-3)}
 .pf-status .blk b{color:var(--red)} .pf-status .ok b{color:var(--green)} .pf-status .wn b{color:var(--amber-ink)}
-.pf-nav{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:2px 16px;padding:10px 0;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em}
-.pf-nav a{color:var(--ink-2);text-decoration:none;padding:4px 0}.pf-nav a:hover{color:var(--amber-ink)}
-.pf-nav .tag{margin-left:auto;background:var(--red-wash);color:var(--red);padding:3px 9px;border-radius:2px;font-weight:600}
+.pf-nav{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:14px;padding:8px 0;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em}
+/* One row that scrolls sideways, never four rows that eat the viewport. */
+.pf-links{display:flex;gap:0 16px;overflow-x:auto;white-space:nowrap;padding:3px 0;scrollbar-width:none;-ms-overflow-style:none}
+.pf-links::-webkit-scrollbar{height:0;display:none}
+.pf-nav a{color:var(--ink-2);text-decoration:none;padding:4px 0;flex:none}.pf-nav a:hover{color:var(--amber-ink)}
+.pf-nav .tag{background:var(--red-wash);color:var(--red);padding:3px 9px;border-radius:2px;font-weight:600;white-space:nowrap}
+@media(max-width:860px){.pf-nav .tag-l{display:none}}
+@media(max-width:560px){.pf-where{display:none}}
 section.pf-s{padding:44px 0 8px;border-bottom:1px solid var(--line-2)}
 section.pf-s>h2{font-size:clamp(22px,2.6vw,28px);letter-spacing:-.02em;margin:0 0 6px}
 section.pf-s>h2 small{font-family:var(--mono);font-size:11px;color:var(--amber-ink);letter-spacing:.1em;margin-right:12px;vertical-align:middle}
@@ -757,6 +768,7 @@ section.pf-s>h2 small{font-family:var(--mono);font-size:11px;color:var(--amber-i
 .cls.DEMO{color:var(--amber-ink);border-color:var(--amber);background:var(--amber-wash)}
 .cls.RESEARCH{color:var(--blue);border-color:var(--blue);background:var(--blue-wash)}
 .cls.PRODUCTION{color:var(--green);border-color:var(--green);background:var(--green-wash)}
+.cls.REFERENCE{color:var(--ink-2);border-color:var(--line-2);background:var(--paper-2)}
 .cls.BLOCKED,.cls.PERMISSION_BLOCKED{color:var(--red);border-color:var(--red);background:var(--red-wash)}
 .cls.INCOMPLETE,.cls.NO_DATA,.cls.PROVISIONAL{color:var(--amber-ink);border-color:var(--amber);background:var(--amber-wash)}
 .tw{overflow-x:auto;border:1px solid var(--line);background:var(--card);margin:0 0 18px}
@@ -765,6 +777,7 @@ table.pf th,table.pf td{text-align:left;padding:8px 11px;border-bottom:1px solid
 table.pf thead th{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);background:var(--paper-2);white-space:nowrap}
 table.pf td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 table.pf tr:last-child td{border-bottom:none}
+table.pf tbody tr:hover{background:var(--paper-2)}
 .note{border-left:3px solid var(--amber);background:var(--card);padding:12px 16px;margin:0 0 18px;font-size:13.5px;max-width:78ch}
 .note.red{border-left-color:var(--red)} .note.green{border-left-color:var(--green)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin:0 0 18px}
@@ -772,55 +785,254 @@ svg.pf{width:100%;height:auto;display:block;background:var(--card);border:1px so
 .arch{font-family:var(--mono);font-size:12px;line-height:1.55;background:var(--card);border:1px solid var(--line);padding:16px 18px;overflow-x:auto;white-space:pre;margin:0 0 18px}
 .ep{font-family:var(--mono);font-size:12.5px}
 ul.tight{margin:0 0 16px;padding-left:20px;max-width:72ch}ul.tight li{margin-bottom:5px}
+.figcap{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink-3);margin:7px 0 18px}
 @media(max-width:700px){.pf-hero{padding:36px 0 22px}}
+
+/* ---------------------------------------------------------- nav, progress */
+.pf-nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 92%,transparent);
+        backdrop-filter:saturate(140%) blur(8px);transition:box-shadow var(--fast) var(--out)}
+.pf-nav[data-solid="1"]{box-shadow:0 1px 0 var(--line),0 8px 24px -18px rgba(23,28,33,.5)}
+.pf-nav a{position:relative;transition:color 180ms var(--out)}
+.pf-nav a::after{content:"";position:absolute;left:0;right:100%;bottom:1px;height:1.5px;
+                 background:var(--amber);transition:right 220ms var(--out)}
+.pf-nav a:hover::after,.pf-nav a:focus-visible::after{right:0}
+.pf-nav a[aria-current="true"]{color:var(--ink);font-weight:600}
+.pf-nav a[aria-current="true"]::after{right:0}
+.pf-prog{position:absolute;left:0;bottom:-1px;height:2px;width:100%;background:var(--amber);
+         transform:scaleX(0);transform-origin:0 50%;z-index:21}
+.pf-where{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-3);
+          padding:3px 0 1px;grid-column:1/-1}
+.pf-where b{color:var(--amber-ink);font-weight:600}
+
+/* ------------------------------------------------------------- hero field */
+.pf-fieldwrap{position:relative;margin:26px 0 0;border:1px solid var(--line);background:var(--card)}
+#pf-field{display:block;width:100%;height:210px}
+.pf-beats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+          border-top:1px solid var(--line)}
+.pf-beats div{background:var(--card);padding:9px 12px;font-family:var(--mono);font-size:10.5px;
+              letter-spacing:.07em;color:var(--ink-3);transition:color 260ms var(--out),
+              background 260ms var(--out)}
+.pf-beats div[data-on="1"]{color:var(--amber-ink);background:var(--amber-wash)}
+.pf-beats b{display:block;font-size:11.5px;color:inherit;letter-spacing:.04em}
+
+/* --------------------------------------------------------- source cards */
+.scards{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px;margin:0 0 18px}
+.scard{border:1px solid var(--line);background:var(--card);padding:12px 13px;
+       transition:transform 200ms var(--out),box-shadow 200ms var(--out),border-color 200ms var(--out)}
+.scard:hover{transform:translateY(-2px);border-color:var(--line-2);
+             box-shadow:0 10px 26px -20px rgba(23,28,33,.7)}
+.scard h4{margin:0 0 2px;font-size:14px;letter-spacing:-.01em;display:flex;align-items:center;gap:7px}
+.scard .ch{font-family:var(--mono);font-size:10px;letter-spacing:.09em;color:var(--ink-3);
+           text-transform:uppercase;margin:0 0 9px}
+.scard dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:11.5px}
+.scard dt{color:var(--ink-3)}
+.scard dd{margin:0;font-family:var(--mono);font-size:11px;text-align:right;overflow-wrap:anywhere}
+/* Permission state and operational state are different facts and never share a
+   colour: a refusal is not an outage. */
+.sdot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--ink-3);position:relative}
+.scard[data-perm="AUTHORIZED"] .sdot{background:var(--green)}
+.scard[data-perm="PENDING"] .sdot{background:var(--amber)}
+.scard[data-perm="PROHIBITED"] .sdot{background:var(--red);border-radius:1.5px}
+.scard[data-perm="UNKNOWN"] .sdot{background:var(--ink-3);opacity:.55}
+.js .scard[data-perm="AUTHORIZED"][data-anim="1"] .sdot{animation:pf-pulse 2.4s var(--out) infinite}
+.js .scard[data-perm="PENDING"][data-anim="1"] .sdot{animation:pf-breathe 3.6s ease-in-out infinite}
+@keyframes pf-pulse{0%{box-shadow:0 0 0 0 var(--green-wash)}
+                    70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes pf-breathe{0%,100%{opacity:.42}50%{opacity:1}}
+.scard .ops{margin-top:9px;padding-top:8px;border-top:1px solid var(--line-2);
+            font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ink-3)}
+
+/* ------------------------------------------------- architecture flow graph */
+svg.ag{width:100%;height:auto;display:block;background:var(--card);border:1px solid var(--line)}
+.ag-node rect{fill:var(--paper-2);stroke:var(--line);transition:fill 320ms var(--out),
+              stroke 320ms var(--out)}
+.ag-node text{font-family:var(--mono);font-size:10.5px;fill:var(--ink-2)}
+.ag-node[data-lit="1"] rect{fill:var(--amber-wash);stroke:var(--amber)}
+.ag-node[data-lit="1"] text{fill:var(--amber-ink)}
+.ag-node[data-blocked="1"] rect{fill:var(--red-wash);stroke:var(--red)}
+.ag-node[data-blocked="1"] text{fill:var(--red)}
+.ag-edge{fill:none;stroke:var(--line-2);stroke-width:1.6}
+.ag-edge.dead{stroke-dasharray:4 4;stroke:var(--red);opacity:.55}
+.ag-pkt{opacity:0}
+.ag-pkt rect{fill:var(--amber);stroke:none}
+.ag-pkt text{font-family:var(--mono);font-size:9.5px;fill:var(--paper);font-weight:600}
+.ag-stop{opacity:0}
+.ag-stop rect{fill:var(--red-wash);stroke:var(--red)}
+.ag-stop text{font-family:var(--mono);font-size:9.5px;fill:var(--red)}
+.ag-cap{font-family:var(--mono);font-size:10px;fill:var(--ink-3)}
+.agwrap{margin:0 0 4px}
+@media(max-width:860px){
+  .agwrap{overflow-x:auto;border:1px solid var(--line)}
+  svg.ag{min-width:820px;border:none}
+}
+
+/* ------------------------------------------------- index dependency chain */
+.dep{display:grid;gap:9px;margin:0 0 18px;max-width:560px}
+.dep .row{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:var(--card);
+          padding:10px 13px;font-size:13px}
+.dep .row i{width:18px;height:18px;border-radius:50%;flex:none;display:grid;place-items:center;
+            font-family:var(--mono);font-size:11px;font-style:normal;color:var(--paper)}
+.dep .row[data-ok="1"] i{background:var(--green)}
+.dep .row[data-ok="0"] i{background:var(--red)}
+.dep .row b{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em}
+.dep .row span{color:var(--ink-3);font-size:12px;margin-left:auto;text-align:right}
+.dep .arrow{font-family:var(--mono);color:var(--ink-3);font-size:12px;padding-left:8px}
+
+/* ------------------------------------------------------- run stage ladder */
+.ladder{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;
+        background:var(--line);border:1px solid var(--line);margin:0 0 18px}
+.ladder div{background:var(--card);padding:12px 13px}
+.ladder b{display:block;font-family:var(--mono);font-size:20px;letter-spacing:-.02em;
+          font-variant-numeric:tabular-nums}
+.ladder span{font-size:11px;color:var(--ink-3)}
+.ladder .zero b{color:var(--red)}
+
+/* ------------------------------------------------------------- bar tracks */
+.track{height:9px;background:var(--paper-2);border:1px solid var(--line);position:relative;
+       overflow:hidden}
+.track i{display:block;height:100%;background:var(--amber);transform:scaleX(0);transform-origin:0 50%}
+.track.dead{background:repeating-linear-gradient(90deg,var(--paper-2) 0 7px,transparent 7px 14px)}
+.btrow{display:grid;grid-template-columns:112px 1fr auto;gap:12px;align-items:center;
+       font-size:12.5px;margin:0 0 9px}
+.btrow .lab{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--ink-2)}
+.btrow .val{font-family:var(--mono);font-size:11px;color:var(--ink-3);white-space:nowrap}
+
+/* ------------------------------------------------------ provenance lineage */
+.lin{display:grid;gap:0;margin:0 0 6px;border:1px solid var(--line);background:var(--card)}
+.lin .step{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:10px 14px;
+           border-bottom:1px solid var(--line-2);font-size:12.5px;opacity:1}
+.js .lin .step{opacity:.25;transition:opacity 320ms var(--out),transform 320ms var(--out)}
+.js .lin .step[data-on="1"]{opacity:1}
+.lin .step:last-child{border-bottom:none}
+.lin .step .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--ink-3);
+              text-transform:uppercase;padding-top:2px}
+.lin .step .v{font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+.lin .step .v em{font-style:normal;color:var(--ink-3)}
+.picker{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.picker button{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:5px 9px;
+               border:1px solid var(--line);background:var(--card);color:var(--ink-2);cursor:pointer;
+               transition:transform 180ms var(--out),border-color 180ms var(--out),
+               background 180ms var(--out)}
+.picker button:hover{transform:translateY(-1px);border-color:var(--amber)}
+.picker button[aria-pressed="true"]{background:var(--amber-wash);border-color:var(--amber);
+                                    color:var(--amber-ink);font-weight:600}
+
+/* -------------------------------------------------------- heatmap interaction */
+.hm-cell{cursor:pointer}
+.hm-cell rect{transition:opacity 200ms var(--out),stroke 200ms var(--out)}
+.hm-cell:hover rect,.hm-cell:focus-visible rect{stroke:var(--amber-ink);stroke-width:2}
+.js .hm-cell[data-anim="1"]{opacity:0}
+.hm-detail{border-left:3px solid var(--line-2);background:var(--card);padding:11px 15px;
+           margin:0 0 18px;font-size:13px;min-height:44px}
+.hm-detail[data-has="1"]{border-left-color:var(--amber)}
+.hm-detail dl{margin:6px 0 0;display:grid;grid-template-columns:auto 1fr;gap:3px 14px;
+              font-size:12px;max-width:420px}
+.hm-detail dd{margin:0;font-family:var(--mono);text-align:right}
+
+/* ---------------------------------------------------------- table stagger */
+.js tbody tr.rvr{opacity:0}
+
+/* ----------------------------------------------------------- endpoint cards */
+.eps{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px;margin:0 0 18px}
+.epc{border:1px solid var(--line);background:var(--card);padding:11px 13px;
+     transition:transform 200ms var(--out),border-color 200ms var(--out)}
+.epc:hover{transform:translateY(-2px);border-color:var(--amber)}
+.epc code{font-family:var(--mono);font-size:11.5px;color:var(--amber-ink);display:block;
+          margin-bottom:5px;overflow-wrap:anywhere}
+.epc p{margin:0;font-size:12px;color:var(--ink-3)}
+
+/* ------------------------------------------------------------ closing beat */
+.pf-close{padding:64px 0 76px;text-align:center}
+.pf-close blockquote{margin:0 auto 26px;max-width:22ch;font-family:var(--disp);
+                     font-size:clamp(26px,4vw,44px);line-height:1.12;letter-spacing:-.025em}
+.pf-close .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ink-3);
+             text-transform:uppercase}
+
+@media (prefers-reduced-motion:reduce){
+  .pf-prog{transform:scaleX(0)!important}
+  #pf-field{display:none}
+  .pf-fieldwrap{border:none}
+  .js .lin .step{opacity:1}
+  .js .hm-cell[data-anim="1"]{opacity:1}
+  .js tbody tr.rvr{opacity:1}
+  .track i{transform:scaleX(1)}
+  .ag-pkt,.ag-stop{opacity:1}
+}
+@media(max-width:700px){
+  #pf-field{height:150px}
+  .pf-beats{grid-template-columns:1fr}
+  .btrow{grid-template-columns:1fr;gap:5px}
+  .lin .step{grid-template-columns:1fr;gap:3px}
+}
 </style>
+<script>document.documentElement.className += " js";</script>
+<script src="vendor/gsap.min.js" defer></script><script src="vendor/ScrollTrigger.min.js" defer></script><script src="vendor/lenis.min.js" defer></script>
 <body>
 <div class="pf">
 <header class="pf-hero">
   <div class="k">MoSPI Problem Statement 26056 · platform console · panel collected 2026-09-12</div>
-  <h1>Real-time airfare measurement infrastructure for India.</h1>
-  <p>Designed for compliant, auditable augmentation of CPI airfare measurement. This console shows the platform — acquisition, scheduling, source health, series, backtest and API — around the one capability that is externally blocked.</p>
+  <p class="pf-mark">APIX</p>
+  <h1><span class="line-mask"><span>Real-time airfare</span></span><span class="line-mask"><span>measurement infrastructure</span></span><span class="line-mask"><span>for India.</span></span></h1>
+  <p class="rv" data-d="1">Designed for compliant, auditable augmentation of CPI airfare measurement. This console shows the platform — acquisition, scheduling, source health, series, backtest and API — around the one capability that is externally blocked.</p>
+  <div class="pf-fieldwrap rv" data-d="2">
+    <canvas id="pf-field" aria-hidden="true"></canvas>
+    <div class="pf-beats">
+      <div data-on="1"><b>01 · QUOTES AS COLLECTED</b>35 real observations, one route, one carrier</div>
+      <div data-on="0"><b>02 · KEYED AND NORMALISED</b>seven advance-purchase buckets, five departure bands</div>
+      <div data-on="0"><b>03 · AGGREGATED</b>geometric mean per bucket — the profile, not an index</div>
+    </div>
+  </div>
   <div class="pf-status">
-    <div class="ok"><b>35</b><span>real observations · 1 route · 1 carrier</span></div>
-    <div><b>150</b><span>searches planned today</span></div>
-    <div class="blk"><b>0</b><span>requests made — every source refused at the gate</span></div>
-    <div class="blk"><b>0 / 30</b><span>sources cleared for live collection</span></div>
-    <div class="wn"><b class="s">MISSING_PREVIOUS_PERIOD</b><span>production index state</span></div>
-    <div class="wn"><b class="s">INCOMPLETE</b><span>DGCA backtest · benchmark not published</span></div>
+    <div class="ok"><b data-count="1" data-s="0">35</b><span>real observations · 1 route · 1 carrier</span></div>
+    <div><b data-count="1" data-s="1">150</b><span>searches planned today</span></div>
+    <div class="blk"><b data-count="1" data-s="2">0</b><span>requests made — every source refused at the gate</span></div>
+    <div class="blk"><b data-count="1" data-s="3">0 / 30</b><span>sources cleared for live collection</span></div>
+    <div class="wn"><b class="s" data-count="1" data-s="4">MISSING_PREVIOUS_PERIOD</b><span>production index state</span></div>
+    <div class="wn"><b class="s" data-count="1" data-s="5">INCOMPLETE</b><span>DGCA backtest · benchmark not published</span></div>
   </div>
 </header>
 
-<nav class="pf-nav" aria-label="Sections"><a href="#overview">Overview</a><a href="#trends">Index trends</a><a href="#heatmap">Routes</a><a href="#leadtime">Lead time</a><a href="#acquisition">Acquisition</a><a href="#sources">Source health</a><a href="#runs">Collection runs</a><a href="#quality">Data quality</a><a href="#provenance">Provenance</a><a href="#backtest">Backtest</a><a href="#methodology">Methodology</a><a href="#architecture">Architecture</a><span class="tag">LIVE AIRFARE CONNECTORS · AUTHORIZATION PENDING</span></nav>
+<nav class="pf-nav" aria-label="Sections"><span class="pf-prog" aria-hidden="true"></span>
+  <span class="pf-links"><a href="#overview">Overview</a><a href="#trends">Index trends</a><a href="#heatmap">Routes</a><a href="#leadtime">Lead time</a><a href="#acquisition">Acquisition</a><a href="#sources">Source health</a><a href="#runs">Collection runs</a><a href="#quality">Data quality</a><a href="#provenance">Provenance</a><a href="#backtest">Backtest</a><a href="#methodology">Methodology</a><a href="#architecture">Architecture</a></span>
+  <span class="tag"><span class="tag-l">LIVE AIRFARE CONNECTORS · </span>AUTHORIZATION PENDING</span>
+  <span class="pf-where">PIPELINE POSITION · <b>Overview</b></span></nav>
 
 <section class="pf-s" id="overview"><h2><small>01</small>Overview</h2>
-<p class="sub">APIx is a complete end-to-end platform with a compliant acquisition boundary. Live automated airfare acquisition is gated pending source authorization; the full downstream pipeline is implemented and demonstrated on verified observations and deterministic replay.</p>
-<div class="note red"><b>Live airfare connectors: BLOCKED — authorization pending.</b> Zero of 30 registered sources clear the live compliance gate. APIx has automatically collected <b>zero</b> fares from any airline or travel website. Every refusal is recorded as <code>PERMISSION_BLOCKED</code>, never as an absence of flights.</div>
-<div class="note"><b>Output classes on this page.</b> <span class="cls RESEARCH">RESEARCH</span> real observations, descriptive only · <span class="cls DEMO">DEMO</span> synthetic fixture, real arithmetic, fictional market · <span class="cls PRODUCTION">PRODUCTION</span> an official index — <b>none exists</b>.</div>
+<p class="sub rv">APIx is a complete end-to-end platform with a compliant acquisition boundary. Live automated airfare acquisition is gated pending source authorization; the full downstream pipeline is implemented and demonstrated on verified observations and deterministic replay.</p>
+<div class="note red rv"><b>Live airfare connectors: BLOCKED — authorization pending.</b> Zero of 30 registered sources clear the live compliance gate. APIx has automatically collected <b>zero</b> fares from any airline or travel website. Every refusal is recorded as <code>PERMISSION_BLOCKED</code>, never as an absence of flights.</div>
+<div class="note rv" data-d="1"><b>Output classes on this page.</b> <span class="cls RESEARCH">RESEARCH</span> real observations, descriptive only · <span class="cls DEMO">DEMO</span> synthetic fixture, real arithmetic, fictional market · <span class="cls REFERENCE">REFERENCE</span> published tariff, inadmissible as an observation · <span class="cls PRODUCTION">PRODUCTION</span> an official index — <b>none exists</b>.</div>
 </section>
 
 <section class="pf-s" id="trends"><h2><small>02</small>Index trends <span class="cls DEMO">DEMO</span></h2>
-<p class="sub">Daily, weekly and monthly series derived from the synthetic 14-day engine fixture — the only place an index level is computed. Levels aggregate geometrically. The real panel produces no series: spec C.1 is LOCKED at I(c,t) = I(c,t-7) x J(c,t); 1 collection wave(s) held, so zero matched pairs exist.</p>
+<p class="sub rv">Daily, weekly and monthly series derived from the synthetic 14-day engine fixture — the only place an index level is computed. Levels aggregate geometrically. The real panel produces no series: spec C.1 is LOCKED at I(c,t) = I(c,t-7) x J(c,t); 1 collection wave(s) held, so zero matched pairs exist.</p>
 <div class="grid2"><svg class="pf" viewBox="0 0 900 300" role="img" aria-label="DAILY · DEMO · synthetic fixture"><text x="62" y="18" font-size="12" fill="var(--ink-2)" font-family="var(--mono)">DAILY · DEMO · synthetic fixture</text><line x1="62" x2="880" y1="244.0" y2="244.0" stroke="var(--line-2)"/><text x="54" y="248.0" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">99.0</text><line x1="62" x2="880" y1="190.5" y2="190.5" stroke="var(--line-2)"/><text x="54" y="194.5" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">100.5</text><line x1="62" x2="880" y1="137.0" y2="137.0" stroke="var(--line-2)"/><text x="54" y="141.0" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">102.0</text><line x1="62" x2="880" y1="83.5" y2="83.5" stroke="var(--line-2)"/><text x="54" y="87.5" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">103.5</text><line x1="62" x2="880" y1="30.0" y2="30.0" stroke="var(--line-2)"/><text x="54" y="34.0" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">105.0</text><path d="M91.2,208.3 L149.6,208.3 L208.1,208.3 L266.5,208.3 L324.9,208.3 L383.4,208.3 L441.8,137.0 L500.2,65.7 L558.6,65.7 L617.1,65.7 L675.5,65.7 L733.9,65.7 L792.4,65.7 L850.8,65.7" fill="none" stroke="var(--amber)" stroke-width="2.2"/><circle cx="91.2" cy="208.3" r="3.5" fill="var(--amber)"/><circle cx="149.6" cy="208.3" r="3.5" fill="var(--amber)"/><circle cx="208.1" cy="208.3" r="3.5" fill="var(--amber)"/><circle cx="266.5" cy="208.3" r="3.5" fill="var(--amber)"/><circle cx="324.9" cy="208.3" r="3.5" fill="var(--amber)"/><circle cx="383.4" cy="208.3" r="3.5" fill="var(--amber)"/><circle cx="441.8" cy="137.0" r="3.5" fill="var(--amber)"/><circle cx="500.2" cy="65.7" r="3.5" fill="var(--amber)"/><circle cx="558.6" cy="65.7" r="3.5" fill="var(--amber)"/><circle cx="617.1" cy="65.7" r="3.5" fill="var(--amber)"/><circle cx="675.5" cy="65.7" r="3.5" fill="var(--amber)"/><circle cx="733.9" cy="65.7" r="3.5" fill="var(--amber)"/><circle cx="792.4" cy="65.7" r="3.5" fill="var(--amber)"/><circle cx="850.8" cy="65.7" r="3.5" fill="var(--amber)"/><text x="91.2" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-10-06</text><text x="208.1" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-10-08</text><text x="324.9" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-10-10</text><text x="441.8" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-10-12</text><text x="558.6" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-10-14</text><text x="675.5" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-10-16</text><text x="792.4" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-10-18</text></svg><svg class="pf" viewBox="0 0 900 300" role="img" aria-label="WEEKLY · DEMO · geometric aggregation"><text x="62" y="18" font-size="12" fill="var(--ink-2)" font-family="var(--mono)">WEEKLY · DEMO · geometric aggregation</text><line x1="62" x2="880" y1="244.0" y2="244.0" stroke="var(--line-2)"/><text x="54" y="248.0" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">99.0</text><line x1="62" x2="880" y1="190.5" y2="190.5" stroke="var(--line-2)"/><text x="54" y="194.5" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">100.5</text><line x1="62" x2="880" y1="137.0" y2="137.0" stroke="var(--line-2)"/><text x="54" y="141.0" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">102.0</text><line x1="62" x2="880" y1="83.5" y2="83.5" stroke="var(--line-2)"/><text x="54" y="87.5" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">103.5</text><line x1="62" x2="880" y1="30.0" y2="30.0" stroke="var(--line-2)"/><text x="54" y="34.0" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">105.0</text><path d="M198.3,208.3 L471.0,75.9 L743.7,65.7" fill="none" stroke="var(--amber)" stroke-width="2.2"/><circle cx="198.3" cy="208.3" r="3.5" fill="var(--amber)"/><circle cx="471.0" cy="75.9" r="3.5" fill="var(--amber)"/><circle cx="743.7" cy="65.7" r="3.5" fill="var(--amber)"/><text x="198.3" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-W41</text><text x="471.0" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-W42</text><text x="743.7" y="266" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-family="var(--mono)">2026-W43</text></svg></div>
 <div class="tw"><table class="pf"><thead><tr><th>Period</th><th>Level</th><th>Change %</th><th>Effective n</th><th>Coverage</th></tr></thead><tbody><tr><td>2026-10</td><td class="n">102.1247</td><td class="n"></td><td class="n">0</td><td>geometric mean of 14 dates</td></tr><tr><td>2026-W41</td><td class="n">100.0000</td><td class="n"></td><td class="n">0</td><td>geometric mean of 6 dates</td></tr><tr><td>2026-W42</td><td class="n">103.7119</td><td class="n">+3.712</td><td class="n">0</td><td>geometric mean of 7 dates</td></tr><tr><td>2026-W43</td><td class="n">104.0000</td><td class="n">+0.278</td><td class="n">0</td><td>geometric mean of 1 dates</td></tr></tbody></table></div>
+<h3 style="font-size:16px;margin:26px 0 4px">Production index status: MISSING_PREVIOUS_PERIOD</h3>
+<p class="sub">Not a gap in the engine. The chain below is evaluated every run, and one link is missing — so the guard refuses rather than inventing a level.</p>
+<div class="dep"><div class="row" data-ok="1"><i>&#10003;</i><b>CURRENT PERIOD</b><span>35 observations, 7 buckets, 5 bands</span></div><div class="arrow">&#8595;</div><div class="row" data-ok="0"><i>&#10007;</i><b>PREVIOUS PERIOD</b><span>no t−7 collection wave exists</span></div><div class="arrow">&#8595;</div><div class="row" data-ok="0"><i>&#10007;</i><b>MATCHED PAIR</b><span>0 pairs survive the longitudinal match</span></div><div class="arrow">&#8595;</div><div class="row" data-ok="0"><i>&#10007;</i><b>PRICE RELATIVE</b><span>Jevons needs a pair; none available</span></div><div class="arrow">&#8595;</div><div class="row" data-ok="0"><i>&#10007;</i><b>INDEX LEVEL</b><span>spec C.1 refuses: I(c,t) = I(c,t−7) · J(c,t)</span></div></div>
 <div class="note red"><b>Production index: MISSING_PREVIOUS_PERIOD.</b> Real observations exist and pass the stages above the longitudinal step, so descriptive statistics are reportable as RESEARCH output. No index level is published, and the guards refuse rather than inventing one. Next unlock: 2026-09-19.</div>
 </section>
 
 <section class="pf-s" id="heatmap"><h2><small>03</small>Routes and sector heatmap <span class="cls RESEARCH">RESEARCH</span></h2>
-<p class="sub">The six city-pairs PS 26056 names, with equal <b>placeholder</b> weights (<span class="cls DEMO">DEMO</span> basket). The honest heatmap has one filled cell: APIx holds real observations on DEL–BOM only. Empty cells are the coverage finding, not missing rendering.</p>
-<svg class="pf" viewBox="0 0 522 502" role="img" aria-label="Route heatmap: observations held per sector"><text x="70" y="18" font-size="12" fill="var(--ink-2)" font-family="var(--mono)">rows: origin · columns: destination · metric: real observations held</text><text x="106.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BLR</text><text x="60" y="90.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BLR</text><text x="178.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BOM</text><text x="60" y="162.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BOM</text><text x="250.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">CCU</text><text x="60" y="234.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">CCU</text><text x="322.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">DEL</text><text x="60" y="306.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">DEL</text><text x="394.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">HYD</text><text x="60" y="378.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">HYD</text><text x="466.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">MAA</text><text x="60" y="450.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">MAA</text><rect x="144" y="268" width="68" height="68" fill="var(--amber)" stroke="var(--line)"/><text x="178.0" y="306.0" text-anchor="middle" font-size="11" fill="var(--paper)" font-family="var(--mono)">35 obs</text><rect x="72" y="268" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="106.0" y="306.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">no data</text><rect x="72" y="124" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="106.0" y="162.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">no data</text><rect x="216" y="268" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="250.0" y="306.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">no data</text><rect x="360" y="52" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="394.0" y="90.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">no data</text><rect x="288" y="412" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="322.0" y="450.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)">no data</text></svg>
-<div class="tw"><table class="pf"><thead><tr><th>Route</th><th>Weight</th><th>Weight source</th><th>Observations</th></tr></thead><tbody><tr><td>DEL-BOM</td><td class="n">0.1666666666666666666666666667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">35</td></tr><tr><td>DEL-BLR</td><td class="n">0.1666666666666666666666666667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>BOM-BLR</td><td class="n">0.1666666666666666666666666667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>DEL-CCU</td><td class="n">0.1666666666666666666666666667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>BLR-HYD</td><td class="n">0.1666666666666666666666666667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>MAA-DEL</td><td class="n">0.1666666666666666666666666667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr></tbody></table></div>
+<p class="sub rv">The six city-pairs PS 26056 names, with equal <b>placeholder</b> weights (<span class="cls DEMO">DEMO</span> basket). The honest heatmap has one filled cell: APIx holds real observations on DEL–BOM only. Empty cells are the coverage finding, not missing rendering. Hover a cell for metadata; activate it for detail.</p>
+<svg class="pf" viewBox="0 0 522 502" role="img" aria-label="Route heatmap: observations held per sector"><text x="70" y="18" font-size="12" fill="var(--ink-2)" font-family="var(--mono)">rows: origin · columns: destination · metric: real observations held</text><text x="106.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BLR</text><text x="60" y="90.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BLR</text><text x="178.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BOM</text><text x="60" y="162.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">BOM</text><text x="250.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">CCU</text><text x="60" y="234.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">CCU</text><text x="322.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">DEL</text><text x="60" y="306.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">DEL</text><text x="394.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">HYD</text><text x="60" y="378.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">HYD</text><text x="466.0" y="38" text-anchor="middle" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">MAA</text><text x="60" y="450.0" text-anchor="end" font-size="12" font-family="var(--mono)" fill="var(--ink-2)">MAA</text><g class="hm-cell" data-anim="1" tabindex="0" role="button" aria-pressed="false" data-pair="DEL-BOM" data-n="35" data-weight="0.1667" data-src="EQUAL PLACEHOLDER — no traffic data held" data-carrier="6E" aria-label="DEL-BOM: 35 obs"><rect x="144" y="268" width="68" height="68" fill="var(--amber)" stroke="var(--line)"/><text x="178.0" y="306.0" text-anchor="middle" font-size="11" fill="var(--paper)" font-family="var(--mono)" pointer-events="none">35 obs</text></g><g class="hm-cell" data-anim="1" tabindex="0" role="button" aria-pressed="false" data-pair="DEL-BLR" data-n="0" data-weight="0.1667" data-src="EQUAL PLACEHOLDER — no traffic data held" data-carrier="6E" aria-label="DEL-BLR: no data"><rect x="72" y="268" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="106.0" y="306.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)" pointer-events="none">no data</text></g><g class="hm-cell" data-anim="1" tabindex="0" role="button" aria-pressed="false" data-pair="BOM-BLR" data-n="0" data-weight="0.1667" data-src="EQUAL PLACEHOLDER — no traffic data held" data-carrier="6E" aria-label="BOM-BLR: no data"><rect x="72" y="124" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="106.0" y="162.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)" pointer-events="none">no data</text></g><g class="hm-cell" data-anim="1" tabindex="0" role="button" aria-pressed="false" data-pair="DEL-CCU" data-n="0" data-weight="0.1667" data-src="EQUAL PLACEHOLDER — no traffic data held" data-carrier="6E" aria-label="DEL-CCU: no data"><rect x="216" y="268" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="250.0" y="306.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)" pointer-events="none">no data</text></g><g class="hm-cell" data-anim="1" tabindex="0" role="button" aria-pressed="false" data-pair="BLR-HYD" data-n="0" data-weight="0.1667" data-src="EQUAL PLACEHOLDER — no traffic data held" data-carrier="6E" aria-label="BLR-HYD: no data"><rect x="360" y="52" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="394.0" y="90.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)" pointer-events="none">no data</text></g><g class="hm-cell" data-anim="1" tabindex="0" role="button" aria-pressed="false" data-pair="MAA-DEL" data-n="0" data-weight="0.1667" data-src="EQUAL PLACEHOLDER — no traffic data held" data-carrier="6E" aria-label="MAA-DEL: no data"><rect x="288" y="412" width="68" height="68" fill="var(--paper-2)" stroke="var(--line)"/><text x="322.0" y="450.0" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="var(--mono)" pointer-events="none">no data</text></g></svg>
+<div class="hm-detail" data-has="0"><div class="hm-body"><em>Select a sector above.</em></div></div>
+<div class="tw"><table class="pf"><thead><tr><th>Route</th><th>Weight</th><th>Weight source</th><th>Observations</th></tr></thead><tbody><tr><td>DEL-BOM</td><td class="n">0.1667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">35</td></tr><tr><td>DEL-BLR</td><td class="n">0.1667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>BOM-BLR</td><td class="n">0.1667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>DEL-CCU</td><td class="n">0.1667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>BLR-HYD</td><td class="n">0.1667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr><tr><td>MAA-DEL</td><td class="n">0.1667</td><td>EQUAL PLACEHOLDER — no traffic data held</td><td class="n">0</td></tr></tbody></table></div>
 <div class="note"><b>Basket status: DEMO · publication grade: False.</b> DEMO ONLY. These are the city-pairs the problem statement lists as examples, with EQUAL weights because APIx holds no DGCA traffic data (OQ-4). Equal weighting is a placeholder, not a finding: it asserts every sector contributes equally to household airfare expenditure, which is false and unmeasured. Exists to exercise multi-route aggregation, the heatmap and the API. It must never inform a published index, and is_publication_grade returns False.</div>
 </section>
 
 <section class="pf-s" id="leadtime"><h2><small>04</small>Lead-time profile <span class="cls RESEARCH">RESEARCH</span></h2>
-<p class="sub">Geometric-mean fare by advance-purchase bucket, real observations. PS 26056 names five windows; APIx froze seven and reports the PS five as a strict subset.</p>
+<p class="sub rv">Geometric-mean fare by advance-purchase bucket, real observations. PS 26056 names five windows; APIx froze seven and reports the PS five as a strict subset. The curve draws on entry and each bucket carries its recorded values on hover.</p>
 <svg viewBox="0 0 1000 420" role="img" aria-label="Geometric mean fare for each of the seven advance-purchase buckets, with the observed minimum and maximum in each bucket"><line class="grid-l" x1="76" y1="343.5" x2="976" y2="343.5"/><text class="tick" x="62" y="347.5" text-anchor="end">6,000</text><line class="grid-l" x1="76" y1="200.0" x2="976" y2="200.0"/><text class="tick" x="62" y="204.0" text-anchor="end">8,000</text><line class="grid-l" x1="76" y1="56.5" x2="976" y2="56.5"/><text class="tick" x="62" y="60.5" text-anchor="end">10,000</text><line x1="140.3" y1="305.5" x2="140.3" y2="294.2" stroke="var(--line-2)" stroke-width="1.5" stroke-linecap="round"/><line x1="268.9" y1="305.5" x2="268.9" y2="188.7" stroke="var(--line-2)" stroke-width="1.5" stroke-linecap="round"/><line x1="397.4" y1="305.5" x2="397.4" y2="279.1" stroke="var(--line-2)" stroke-width="1.5" stroke-linecap="round"/><line x1="526.0" y1="305.5" x2="526.0" y2="260.3" stroke="var(--line-2)" stroke-width="1.5" stroke-linecap="round"/><line x1="654.6" y1="305.5" x2="654.6" y2="279.1" stroke="var(--line-2)" stroke-width="1.5" stroke-linecap="round"/><line x1="783.1" y1="270.4" x2="783.1" y2="259.6" stroke="var(--line-2)" stroke-width="1.5" stroke-linecap="round"/><line x1="911.7" y1="148.3" x2="911.7" y2="80.5" stroke="var(--line-2)" stroke-width="1.5" stroke-linecap="round"/><path class="ser" d="M140.3 303.3 L268.9 278.8 L397.4 298.1 L526.0 282.6 L654.6 300.3 L783.1 268.3 L911.7 121.7"/><circle class="hit" cx="140.3" cy="303.3" r="24" tabindex="0" role="button" data-apw="1" aria-label="T plus 1, geometric mean 6,561 rupees, travel date 2026-09-13, 5 observations, spread 2.4 percent"/><circle class="dot" cx="140.3" cy="303.3" r="5.5"/><text class="tick b" x="140.3" y="372" text-anchor="middle">T+1</text><text class="tick" x="140.3" y="390" text-anchor="middle" opacity=".8">Sun</text><text class="tick" x="140.3" y="406" text-anchor="middle" opacity=".55">09-13</text><circle class="hit" cx="268.9" cy="278.8" r="24" tabindex="0" role="button" data-apw="3" aria-label="T plus 3, geometric mean 6,903 rupees, travel date 2026-09-15, 5 observations, spread 24.9 percent"/><circle class="dot" cx="268.9" cy="278.8" r="5.5"/><text class="tick b" x="268.9" y="372" text-anchor="middle">T+3</text><text class="tick" x="268.9" y="390" text-anchor="middle" opacity=".8">Tue</text><text class="tick" x="268.9" y="406" text-anchor="middle" opacity=".55">09-15</text><circle class="hit" cx="397.4" cy="298.1" r="24" tabindex="0" role="button" data-apw="7" aria-label="T plus 7, geometric mean 6,634 rupees, travel date 2026-09-19, 5 observations, spread 5.6 percent"/><circle class="dot" cx="397.4" cy="298.1" r="5.5"/><text class="tick b" x="397.4" y="372" text-anchor="middle">T+7</text><text class="tick" x="397.4" y="390" text-anchor="middle" opacity=".8">Sat</text><text class="tick" x="397.4" y="406" text-anchor="middle" opacity=".55">09-19</text><circle class="hit" cx="526.0" cy="282.6" r="24" tabindex="0" role="button" data-apw="15" aria-label="T plus 15, geometric mean 6,850 rupees, travel date 2026-09-27, 5 observations, spread 9.6 percent"/><circle class="dot" cx="526.0" cy="282.6" r="5.5"/><text class="tick b" x="526.0" y="372" text-anchor="middle">T+15</text><text class="tick" x="526.0" y="390" text-anchor="middle" opacity=".8">Sun</text><text class="tick" x="526.0" y="406" text-anchor="middle" opacity=".55">09-27</text><circle class="hit" cx="654.6" cy="300.3" r="24" tabindex="0" role="button" data-apw="30" aria-label="T plus 30, geometric mean 6,602 rupees, travel date 2026-10-12, 5 observations, spread 5.6 percent"/><circle class="dot" cx="654.6" cy="300.3" r="5.5"/><text class="tick b" x="654.6" y="372" text-anchor="middle">T+30</text><text class="tick" x="654.6" y="390" text-anchor="middle" opacity=".8">Mon</text><text class="tick" x="654.6" y="406" text-anchor="middle" opacity=".55">10-12</text><circle class="hit" cx="783.1" cy="268.3" r="24" tabindex="0" role="button" data-apw="45" aria-label="T plus 45, geometric mean 7,049 rupees, travel date 2026-10-27, 5 observations, spread 2.1 percent"/><circle class="dot" cx="783.1" cy="268.3" r="5.5"/><text class="tick b" x="783.1" y="372" text-anchor="middle">T+45</text><text class="tick" x="783.1" y="390" text-anchor="middle" opacity=".8">Tue</text><text class="tick" x="783.1" y="406" text-anchor="middle" opacity=".55">10-27</text><circle class="hit" cx="911.7" cy="121.7" r="24" tabindex="0" role="button" data-apw="60" aria-label="T plus 60, geometric mean 9,091 rupees, travel date 2026-11-11, 5 observations, spread 10.8 percent"/><circle class="dot" cx="911.7" cy="121.7" r="5.5"/><text class="tick b" x="911.7" y="372" text-anchor="middle">T+60</text><text class="tick" x="911.7" y="390" text-anchor="middle" opacity=".8">Wed</text><text class="tick" x="911.7" y="406" text-anchor="middle" opacity=".55">11-11</text><text class="tick" x="76" y="24">rupees, geometric mean &#183; vertical rule = observed min to max</text></svg>
+<p class="figcap">seven cross-sections on seven travel dates · ordinal axis, never a time axis</p>
 <div class="tw"><table class="pf"><thead><tr><th>APW</th><th>Set</th><th>Travel date</th><th>Day</th><th>n</th><th>Geomean ₹</th><th>Spread %</th><th>vs T+1 %</th></tr></thead><tbody><tr><td class="n">1</td><td>PS 26056</td><td>2026-09-13</td><td>Sun</td><td class="n">5</td><td class="n">6,561</td><td class="n">2.4000</td><td class="n">0.0000</td></tr><tr><td class="n">3</td><td>APIx research</td><td>2026-09-15</td><td>Tue</td><td class="n">5</td><td class="n">6,903</td><td class="n">24.9000</td><td class="n">5.2000</td></tr><tr><td class="n">7</td><td>PS 26056</td><td>2026-09-19</td><td>Sat</td><td class="n">5</td><td class="n">6,634</td><td class="n">5.6000</td><td class="n">1.1000</td></tr><tr><td class="n">15</td><td>PS 26056</td><td>2026-09-27</td><td>Sun</td><td class="n">5</td><td class="n">6,850</td><td class="n">9.6000</td><td class="n">4.4000</td></tr><tr><td class="n">30</td><td>PS 26056</td><td>2026-10-12</td><td>Mon</td><td class="n">5</td><td class="n">6,602</td><td class="n">5.6000</td><td class="n">0.6200</td></tr><tr><td class="n">45</td><td>PS 26056</td><td>2026-10-27</td><td>Tue</td><td class="n">5</td><td class="n">7,049</td><td class="n">2.1000</td><td class="n">7.4300</td></tr><tr><td class="n">60</td><td>APIx research</td><td>2026-11-11</td><td>Wed</td><td class="n">5</td><td class="n">9,091</td><td class="n">10.8000</td><td class="n">38.5500</td></tr></tbody></table></div>
 <div class="note red"><b>Not an elasticity.</b> DESCRIPTIVE APW PROFILE - NOT AN INDEX. Each bucket is a separate cross-section on a different travel date. Differences between buckets are not temporal price movements and are not inflation. Advance-purchase buckets are not interchangeable time observations. In this panel lead time is confounded with travel date / day-of-week, so the APW profile is descriptive and is not an inflation measure.</div>
 </section>
 
 <section class="pf-s" id="acquisition"><h2><small>05</small>Data acquisition</h2>
-<p class="sub">Four acquisition paths, one canonical observation contract. Only the manual path has ever produced an observation; the live path is built and gated.</p>
+<p class="sub rv">Two lanes, one canonical observation contract. The live lane is built and gated; only the manual lane has ever produced an observation. The graph animates a <b>recorded</b> observation through the path it actually travelled — it is a replay, not a live feed.</p>
+<div class="agwrap"><svg class="ag" id="arch-graph" viewBox="0 0 980 300" role="img" aria-label="Pipeline graph: the live acquisition lane is refused at the compliance gate; the manual evidence lane reaches the API and this console, and the index is refused by the publication guard"><text class="ag-cap" x="20" y="26">LIVE ACQUISITION LANE · built, gated, never executed</text><text class="ag-cap" x="20" y="122">EVIDENCE LANE · the path the 35 real observations travelled</text><path id="ag-flow" d="M76,157 L206,157 L336,157 L466,157 L596,157 L726,157 L856,157 L856,251" fill="none" stroke="none"/><path class="ag-edge" d="M130,63 L150,63"/><path class="ag-edge" d="M260,63 L280,63"/><path class="ag-edge" d="M390,63 L410,63"/><path class="ag-edge" d="M781,157 L800,157"/><path class="ag-edge" d="M856,174 L856,234"/><path class="ag-edge" d="M77,157 L205,157"/><path class="ag-edge" d="M207,157 L335,157"/><path class="ag-edge" d="M337,157 L465,157"/><path class="ag-edge" d="M467,157 L595,157"/><path class="ag-edge" d="M597,157 L725,157"/><path class="ag-edge dead" d="M710,63 L790,63"/><text class="ag-cap" x="796" y="67" fill="var(--red)">PERMISSION_BLOCKED</text><path class="ag-edge dead" d="M726,174 L726,234"/><g class="ag-node"><rect x="20" y="46" width="112" height="34" rx="2"/><text x="76" y="62" text-anchor="middle">AIRLINE / OTA</text><text x="76" y="72" text-anchor="middle">30 registered</text></g><g class="ag-node"><rect x="150" y="46" width="112" height="34" rx="2"/><text x="206" y="62" text-anchor="middle">COLLECTOR</text><text x="206" y="72" text-anchor="middle">Playwright, gated</text></g><g class="ag-node"><rect x="280" y="46" width="112" height="34" rx="2"/><text x="336" y="62" text-anchor="middle">SCHEDULER</text><text x="336" y="72" text-anchor="middle">150 planned</text></g><g class="ag-node" data-blocked="1"><rect x="410" y="46" width="150" height="34" rx="2"/><text x="485" y="62" text-anchor="middle">COMPLIANCE GATE</text><text x="485" y="72" text-anchor="middle">0 requests made</text></g><g class="ag-node" data-at="0.0000"><rect x="20" y="140" width="112" height="34" rx="2"/><text x="76" y="156" text-anchor="middle">MANUAL EVIDENCE</text><text x="76" y="166" text-anchor="middle">152 screenshots</text></g><g class="ag-node" data-at="0.1487"><rect x="150" y="140" width="112" height="34" rx="2"/><text x="206" y="156" text-anchor="middle">RAW ARTIFACTS</text><text x="206" y="166" text-anchor="middle">@primary, hashed</text></g><g class="ag-node" data-at="0.2975"><rect x="280" y="140" width="112" height="34" rx="2"/><text x="336" y="156" text-anchor="middle">NORMALIZER</text><text x="336" y="166" text-anchor="middle">bands, keys, dedup</text></g><g class="ag-node" data-at="0.4462"><rect x="410" y="140" width="112" height="34" rx="2"/><text x="466" y="156" text-anchor="middle">OBSERVATION STORE</text><text x="466" y="166" text-anchor="middle">35 rows</text></g><g class="ag-node" data-at="0.5950"><rect x="540" y="140" width="112" height="34" rx="2"/><text x="596" y="156" text-anchor="middle">QUALITY ENGINE</text><text x="596" y="166" text-anchor="middle">122 exclusions</text></g><g class="ag-node" data-at="0.7437"><rect x="670" y="140" width="112" height="34" rx="2"/><text x="726" y="156" text-anchor="middle">STATISTICAL ENGINE</text><text x="726" y="166" text-anchor="middle">Jevons, chaining</text></g><g class="ag-node" data-at="0.8924"><rect x="800" y="140" width="112" height="34" rx="2"/><text x="856" y="156" text-anchor="middle">API</text><text x="856" y="166" text-anchor="middle">13 endpoints</text></g><g class="ag-node" data-at="1.0000"><rect x="800" y="234" width="112" height="34" rx="2"/><text x="856" y="250" text-anchor="middle">THIS CONSOLE</text><text x="856" y="260" text-anchor="middle">12 views</text></g><g class="ag-node" data-blocked="1"><rect x="670" y="234" width="112" height="34" rx="2"/><text x="726" y="250" text-anchor="middle">INDEX</text><text x="726" y="260" text-anchor="middle">0 published</text></g><g class="ag-pkt" id="ag-pkt"><rect x="0" y="0" width="110" height="18" rx="2"/><text id="ag-pkt-label" x="55" y="12.5" text-anchor="middle">observation</text></g><g class="ag-stop" id="ag-stop"><rect x="664" y="276" width="196" height="20" rx="2"/><text x="762" y="290" text-anchor="middle">PUBLICATION GUARD · REFUSED</text></g></svg></div>
+<p class="figcap">packet = one real row from data/panel.json · the live lane carries none, because no request was ever made</p>
 <div class="arch">SOURCE REGISTER  (4 axes: automation_gate · data_admissibility · data_rights · operational_status)
       │  gate evaluated BEFORE any adapter is constructed
       ▼
@@ -840,30 +1052,43 @@ DAILY · WEEKLY · MONTHLY  →  READINESS (allowed to say no)  →  BACKTEST  �
 </section>
 
 <section class="pf-s" id="sources"><h2><small>06</small>Source health</h2>
-<p class="sub">30 registered sources. <code>PERMISSION_BLOCKED</code> is a permission fact and is visually distinct from an outage, a challenge or an empty result. Gate distribution: AUTOMATION_ALLOWED 1, AUTOMATION_ALLOWED_WITH_PERMISSION 7, AUTOMATION_PROHIBITED 12, AUTOMATION_UNKNOWN 10.</p>
+<p class="sub rv">30 registered sources. <b>Permission state and operational state are different facts</b> and never share a colour: a refusal is not an outage. Gate distribution: AUTOMATION_ALLOWED 1, AUTOMATION_ALLOWED_WITH_PERMISSION 7, AUTOMATION_PROHIBITED 12, AUTOMATION_UNKNOWN 10.</p>
+<div class="scards"><article class="scard" data-perm="PROHIBITED" data-anim="0"><h4><i class="sdot"></i>Air India</h4><p class="ch">AIRLINE_DIRECT</p><dl><dt>permission</dt><dd>PROHIBITED</dd><dt>gate</dt><dd>PROHIBITED</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_VERIFIED</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · PERMISSION_BLOCKED · today, at the gate</p></article><article class="scard" data-perm="PROHIBITED" data-anim="0"><h4><i class="sdot"></i>Cleartrip</h4><p class="ch">AGGREGATOR</p><dl><dt>permission</dt><dd>PROHIBITED</dd><dt>gate</dt><dd>PROHIBITED</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>DISALLOWS_REQUIRED_PATH</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · PERMISSION_BLOCKED · today, at the gate</p></article><article class="scard" data-perm="PROHIBITED" data-anim="0"><h4><i class="sdot"></i>IndiGo</h4><p class="ch">AIRLINE_DIRECT</p><dl><dt>permission</dt><dd>PROHIBITED</dd><dt>gate</dt><dd>PROHIBITED</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_VERIFIED</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · PERMISSION_BLOCKED · today, at the gate</p></article><article class="scard" data-perm="PENDING" data-anim="0"><h4><i class="sdot"></i>IndiGo NDC API</h4><p class="ch">LICENSED_FEED</p><dl><dt>permission</dt><dd>PENDING</dd><dt>gate</dt><dd>ALLOWED_WITH_PERMISSION</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · PERMISSION_BLOCKED · today, at the gate</p></article><article class="scard" data-perm="UNKNOWN" data-anim="0"><h4><i class="sdot"></i>MakeMyTrip</h4><p class="ch">AGGREGATOR</p><dl><dt>permission</dt><dd>UNKNOWN</dd><dt>gate</dt><dd>UNKNOWN</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_VERIFIED</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · PERMISSION_BLOCKED · today, at the gate</p></article><article class="scard" data-perm="PENDING" data-anim="0"><h4><i class="sdot"></i>Air India NDC API</h4><p class="ch">LICENSED_FEED</p><dl><dt>permission</dt><dd>PENDING</dd><dt>gate</dt><dd>ALLOWED_WITH_PERMISSION</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · NOT_SCHEDULED · never scheduled</p></article><article class="scard" data-perm="PENDING" data-anim="0"><h4><i class="sdot"></i>Kiwi.com Tequila API</h4><p class="ch">AGGREGATOR</p><dl><dt>permission</dt><dd>PENDING</dd><dt>gate</dt><dd>ALLOWED_WITH_PERMISSION</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · NOT_SCHEDULED · never scheduled</p></article><article class="scard" data-perm="PENDING" data-anim="0"><h4><i class="sdot"></i>Sabre Developer Hub (Bargain Finder Max, NDC AirShopping)</h4><p class="ch">LICENSED_FEED</p><dl><dt>permission</dt><dd>PENDING</dd><dt>gate</dt><dd>ALLOWED_WITH_PERMISSION</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · NOT_SCHEDULED · never scheduled</p></article><article class="scard" data-perm="PENDING" data-anim="0"><h4><i class="sdot"></i>Skyscanner Partners API</h4><p class="ch">AGGREGATOR</p><dl><dt>permission</dt><dd>PENDING</dd><dt>gate</dt><dd>ALLOWED_WITH_PERMISSION</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · NOT_SCHEDULED · never scheduled</p></article><article class="scard" data-perm="PENDING" data-anim="0"><h4><i class="sdot"></i>TBO / Tripjack B2B flight APIs</h4><p class="ch">LICENSED_FEED</p><dl><dt>permission</dt><dd>PENDING</dd><dt>gate</dt><dd>ALLOWED_WITH_PERMISSION</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · NOT_SCHEDULED · never scheduled</p></article><article class="scard" data-perm="AUTHORIZED" data-anim="0"><h4><i class="sdot"></i>Travelpayouts</h4><p class="ch">LICENSED_FEED</p><dl><dt>permission</dt><dd>AUTHORIZED</dd><dt>gate</dt><dd>ALLOWED</dd><dt>data rights</dt><dd>UNKNOWN</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · NOT_SCHEDULED · never scheduled</p></article><article class="scard" data-perm="PENDING" data-anim="0"><h4><i class="sdot"></i>Travelport Universal API (IndiGo content via GDS)</h4><p class="ch">LICENSED_FEED</p><dl><dt>permission</dt><dd>PENDING</dd><dt>gate</dt><dd>ALLOWED_WITH_PERMISSION</dd><dt>data rights</dt><dd>PROHIBITED</dd><dt>robots.txt</dt><dd>NOT_APPLICABLE</dd><dt>coverage</dt><dd>0 fares</dd></dl><p class="ops">OPERATIONAL · NOT_SCHEDULED · never scheduled</p></article></div>
+<p class="figcap">cards = the acquisition frontier (scheduled, or gate not unknown) · all 30 registered sources are in the table</p>
 <div class="tw"><table class="pf"><thead><tr><th>Source</th><th>Channel</th><th>Automation gate</th><th>Admissibility</th><th>Data rights</th><th>robots.txt</th><th>Operational</th><th>Evidence</th></tr></thead><tbody><tr><td>air_india</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_VERIFIED</td><td><span class="cls PERMISSION_BLOCKED">PERMISSION_BLOCKED</span></td><td>2026-09-10</td></tr><tr><td>air_india_express</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>DISALLOWS_REQUIRED_PATH</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-10</td></tr><tr><td>air_india_ndc</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_ALLOWED_WITH_PERMISSION">AUTOMATION_ALLOWED_WITH_PERMISSION</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>airline_tariff_sheets</td><td>DECLARED_TARIFF</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_VERIFIED</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-10</td></tr><tr><td>akasa_air</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NO_RELEVANT_DISALLOW</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-12</td></tr><tr><td>alliance_air</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NO_ROBOTS_FILE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>amadeus_self_service</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-12</td></tr><tr><td>cleartrip</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>DISALLOWS_REQUIRED_PATH</td><td><span class="cls PERMISSION_BLOCKED">PERMISSION_BLOCKED</span></td><td>2026-09-10</td></tr><tr><td>data_gov_in</td><td>OFFICIAL_STATISTICS</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_PERMITTED">RETENTION_PERMITTED</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>dgca_publications</td><td>OFFICIAL_STATISTICS</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_VERIFIED</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>duffel</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_PROHIBITED">RETENTION_PROHIBITED</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>easemytrip</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>DISALLOWS_REQUIRED_PATH</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-10</td></tr><tr><td>fly91</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>PARTIAL_DISALLOW</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>goibibo</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>PARTIAL_DISALLOW</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-10</td></tr><tr><td>google_flights</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>DISALLOWS_REQUIRED_PATH</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>indigo</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td>ADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_VERIFIED</td><td><span class="cls PERMISSION_BLOCKED">PERMISSION_BLOCKED</span></td><td>2026-09-12</td></tr><tr><td>indigo_ndc</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_ALLOWED_WITH_PERMISSION">AUTOMATION_ALLOWED_WITH_PERMISSION</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls PERMISSION_BLOCKED">PERMISSION_BLOCKED</span></td><td>2026-09-15</td></tr><tr><td>ixigo</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>DISALLOWS_REQUIRED_PATH</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-10</td></tr><tr><td>kiwi_tequila</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_ALLOWED_WITH_PERMISSION">AUTOMATION_ALLOWED_WITH_PERMISSION</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>makemytrip</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_VERIFIED</td><td><span class="cls PERMISSION_BLOCKED">PERMISSION_BLOCKED</span></td><td>2026-09-10</td></tr><tr><td>mospi_esankhyiki</td><td>OFFICIAL_STATISTICS</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>sabre_dev_studio</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_ALLOWED_WITH_PERMISSION">AUTOMATION_ALLOWED_WITH_PERMISSION</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>serpapi_google_flights</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>skyscanner_partners</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_ALLOWED_WITH_PERMISSION">AUTOMATION_ALLOWED_WITH_PERMISSION</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>spicejet</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NO_RELEVANT_DISALLOW</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>star_air</td><td>AIRLINE_DIRECT</td><td><span class="cls AUTOMATION_UNKNOWN">AUTOMATION_UNKNOWN</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NO_RELEVANT_DISALLOW</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>tbo_tripjack</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_ALLOWED_WITH_PERMISSION">AUTOMATION_ALLOWED_WITH_PERMISSION</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>travelpayouts</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_ALLOWED">AUTOMATION_ALLOWED</span></td><td>INADMISSIBLE</td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-12</td></tr><tr><td>travelport_uapi</td><td>LICENSED_FEED</td><td><span class="cls AUTOMATION_ALLOWED_WITH_PERMISSION">AUTOMATION_ALLOWED_WITH_PERMISSION</span></td><td>NOT_ASSESSED</td><td><span class="cls RETENTION_PROHIBITED">RETENTION_PROHIBITED</span></td><td>NOT_APPLICABLE</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-15</td></tr><tr><td>yatra</td><td>AGGREGATOR</td><td><span class="cls AUTOMATION_PROHIBITED">AUTOMATION_PROHIBITED</span></td><td></td><td><span class="cls RETENTION_UNKNOWN">RETENTION_UNKNOWN</span></td><td>NOT_VERIFIED</td><td><span class="cls NOT_SCHEDULED">NOT_SCHEDULED</span></td><td>2026-09-10</td></tr></tbody></table></div>
 </section>
 
 <section class="pf-s" id="runs"><h2><small>07</small>Collection runs</h2>
-<p class="sub">The scheduled run against the real register, executed today with no network. Every planned search has exactly one record.</p>
-<div class="tw"><table class="pf"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody><tr><td>run_id</td><td>sched-2026-09-15-7a3b0aef3857</td></tr><tr><td>collection_date</td><td>2026-09-15</td></tr><tr><td>basket_version</td><td>demo-ps26056</td></tr><tr><td>basket_status</td><td>DEMO</td></tr><tr><td>basket_is_publication_grade</td><td>False</td></tr><tr><td>window_set</td><td>ps-26056</td></tr><tr><td>windows</td><td>[1, 7, 15, 30, 45]</td></tr><tr><td>bands</td><td>[2, 3, 4, 5, 6]</td></tr><tr><td>mode</td><td>LIVE</td></tr><tr><td>planned_searches</td><td>150</td></tr><tr><td>requests_made</td><td>0</td></tr><tr><td>observations_written</td><td>0</td></tr><tr><td>cleared_sources</td><td>[]</td></tr><tr><td>by_outcome</td><td>PERMISSION_BLOCKED=150</td></tr><tr><td>coverage_loss_attributed_to_us</td><td>150</td></tr><tr><td>started_at</td><td>2026-09-16T00:04:51.591317+05:30</td></tr><tr><td>finished_at</td><td>2026-09-16T00:04:51.591767+05:30</td></tr></tbody></table></div>
+<p class="sub rv">Run <code>sched-2026-09-15-7a3b0aef3857</code> against the real register, executed today with no network. Every planned search has exactly one record. The stages below are the recorded values, revealed in pipeline order.</p>
+<div class="ladder"><div class=""><b data-count="1" data-s="0">6</b><span>routes in basket</span></div><div class=""><b data-count="1" data-s="1">5</b><span>APW windows</span></div><div class=""><b data-count="1" data-s="2">5</b><span>departure bands</span></div><div class=""><b data-count="1" data-s="3">5</b><span>sources scheduled</span></div><div class=""><b data-count="1" data-s="4">150</b><span>searches planned</span></div><div class="zero"><b data-count="1" data-s="5">0</b><span>requests made</span></div><div class="zero"><b data-count="1" data-s="6">0</b><span>observations written</span></div></div>
+<div class="tw"><table class="pf"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody><tr><td>run_id</td><td>sched-2026-09-15-7a3b0aef3857</td></tr><tr><td>collection_date</td><td>2026-09-15</td></tr><tr><td>basket_version</td><td>demo-ps26056</td></tr><tr><td>basket_status</td><td>DEMO</td></tr><tr><td>basket_is_publication_grade</td><td>False</td></tr><tr><td>window_set</td><td>ps-26056</td></tr><tr><td>windows</td><td>[1, 7, 15, 30, 45]</td></tr><tr><td>bands</td><td>[2, 3, 4, 5, 6]</td></tr><tr><td>mode</td><td>LIVE</td></tr><tr><td>planned_searches</td><td>150</td></tr><tr><td>requests_made</td><td>0</td></tr><tr><td>observations_written</td><td>0</td></tr><tr><td>cleared_sources</td><td>[]</td></tr><tr><td>by_outcome</td><td>PERMISSION_BLOCKED=150</td></tr><tr><td>coverage_loss_attributed_to_us</td><td>150</td></tr></tbody></table></div>
 <div class="note"><b>Coverage loss attributed to us: 150 of 150.</b> A permission refusal keeps its cell in the coverage denominator (spec H.1). Reading it as <code>NO_FLIGHT</code> would make our lack of authorisation look like an absence of service — ADR-0066.</div>
+<p class="figcap">run timestamps are deliberately not rendered: this page must regenerate byte-identically</p>
 </section>
 
 <section class="pf-s" id="quality"><h2><small>08</small>Data quality <span class="cls RESEARCH">RESEARCH</span></h2>
-<p class="sub">Plan completion 100.0% — 35 of 35 slots. Statistical coverage: <b>NOT_ESTABLISHED</b>.</p>
+<p class="sub rv">Plan completion 100.0% — 35 of 35 slots. Statistical coverage: <b>NOT_ESTABLISHED</b>.</p>
+<div class="btrow"><span class="lab">PLAN COMPLETION</span><span class="track"><i data-w="1.0000"></i></span><span class="val">35 of 35 slots · 7 frozen APW buckets x 5 bands</span></div>
+<div class="btrow"><span class="lab">STATISTICAL COVERAGE</span><span class="track dead"></span><span class="val">NOT_ESTABLISHED — AMB-8 open</span></div>
 <div class="note red">AMB-8 OPEN: spec I gates on '60% of expected cells' and nothing defines an expected cell. No denominator has been chosen, so no statistical coverage figure is computed.</div>
 <div class="tw"><table class="pf"><thead><tr><th>Exclusion group</th><th>Reason</th><th>Count</th></tr></thead><tbody><tr><td></td><td>NOT_EARLIEST_IN_BAND (contract selects earliest)</td><td class="n">67</td></tr><tr><td></td><td>APW_MATCHES_NO_BUCKET (T+68, spec A.3 exact match)</td><td class="n">24</td></tr><tr><td></td><td>OUTSIDE_CONTRACTED_BANDS (band 7)</td><td class="n">16</td></tr><tr><td></td><td>DEP_TIME_NOT_READABLE (not selected; did not affect any selection)</td><td class="n">8</td></tr><tr><td></td><td>OUTSIDE_CONTRACTED_BANDS (band 1)</td><td class="n">6</td></tr><tr><td></td><td>INSUFFICIENT_EVIDENCE (flight row scrolled off; no flight no. or times)</td><td class="n">1</td></tr></tbody></table></div>
 <p class="sub">122 screenshots excluded with a reason each; the replay reproduces the recorded verdict on 45 of 46 mechanically decidable cases with 0 disagreements.</p>
 </section>
 
 <section class="pf-s" id="provenance"><h2><small>09</small>Provenance explorer <span class="cls RESEARCH">RESEARCH</span></h2>
-<p class="sub">Every observation resolves through the API to its collection run, collector, parser version and methodology version. First 12 of 35 shown; all are served.</p>
+<p class="sub rv">Every observation resolves through the API to its collection run, collector, parser version and methodology version. Pick an observation to traverse its lineage from the index it cannot reach back to the raw artifact.</p>
+<div class="picker" data-for="lineage" role="group" aria-label="Choose an observation"><button type="button" data-i="0" aria-pressed="false">T+1 · 6E 6218</button><button type="button" data-i="1" aria-pressed="false">T+1 · 6E 6107</button><button type="button" data-i="2" aria-pressed="false">T+1 · 6E 6676</button><button type="button" data-i="3" aria-pressed="false">T+1 · 6E 864</button><button type="button" data-i="4" aria-pressed="false">T+1 · 6E 329</button><button type="button" data-i="5" aria-pressed="false">T+3 · 6E 6218</button><button type="button" data-i="6" aria-pressed="false">T+3 · 6E 6107</button><button type="button" data-i="7" aria-pressed="false">T+3 · 6E 6676</button><button type="button" data-i="8" aria-pressed="false">T+3 · 6E 864</button><button type="button" data-i="9" aria-pressed="false">T+3 · 6E 329</button><button type="button" data-i="10" aria-pressed="false">T+7 · 6E 6218</button><button type="button" data-i="11" aria-pressed="false">T+7 · 6E 6107</button></div>
+<div class="lin"><div class="step" data-k="index" data-on="0"><div class="k">Index</div><div class="v"><em>no index level — 0 matched t/t−7 pairs (spec C.1)</em></div></div><div class="step" data-k="route" data-on="0"><div class="k">Route contribution</div><div class="v">DEL-BOM · basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em></div></div><div class="step" data-k="observation" data-on="0"><div class="k">Observation</div><div class="v">6E 6218 · T+1 · band 2 · 6,530 <em>(base 5,065 + tax 1,465)</em></div></div><div class="step" data-k="run" data-on="0"><div class="k">Collection run</div><div class="v">run-20260912-primary · 2026-09-12 · parser manual-1.0 · methodology 2.1</div></div><div class="step" data-k="source" data-on="0"><div class="k">Source</div><div class="v">IndiGo web · PRIMARY_HASHED <em>(manual protocol, not automated)</em></div></div><div class="step" data-k="artifact" data-on="0"><div class="k">Raw artifact</div><div class="v"><em>screenshot corpus → @primary → </em>20260912-primary-indigo-direct-6E6218-20260913-Saver fare</div></div></div>
+<p class="figcap">lineage reveals in pipeline order · first 12 of 35 shown here, all 35 served at GET /provenance/&#123;observation_id&#125;</p>
 <div class="tw"><table class="pf"><thead><tr><th>Observation</th><th>APW</th><th>Band</th><th>Flight</th><th>Dep</th><th>Total ₹</th><th>Evidence</th><th>Endpoint</th></tr></thead><tbody><tr><td><span class="ep">20260912-primary-indigo-direct-6E6218-20260913-Saver fare</span></td><td class="n">1</td><td class="n">2</td><td>6E 6218</td><td>06:05</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6218-20260913-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E6107-20260913-Saver fare</span></td><td class="n">1</td><td class="n">3</td><td>6E 6107</td><td>09:30</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6107-20260913-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E6676-20260913-Saver fare</span></td><td class="n">1</td><td class="n">4</td><td>6E 6676</td><td>12:00</td><td class="n">6,688</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6676-20260913-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E864-20260913-Saver fare</span></td><td class="n">1</td><td class="n">5</td><td>6E 864</td><td>15:30</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E864-20260913-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E329-20260913-Saver fare</span></td><td class="n">1</td><td class="n">6</td><td>6E 329</td><td>18:00</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E329-20260913-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E6218-20260915-Saver fare</span></td><td class="n">3</td><td class="n">2</td><td>6E 6218</td><td>06:05</td><td class="n">8,158</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6218-20260915-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E6107-20260915-Saver fare</span></td><td class="n">3</td><td class="n">3</td><td>6E 6107</td><td>09:30</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6107-20260915-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E6676-20260915-Saver fare</span></td><td class="n">3</td><td class="n">4</td><td>6E 6676</td><td>12:00</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6676-20260915-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E864-20260915-Saver fare</span></td><td class="n">3</td><td class="n">5</td><td>6E 864</td><td>15:30</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E864-20260915-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E329-20260915-Saver fare</span></td><td class="n">3</td><td class="n">6</td><td>6E 329</td><td>18:00</td><td class="n">6,898</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E329-20260915-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E6218-20260919-Saver fare</span></td><td class="n">7</td><td class="n">2</td><td>6E 6218</td><td>06:05</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6218-20260919-Saver fare</span></td></tr><tr><td><span class="ep">20260912-primary-indigo-direct-6E6107-20260919-Saver fare</span></td><td class="n">7</td><td class="n">3</td><td>6E 6107</td><td>09:30</td><td class="n">6,530</td><td><span class="cls PRIMARY_HASHED">PRIMARY_HASHED</span></td><td><span class="ep">GET /provenance/20260912-primary-indigo-direct-6E6107-20260919-Saver fare</span></td></tr></tbody></table></div>
 </section>
 
 <section class="pf-s" id="backtest"><h2><small>10</small>Backtest <span class="cls INCOMPLETE">INCOMPLETE</span></h2>
-<p class="sub">Framework complete — alignment, Pearson, MAE, MAPE, RMSE, directional agreement, all verified against known series. The PS names DGCA monthly average-fare data as the benchmark.</p>
+<p class="sub rv">Framework complete — alignment, Pearson, MAE, MAPE, RMSE, directional agreement, all verified against known series. The PS names DGCA monthly average-fare data as the benchmark. The chart below is not fabricated: it shows what each series actually offers.</p>
+<div class="btrow"><span class="lab">APIx SERIES</span><span class="track"><i data-w="0.0333"></i></span><span class="val">1 monthly point · DEMO input · 0 real</span></div>
+<div class="btrow"><span class="lab">DGCA AVERAGE FARE</span><span class="track dead"></span><span class="val">NOT_LOCATED — never published</span></div>
+<div class="btrow"><span class="lab">MoSPI CPI AIRFARE</span><span class="track dead"><i data-w="0.0833"></i></span><span class="val">12 points · December only · insufficient temporal granularity</span></div>
+<p class="figcap">a 30-day backtest needs 30 aligned days · FRAMEWORK READY · EMPIRICAL VALIDATION INCOMPLETE</p>
 <div class="note red"><b>DGCA fare benchmark: NOT_LOCATED.</b> No published DGCA average-fare or tariff series was located. DGCA's complete A-Z index and sitemap were enumerated on 2026-09-15 [TOOL]: its air-transport statistical offering is the Handbook on Civil Aviation Statistics plus domestic and international traffic…</div>
 <div class="tw"><table class="pf"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody><tr><td>id</td><td>mospi_cpi_airfare_base2012</td></tr><tr><td>publisher</td><td>MoSPI eSankhyiki</td></tr><tr><td>measures</td><td>Air Fare (normal): Economy Class(adult)</td></tr><tr><td>unit</td><td>index (2012=100)</td></tr><tr><td>declared_frequency</td><td>monthly</td></tr><tr><td>months_actually_published</td><td>['December']</td></tr><tr><td>points</td><td>12</td></tr></tbody></table></div>
 <ul class="tight"><li>PUBLIC BENCHMARK AVAILABILITY: no DGCA average-fare series is published</li><li>PUBLIC BENCHMARK GRANULARITY: the held benchmark publishes one month per year</li><li>APIx holds no real index series: zero matched t/t-7 pairs</li></ul>
@@ -871,15 +1096,649 @@ DAILY · WEEKLY · MONTHLY  →  READINESS (allowed to say no)  →  BACKTEST  �
 </section>
 
 <section class="pf-s" id="methodology"><h2><small>11</small>Methodology</h2>
-<p class="sub">Frozen v2.1. Nothing on this page changes it.</p>
+<p class="sub rv">Frozen v2.1. Nothing on this page changes it.</p>
 <div class="tw"><table class="pf"><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody><tr><td>APW frozen vector (spec A.3, LOCKED)</td><td>[1, 3, 7, 15, 30, 45, 60]</td></tr><tr><td>APW PS 26056 vector</td><td>[1, 7, 15, 30, 45] — strict subset: True</td></tr><tr><td>Departure bands</td><td>2: 06:00-08:59, 3: 09:00-11:59, 4: 12:00-14:59, 5: 15:00-17:59, 6: 18:00-20:59</td></tr><tr><td>Selection</td><td>earliest eligible flight per band — never the cheapest</td></tr><tr><td>Elementary index</td><td>Jevons, log form; band price = geometric mean</td></tr><tr><td>Chaining (spec C.1, LOCKED)</td><td>I(c,t) = I(c,t−7) · J(c,t)</td></tr><tr><td>Higher aggregation</td><td>Young / Modified Laspeyres, §G.5 sum-to-one</td></tr><tr><td>Open blocking ambiguities</td><td>AMB-8 (expected cells), AMB-9 (carrier allocation)</td></tr></tbody></table></div>
 </section>
 
 <section class="pf-s" id="architecture"><h2><small>12</small>System architecture and API</h2>
-<p class="sub">Standard-library HTTP, JSON, every response wrapped with methodology version, output class and publication state. <code>python -m apix.api</code></p>
-<div class="tw"><table class="pf"><thead><tr><th>Endpoint</th><th>Returns</th></tr></thead><tbody><tr><td><span class="ep">GET /health</span></td><td>liveness, files present, egress policy</td></tr><tr><td><span class="ep">GET /sources</span></td><td>30-source register with gates and operational status</td></tr><tr><td><span class="ep">GET /routes</span></td><td>declared baskets; none publication grade</td></tr><tr><td><span class="ep">GET /observations</span></td><td>the 35 real observations, RESEARCH</td></tr><tr><td><span class="ep">GET /index/daily|weekly|monthly</span></td><td>empty series + readiness verdict; ?class=demo for the fixture, labelled DEMO</td></tr><tr><td><span class="ep">GET /coverage</span></td><td>plan completion, AMB-8 blocker, scheduled-run refusals</td></tr><tr><td><span class="ep">GET /lead-time</span></td><td>descriptive APW profile with confound; not an elasticity</td></tr><tr><td><span class="ep">GET /provenance/&#123;observation_id&#125;</span></td><td>observation → run → collector → parser → methodology</td></tr><tr><td><span class="ep">GET /backtest</span></td><td>framework verdict: INCOMPLETE, reasons named</td></tr><tr><td><span class="ep">GET /reference</span></td><td>Alliance Air tariff, REFERENCE_ONLY, INADMISSIBLE</td></tr><tr><td><span class="ep">GET /config</span></td><td>APW window sets, bands, egress policy</td></tr></tbody></table></div>
+<p class="sub rv">Standard-library HTTP, JSON, every response wrapped with methodology version, output class and publication state. <code>python -m apix.api --port 8760</code></p>
+<div class="eps">
+  <div class="epc"><code>GET /health</code><p>liveness, files present, egress policy</p></div>
+  <div class="epc"><code>GET /sources</code><p>30-source register with gates and operational status</p></div>
+  <div class="epc"><code>GET /routes</code><p>declared baskets; none publication grade</p></div>
+  <div class="epc"><code>GET /observations</code><p>the 35 real observations, RESEARCH</p></div>
+  <div class="epc"><code>GET /index/daily|weekly|monthly</code><p>empty series + readiness verdict; <code>?class=demo</code> for the fixture, labelled DEMO</p></div>
+  <div class="epc"><code>GET /coverage</code><p>plan completion, AMB-8 blocker, scheduled-run refusals</p></div>
+  <div class="epc"><code>GET /lead-time</code><p>descriptive APW profile with confound; not an elasticity</p></div>
+  <div class="epc"><code>GET /provenance/&#123;observation_id&#125;</code><p>observation → run → collector → parser → methodology</p></div>
+  <div class="epc"><code>GET /backtest</code><p>framework verdict: INCOMPLETE, reasons named</p></div>
+  <div class="epc"><code>GET /reference</code><p>Alliance Air tariff, REFERENCE_ONLY, INADMISSIBLE</p></div>
+  <div class="epc"><code>GET /config</code><p>APW window sets, bands, egress policy</p></div>
+</div>
 <p class="sub">Exports: <code>python -m apix.export</code> writes CSV and JSON to <code>data/exports/</code> with fixed column orders. The editorial dashboard is <a href="dashboard.html">dashboard.html</a>. The one-command demo is <code>python -m apix.demo</code>.</p>
 <div class="note red"><b>The externally blocked capability, stated once:</b> authorized live airfare acquisition. Everything else on this page runs today.</div>
 </section>
+
+<section class="pf-close">
+  <blockquote class="line-mask-group"><span class="line-mask"><span>APIx does not</span></span><span class="line-mask"><span>manufacture certainty.</span></span></blockquote>
+  <p class="rv" style="max-width:44ch;margin:0 auto 30px;color:var(--ink-2)">It measures only what the evidence supports.</p>
+  <p class="k rv" data-d="1">PS 26056 · Airfare measurement infrastructure for India</p>
+</section>
 </div>
+<div id="tip" role="status" aria-live="polite"></div>
+<script type="application/json" id="apix-data">{"apw":[{"apw":1,"day_of_week":"Sun","geomean":6561.3,"in_ps_26056_set":true,"max":6688.0,"max_obs":{"band":4,"dep":"12:00","flight":"6E 6676","observation_id":"20260912-primary-indigo-direct-6E6676-20260913-Saver fare","total":6688.0},"min":6530.0,"min_obs":{"band":2,"dep":"06:05","flight":"6E 6218","observation_id":"20260912-primary-indigo-direct-6E6218-20260913-Saver fare","total":6530.0},"n":5,"premium_vs_t1_pct":0.0,"rel_to_first":1.0,"spread_pct":2.4,"travel_date":"2026-09-13"},{"apw":3,"day_of_week":"Tue","geomean":6902.55,"in_ps_26056_set":false,"max":8158.0,"max_obs":{"band":2,"dep":"06:05","flight":"6E 6218","observation_id":"20260912-primary-indigo-direct-6E6218-20260915-Saver fare","total":8158.0},"min":6530.0,"min_obs":{"band":3,"dep":"09:30","flight":"6E 6107","observation_id":"20260912-primary-indigo-direct-6E6107-20260915-Saver fare","total":6530.0},"n":5,"premium_vs_t1_pct":5.2,"rel_to_first":1.052,"spread_pct":24.9,"travel_date":"2026-09-15"},{"apw":7,"day_of_week":"Sat","geomean":6633.64,"in_ps_26056_set":true,"max":6898.0,"max_obs":{"band":6,"dep":"18:00","flight":"6E 329","observation_id":"20260912-primary-indigo-direct-6E329-20260919-Saver fare","total":6898.0},"min":6530.0,"min_obs":{"band":2,"dep":"06:05","flight":"6E 6218","observation_id":"20260912-primary-indigo-direct-6E6218-20260919-Saver fare","total":6530.0},"n":5,"premium_vs_t1_pct":1.1,"rel_to_first":1.011,"spread_pct":5.6,"travel_date":"2026-09-19"},{"apw":15,"day_of_week":"Sun","geomean":6849.76,"in_ps_26056_set":true,"max":7160.0,"max_obs":{"band":4,"dep":"12:00","flight":"6E 6676","observation_id":"20260912-primary-indigo-direct-6E6676-20260927-Saver fare","total":7160.0},"min":6530.0,"min_obs":{"band":2,"dep":"06:05","flight":"6E 6218","observation_id":"20260912-primary-indigo-direct-6E6218-20260927-Saver fare","total":6530.0},"n":5,"premium_vs_t1_pct":4.4,"rel_to_first":1.044,"spread_pct":9.6,"travel_date":"2026-09-27"},{"apw":30,"day_of_week":"Mon","geomean":6601.99,"in_ps_26056_set":true,"max":6898.0,"max_obs":{"band":2,"dep":"06:05","flight":"6E 6218","observation_id":"20260912-primary-indigo-direct-6E6218-20261012-Saver fare","total":6898.0},"min":6530.0,"min_obs":{"band":3,"dep":"09:30","flight":"6E 6107","observation_id":"20260912-primary-indigo-direct-6E6107-20261012-Saver fare","total":6530.0},"n":5,"premium_vs_t1_pct":0.62,"rel_to_first":1.0062,"spread_pct":5.6,"travel_date":"2026-10-12"},{"apw":45,"day_of_week":"Tue","geomean":7048.75,"in_ps_26056_set":true,"max":7169.0,"max_obs":{"band":6,"dep":"18:30","flight":"6E 329","observation_id":"20260913-primary-indigo-direct-6E329-20261027-Saver fare","total":7169.0},"min":7019.0,"min_obs":{"band":2,"dep":"06:05","flight":"6E 6218","observation_id":"20260913-primary-indigo-direct-6E6218-20261027-Saver fare","total":7019.0},"n":5,"premium_vs_t1_pct":7.43,"rel_to_first":1.0743,"spread_pct":2.1,"travel_date":"2026-10-27"},{"apw":60,"day_of_week":"Wed","geomean":9090.99,"in_ps_26056_set":false,"max":9665.0,"max_obs":{"band":4,"dep":"13:15","flight":"6E 324","observation_id":"20260912-primary-indigo-direct-6E324-20261111-Saver fare","total":9665.0},"min":8720.0,"min_obs":{"band":3,"dep":"09:30","flight":"6E 6107","observation_id":"20260912-primary-indigo-direct-6E6107-20261111-Saver fare","total":8720.0},"n":5,"premium_vs_t1_pct":38.55,"rel_to_first":1.3855,"spread_pct":10.8,"travel_date":"2026-11-11"}],"apwOrder":[1,3,7,15,30,45,60],"geomeanByApw":{"1":6561.3,"3":6902.55,"7":6633.64,"15":6849.76,"30":6601.99,"45":7048.75,"60":9090.99},"lineage":[{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6218-20260913-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6218 \u00b7 T+1 \u00b7 band 2 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6107-20260913-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6107 \u00b7 T+1 \u00b7 band 3 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6676-20260913-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6676 \u00b7 T+1 \u00b7 band 4 \u00b7 6,688 <em>(base 5,215 + tax 1,473)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E864-20260913-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 864 \u00b7 T+1 \u00b7 band 5 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E329-20260913-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 329 \u00b7 T+1 \u00b7 band 6 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6218-20260915-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6218 \u00b7 T+3 \u00b7 band 2 \u00b7 8,158 <em>(base 6,615 + tax 1,543)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6107-20260915-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6107 \u00b7 T+3 \u00b7 band 3 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6676-20260915-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6676 \u00b7 T+3 \u00b7 band 4 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E864-20260915-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 864 \u00b7 T+3 \u00b7 band 5 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E329-20260915-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 329 \u00b7 T+3 \u00b7 band 6 \u00b7 6,898 <em>(base 5,415 + tax 1,483)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6218-20260919-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6218 \u00b7 T+7 \u00b7 band 2 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"},{"artifact":"<em>screenshot corpus \u2192 @primary \u2192 </em>20260912-primary-indigo-direct-6E6107-20260919-Saver fare","index":"<em>no index level \u2014 0 matched t/t\u22127 pairs (spec C.1)</em>","observation":"6E 6107 \u00b7 T+7 \u00b7 band 3 \u00b7 6,530 <em>(base 5,065 + tax 1,465)</em>","route":"DEL-BOM \u00b7 basket weight 0.1667 <em>(DEMO placeholder, equal weights)</em>","run":"run-20260912-primary \u00b7 2026-09-12 \u00b7 parser manual-1.0 \u00b7 methodology 2.1","source":"IndiGo web \u00b7 PRIMARY_HASHED <em>(manual protocol, not automated)</em>"}],"obs":[{"apw":1,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":1,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":1,"ev":"PRIMARY_HASHED","total":6688.0},{"apw":1,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":1,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":3,"ev":"PRIMARY_HASHED","total":8158.0},{"apw":3,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":3,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":3,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":3,"ev":"PRIMARY_HASHED","total":6898.0},{"apw":7,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":7,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":7,"ev":"PRIMARY_HASHED","total":6688.0},{"apw":7,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":7,"ev":"PRIMARY_HASHED","total":6898.0},{"apw":15,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":15,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":15,"ev":"PRIMARY_HASHED","total":7160.0},{"apw":15,"ev":"PRIMARY_HASHED","total":6898.0},{"apw":15,"ev":"PRIMARY_HASHED","total":7160.0},{"apw":30,"ev":"PRIMARY_HASHED","total":6898.0},{"apw":30,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":30,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":30,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":30,"ev":"PRIMARY_HASHED","total":6530.0},{"apw":45,"ev":"SECONDARY_CHAT_IMAGE","total":7019.0},{"apw":45,"ev":"SECONDARY_CHAT_IMAGE","total":7019.0},{"apw":45,"ev":"SECONDARY_CHAT_IMAGE","total":7019.0},{"apw":45,"ev":"SECONDARY_CHAT_IMAGE","total":7019.0},{"apw":45,"ev":"SECONDARY_CHAT_IMAGE","total":7169.0},{"apw":60,"ev":"PRIMARY_HASHED","total":9192.0},{"apw":60,"ev":"PRIMARY_HASHED","total":8720.0},{"apw":60,"ev":"PRIMARY_HASHED","total":9665.0},{"apw":60,"ev":"PRIMARY_HASHED","total":9192.0},{"apw":60,"ev":"PRIMARY_HASHED","total":8720.0}],"packets":[{"label":"DEL-BOM \u00b7 T+1 \u00b7 \u20b96,530"},{"label":"DEL-BOM \u00b7 T+1 \u00b7 \u20b96,530"},{"label":"DEL-BOM \u00b7 T+1 \u00b7 \u20b96,688"},{"label":"DEL-BOM \u00b7 T+1 \u00b7 \u20b96,530"},{"label":"DEL-BOM \u00b7 T+1 \u00b7 \u20b96,530"},{"label":"DEL-BOM \u00b7 T+3 \u00b7 \u20b98,158"}]}</script>
+<script>
+(function(){
+"use strict";
+/* Booting on DOMContentLoaded, not at parse time: the three libraries are
+   loaded with `defer`, so window.gsap does not exist while this script is being
+   parsed. Reading it too early is what silently disabled the whole animation
+   layer in the dashboard's first build. */
+function boot(){
+var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+var D = null;
+try { D = JSON.parse(document.getElementById('apix-data').textContent); } catch(e) { D = null; }
+var G = window.gsap, ST = window.ScrollTrigger, LenisCtor = window.Lenis;
+var hasGSAP = !!(G && ST);
+if(hasGSAP){ try { G.registerPlugin(ST); } catch(e){ hasGSAP = false; } }
+var TRIGGERS = [];
+function keep(t){ if(t) TRIGGERS.push(t); return t; }
+
+/* ------------------------------------------------------- smooth scrolling */
+var lenis = null;
+if(LenisCtor && !RM){
+  try {
+    lenis = new LenisCtor({ duration:1.05,
+      easing:function(t){ return Math.min(1, 1.001 - Math.pow(2, -10*t)); } });
+    function raf(t){ lenis.raf(t); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+    if(hasGSAP){ lenis.on('scroll', ST.update); }
+  } catch(e){ lenis = null; }
+}
+
+/* --------------------------------------------------------------- tooltips */
+var tip = document.getElementById('tip');
+function showTip(html, x, y){
+  if(!tip) return;
+  tip.innerHTML = html; tip.style.left = x+'px'; tip.style.top = y+'px';
+  tip.classList.add('on');
+}
+function hideTip(){ if(tip) tip.classList.remove('on'); }
+function rows(p){
+  var s='<dl>';
+  for(var i=0;i<p.length;i++){ s += '<dt>'+p[i][0]+'</dt><dd>'+p[i][1]+'</dd>'; }
+  return s+'</dl>';
+}
+function inr(v){ return '₹' + Math.round(Number(v)).toLocaleString('en-IN'); }
+function bind(el, fn){
+  el.addEventListener('mouseenter', fn); el.addEventListener('focus', fn);
+  el.addEventListener('mouseleave', hideTip); el.addEventListener('blur', hideTip);
+}
+
+/* ---------------------------------------------------------------- reveals */
+function revealFallback(){
+  var rv = document.querySelectorAll('.rv, .line-mask');
+  if(RM || !('IntersectionObserver' in window)){
+    rv.forEach(function(el){ el.style.opacity='1'; el.style.transform='none';
+      el.querySelectorAll('span').forEach(function(s){ s.style.transform='none'; }); });
+    return;
+  }
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(!e.isIntersecting) return;
+      var el = e.target;
+      el.style.transition = 'opacity .7s cubic-bezier(.16,1,.3,1),' +
+                            ' transform .7s cubic-bezier(.16,1,.3,1)';
+      el.style.opacity='1'; el.style.transform='none';
+      el.querySelectorAll('span').forEach(function(s,i){
+        s.style.transition = 'transform .8s cubic-bezier(.16,1,.3,1) '+(i*0.06)+'s';
+        s.style.transform='none';
+      });
+      io.unobserve(el);
+    });
+  }, {rootMargin:'0px 0px -10% 0px', threshold:.06});
+  rv.forEach(function(el){ io.observe(el); });
+}
+if(!hasGSAP || RM){
+  revealFallback();
+} else {
+  document.querySelectorAll('.line-mask').forEach(function(el){
+    /* fromTo, not to: the resting offset is a CSS percentage and GSAP reads a
+       computed transform back as pixels, so a tween *to* yPercent 0 moves
+       nothing and the heading stays hidden behind its own clip. */
+    G.fromTo(el.querySelectorAll('span'), {yPercent:112, y:0}, {
+      yPercent:0, y:0, duration:1.15, ease:'expo.out', stagger:0.07,
+      scrollTrigger:{ trigger:el, start:'top 90%' }
+    });
+  });
+  document.querySelectorAll('.rv').forEach(function(el){
+    G.to(el, { opacity:1, y:0, duration:0.9, ease:'expo.out',
+      delay:(el.dataset.d ? +el.dataset.d * 0.08 : 0),
+      scrollTrigger:{ trigger:el, start:'top 92%' } });
+  });
+}
+
+/* Failsafe. The reveal is an enhancement, so it must not be the only path to
+   visible content. If nothing revealed after 2.5s the mechanism is dead and
+   everything is shown outright. */
+setTimeout(function(){
+  var all = [].slice.call(document.querySelectorAll('.rv'));
+  var shown = all.filter(function(el){
+    return parseFloat(getComputedStyle(el).opacity) > 0.5;
+  }).length;
+  if(all.length && shown > 0) return;
+  all.forEach(function(el){ el.style.opacity='1'; el.style.transform='none'; });
+  [].slice.call(document.querySelectorAll('.line-mask > span')).forEach(function(s){
+    s.style.transform='none';
+  });
+  [].slice.call(document.querySelectorAll('[data-count]')).forEach(function(el){
+    el.style.clipPath=''; el.style.transform=''; el.style.transition='';
+  });
+  [].slice.call(document.querySelectorAll('tbody tr.rvr, .hm-cell')).forEach(function(el){
+    el.style.opacity='1';
+  });
+}, 2500);
+
+/* -------------------------------------------------------- number reveals */
+/* The element's text is already the true value; this only uncovers it. A
+   0 -> 35 tally would put a WRONG statistic on screen for about a second, and
+   any frame can be screenshotted, so no intermediate value is ever rendered. */
+document.querySelectorAll('[data-count]').forEach(function(el){
+  if(RM) return;
+  var HID = 'inset(-25% 0 100% 0)', SEEN = 'inset(-25% 0 -25% 0)';
+  function show(){ el.style.clipPath=''; el.style.transition=''; el.style.willChange=''; }
+  el.style.willChange = 'clip-path';
+  el.style.clipPath = HID;
+  if(hasGSAP){
+    G.fromTo(el, {clipPath:HID},
+      { clipPath:SEEN, duration:1.0, ease:'expo.out', immediateRender:true,
+        delay:(el.dataset.s ? +el.dataset.s * 0.09 : 0),
+        scrollTrigger:{ trigger:el.closest('section, header') || el, start:'top 82%' },
+        onComplete:show });
+  } else if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting) return;
+        io.unobserve(e.target);
+        el.style.transition = 'clip-path .95s cubic-bezier(.16,1,.3,1) ' +
+                              (el.dataset.s ? +el.dataset.s * 0.09 : 0) + 's';
+        el.style.clipPath = SEEN;
+        setTimeout(show, 1400);
+      });
+    }, {threshold:.25});
+    io.observe(el);
+  } else { show(); }
+});
+
+/* ------------------------------------------- nav: active, progress, context */
+(function(){
+  var nav = document.querySelector('.pf-nav');
+  var prog = document.querySelector('.pf-prog');
+  var where = document.querySelector('.pf-where b');
+  var links = [].slice.call(document.querySelectorAll('.pf-nav a[href^="#"]'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function onScroll(){
+    var y = window.scrollY || 0;
+    if(nav) nav.dataset.solid = y > 30 ? '1' : '0';
+    var doc = document.documentElement.scrollHeight - innerHeight;
+    if(prog) prog.style.transform = 'scaleX(' + (doc > 0 ? Math.min(1, y/doc) : 0) + ')';
+    var mid = y + (nav ? nav.offsetHeight : 48) + 30, best = -1;
+    secs.forEach(function(s, i){ if(s && s.offsetTop <= mid) best = i; });
+    links.forEach(function(a, i){
+      if(i === best) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current');
+    });
+    if(where) where.textContent = best >= 0 ? links[best].textContent : 'Overview';
+  }
+  addEventListener('scroll', onScroll, {passive:true});
+  addEventListener('resize', onScroll, {passive:true});
+  onScroll();
+  links.forEach(function(a){
+    a.addEventListener('click', function(ev){
+      var t = document.querySelector(a.getAttribute('href'));
+      if(!t) return;
+      ev.preventDefault();
+      /* CSS scroll-padding handles scrollIntoView; Lenis scrolls itself and has
+         to be told the same clearance explicitly. */
+      var clear = (nav ? nav.offsetHeight : 48) + 18;
+      if(lenis) lenis.scrollTo(t, {offset:-clear});
+      else t.scrollIntoView({behavior:RM?'auto':'smooth'});
+    });
+  });
+})();
+
+/* ================================================= hero observation field ==
+   35 points, one per real observation. Both coordinates are recorded fields --
+   advance-purchase bucket and payable fare -- and scroll drives a continuous
+   `beat` between three layouts: the quotes as collected, the same quotes keyed
+   into their seven buckets, and the seven bucket geometric means the profile
+   chart draws. Nothing is randomised and no value is invented.              */
+(function(){
+  var cv = document.getElementById('pf-field');
+  if(!cv || !D || !D.obs || !D.obs.length || RM){ if(cv && RM) cv.remove(); return; }
+  var ctx = null;
+  try { ctx = cv.getContext('2d'); } catch(e){}
+  if(!ctx){ cv.remove(); return; }
+
+  var obs = D.obs, apws = D.apwOrder || [], gm = D.geomeanByApw || {};
+  var fares = obs.map(function(o){ return o.total; });
+  var flo = Math.min.apply(null, fares), fhi = Math.max.apply(null, fares);
+  var caps = [].slice.call(document.querySelectorAll('.pf-beats div'));
+
+  function nx(i){ return (i + 0.5) / obs.length; }
+  function ax(o){ var k = apws.indexOf(o.apw);
+                  return (k < 0 ? 0.5 : (k + 0.5) / Math.max(apws.length,1)); }
+  function fy(v){ return 1 - (v - flo) / Math.max(fhi - flo, 1); }
+  var LAY = [
+    function(o,i){ return [nx(i), fy(o.total)]; },
+    function(o){   return [ax(o),  fy(o.total)]; },
+    function(o){   return [ax(o),  fy(gm[o.apw] != null ? gm[o.apw] : o.total)]; }
+  ];
+  var BEATS = LAY.length;
+  var beat = 0, target = 0, running = false, rafId = 0, dpr = 1;
+
+  function size(){
+    dpr = Math.min(devicePixelRatio || 1, innerWidth < 760 ? 1.5 : 2);
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if(cv.width !== (w*dpr|0) || cv.height !== (h*dpr|0)){
+      cv.width = w*dpr|0; cv.height = h*dpr|0;
+    }
+  }
+  function ease(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+  function draw(){
+    var w = cv.width, h = cv.height, PL = 46*dpr, PR = 16*dpr, PT = 18*dpr, PB = 26*dpr;
+    var iw = w - PL - PR, ih = h - PT - PB;
+    ctx.clearRect(0,0,w,h);
+    var lo = Math.max(0, Math.min(BEATS-1, Math.floor(beat)));
+    var hi = Math.min(BEATS-1, lo+1);
+    var k = ease(Math.max(0, Math.min(1, beat - lo)));
+    /* baseline + bucket guides, drawn only once the points are keyed */
+    ctx.strokeStyle = 'rgba(23,28,33,.10)'; ctx.lineWidth = 1*dpr;
+    ctx.beginPath(); ctx.moveTo(PL, PT+ih); ctx.lineTo(PL+iw, PT+ih); ctx.stroke();
+    var guide = Math.max(0, Math.min(1, beat - 0.25));
+    if(guide > 0 && apws.length){
+      ctx.strokeStyle = 'rgba(23,28,33,'+(0.07*guide).toFixed(3)+')';
+      apws.forEach(function(a, gi){
+        var gx = PL + iw * ((gi + 0.5) / apws.length);
+        ctx.beginPath(); ctx.moveTo(gx, PT); ctx.lineTo(gx, PT+ih); ctx.stroke();
+      });
+    }
+    for(var i=0;i<obs.length;i++){
+      var a = LAY[lo](obs[i], i), b = LAY[hi](obs[i], i);
+      var px = PL + iw * (a[0] + (b[0]-a[0])*k);
+      var py = PT + ih * (a[1] + (b[1]-a[1])*k);
+      var primary = obs[i].ev === 'PRIMARY_HASHED';
+      ctx.beginPath();
+      ctx.arc(px, py, (primary ? 2.6 : 3.6)*dpr, 0, 6.2832);
+      ctx.fillStyle = beat > 1.55 ? 'rgba(166,104,16,.92)'
+                    : (primary ? 'rgba(40,80,120,.80)' : 'rgba(166,104,16,.85)');
+      ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(23,28,33,.42)';
+    ctx.font = (10*dpr) + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillText(inr(fhi), 4*dpr, PT + 4*dpr);
+    ctx.fillText(inr(flo), 4*dpr, PT + ih);
+  }
+  function frame(){
+    if(!running) return;
+    size();
+    beat += (target - beat) * 0.085;
+    draw();
+    rafId = requestAnimationFrame(frame);
+  }
+  function setBeat(b){
+    target = Math.max(0, Math.min(BEATS-1, b));
+    var act = Math.round(target);
+    caps.forEach(function(el,i){ el.dataset.on = i === act ? '1' : '0'; });
+  }
+  setBeat(0);
+  if(hasGSAP){
+    keep(ST.create({ trigger:'.pf-hero', start:'top top', end:'bottom 30%', scrub:0.6,
+      onUpdate:function(self){ setBeat(self.progress * (BEATS-1)); } }));
+  } else {
+    addEventListener('scroll', function(){
+      var hero = document.querySelector('.pf-hero');
+      if(!hero) return;
+      var p = Math.min(1, Math.max(0, (window.scrollY||0) / Math.max(hero.offsetHeight,1)));
+      setBeat(p * (BEATS-1));
+    }, {passive:true});
+  }
+  /* Offscreen costs nothing: the loop is stopped, not throttled. */
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting && !running){ running = true; rafId = requestAnimationFrame(frame); }
+      else if(!e.isIntersecting && running){ running = false; cancelAnimationFrame(rafId); }
+    });
+  }, {threshold:0.01});
+  io.observe(cv);
+  running = true; rafId = requestAnimationFrame(frame);
+  addEventListener('resize', function(){ size(); draw(); }, {passive:true});
+})();
+
+/* ============================================== architecture: two lanes ====
+   The manual-evidence lane carries a real observation from the island and
+   stops at the index, because that is exactly where the evidence stops. The
+   live-acquisition lane carries NOTHING past the gate: zero requests were
+   made, so animating a packet through it would animate work that never
+   happened.                                                                */
+(function(){
+  var svg = document.getElementById('arch-graph');
+  if(!svg) return;
+  var flow = svg.querySelector('#ag-flow');
+  var pkt = svg.querySelector('#ag-pkt');
+  var label = svg.querySelector('#ag-pkt-label');
+  var stop = svg.querySelector('#ag-stop');
+  var nodes = [].slice.call(svg.querySelectorAll('.ag-node[data-at]'));
+  if(!flow || !pkt) return;
+  var len = 0;
+  try { len = flow.getTotalLength(); } catch(e){ return; }
+  if(!len) return;
+
+  var samples = (D && D.packets) || [];
+  if(!samples.length) return;
+  var si = 0;
+  function dress(i){
+    var s = samples[i % samples.length];
+    if(label) label.textContent = s.label;
+    var w = Math.max(74, s.label.length * 5.4 + 14);
+    var r = pkt.querySelector('rect');
+    if(r) r.setAttribute('width', w.toFixed(0));
+    var t = pkt.querySelector('text');
+    if(t) t.setAttribute('x', (w/2).toFixed(0));
+  }
+  dress(0);
+
+  function place(p){
+    var pt = flow.getPointAtLength(len * p);
+    pkt.setAttribute('transform', 'translate(' + (pt.x - 6).toFixed(1) + ',' +
+                                                 (pt.y - 9).toFixed(1) + ')');
+    nodes.forEach(function(n){
+      var at = parseFloat(n.dataset.at);
+      if(n.dataset.blocked === '1') return;
+      n.dataset.lit = (p >= at - 0.005) ? '1' : '0';
+    });
+  }
+  place(0);
+  if(RM){
+    pkt.style.opacity = '1'; if(stop) stop.style.opacity = '1';
+    nodes.forEach(function(n){ if(n.dataset.blocked !== '1') n.dataset.lit = '1'; });
+    place(1);
+    return;
+  }
+
+  var tl = null;
+  function run(){
+    if(!hasGSAP){
+      pkt.style.opacity = '1'; place(1);
+      if(stop) stop.style.opacity = '1';
+      nodes.forEach(function(n){ if(n.dataset.blocked !== '1') n.dataset.lit = '1'; });
+      return;
+    }
+    var proxy = {p:0};
+    tl = G.timeline({ paused:true, onComplete:function(){
+      /* Next observation, same journey. This is a replay of recorded rows, not
+         a live feed, and the caption on the figure says so. */
+      si++; dress(si);
+      tl.kill(); run(); tl.play();
+    }});
+    tl.set(pkt, {opacity:0})
+      .set(stop, {opacity:0})
+      .set(proxy, {p:0})
+      .to(pkt, {opacity:1, duration:0.28, ease:'power2.out'})
+      .to(proxy, {p:1, duration:3.4, ease:'none',
+                  onUpdate:function(){ place(proxy.p); }}, '<')
+      .to(pkt, {opacity:0, duration:0.3, ease:'power2.in'}, '+=0.15')
+      .to(stop, {opacity:1, duration:0.4, ease:'expo.out'}, '<')
+      .to({}, {duration:1.5})
+      .to(stop, {opacity:0, duration:0.4}, '+=0');
+    keep(ST.create({ trigger:svg, start:'top 85%', end:'bottom 15%',
+      onToggle:function(self){
+        if(self.isActive) tl.play(); else tl.pause();
+      } }));
+  }
+  run();
+})();
+
+/* ------------------------------------------- index dependency chain, drawn */
+(function(){
+  var dep = document.querySelector('.dep');
+  if(!dep) return;
+  var rows = [].slice.call(dep.children);
+  if(RM || !hasGSAP){ return; }
+  G.from(rows, { opacity:0, x:-14, duration:0.6, ease:'expo.out', stagger:0.11,
+    scrollTrigger:{ trigger:dep, start:'top 86%' } });
+})();
+
+/* ------------------------------------------------------------ bar tracks */
+(function(){
+  var bars = [].slice.call(document.querySelectorAll('.track i[data-w]'));
+  if(!bars.length) return;
+  bars.forEach(function(b){
+    var w = Math.max(0, Math.min(1, parseFloat(b.dataset.w) || 0));
+    if(RM){ b.style.transform = 'scaleX(' + w + ')'; return; }
+    if(hasGSAP){
+      G.fromTo(b, {scaleX:0}, { scaleX:w, duration:1.1, ease:'expo.out',
+        immediateRender:true,
+        scrollTrigger:{ trigger:b.closest('section') || b, start:'top 80%' } });
+    } else if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(!e.isIntersecting) return;
+          io.disconnect();
+          b.style.transition = 'transform .9s cubic-bezier(.16,1,.3,1)';
+          b.style.transform = 'scaleX(' + w + ')'; });
+      }, {threshold:.2});
+      io.observe(b);
+    } else { b.style.transform = 'scaleX(' + w + ')'; }
+  });
+})();
+
+/* ------------------------------------------- lead-time curve, drawn on entry */
+(function(){
+  var svgs = [].slice.call(document.querySelectorAll('#leadtime svg, #trends svg'));
+  svgs.forEach(function(svg){
+    var path = svg.querySelector('path.ser, path[stroke-width="2.2"]');
+    var dots = [].slice.call(svg.querySelectorAll('circle.dot, circle[r="3.5"]'));
+    if(!path) return;
+    var L = 0;
+    try { L = path.getTotalLength(); } catch(e){ return; }
+    if(!L) return;
+    if(RM || !hasGSAP){
+      if(!hasGSAP && !RM && 'IntersectionObserver' in window){
+        path.style.strokeDasharray = L + ' ' + L;
+        path.style.strokeDashoffset = L;
+        var io = new IntersectionObserver(function(es){
+          es.forEach(function(e){ if(!e.isIntersecting) return;
+            io.disconnect();
+            path.style.transition = 'stroke-dashoffset 1.3s cubic-bezier(.16,1,.3,1)';
+            path.style.strokeDashoffset = 0; });
+        }, {threshold:.2});
+        io.observe(svg);
+      }
+      return;
+    }
+    G.fromTo(path, {strokeDasharray:L + ' ' + L, strokeDashoffset:L},
+      { strokeDashoffset:0, duration:1.5, ease:'power2.inOut', immediateRender:true,
+        scrollTrigger:{ trigger:svg, start:'top 82%' },
+        onComplete:function(){ path.style.strokeDasharray=''; path.style.strokeDashoffset=''; } });
+    if(dots.length){
+      G.fromTo(dots, {opacity:0, scale:0.2, transformOrigin:'50% 50%'},
+        { opacity:1, scale:1, duration:0.5, ease:'back.out(2)', stagger:0.1, delay:0.35,
+          immediateRender:true, scrollTrigger:{ trigger:svg, start:'top 82%' } });
+    }
+  });
+})();
+
+/* APW tooltips, reusing the dashboard's contract shape. */
+if(D && D.apw){
+  var byApw = {}; D.apw.forEach(function(p){ byApw[p.apw] = p; });
+  document.querySelectorAll('.hit[data-apw]').forEach(function(h){
+    bind(h, function(){
+      var p = byApw[h.dataset.apw]; if(!p) return;
+      var r = h.getBoundingClientRect();
+      showTip('<div class="h">T+'+p.apw+' · '+p.day_of_week+' '+p.travel_date+'</div>' +
+        rows([['geometric mean', inr(p.geomean)], ['observed min', inr(p.min)],
+              ['observed max', inr(p.max)], ['spread', p.spread_pct+'%'],
+              ['observations', p.n], ['set', p.in_ps_26056_set ? 'PS 26056' : 'APIx research']]),
+        r.left + r.width/2, r.top);
+    });
+  });
+}
+
+/* --------------------------------------------------------- route heatmap */
+(function(){
+  var cells = [].slice.call(document.querySelectorAll('.hm-cell'));
+  if(!cells.length) return;
+  var detail = document.querySelector('.hm-detail');
+  var body = detail && detail.querySelector('.hm-body');
+  if(!RM){
+    if(hasGSAP){
+      G.to(cells, { opacity:1, duration:0.5, ease:'power2.out', stagger:0.045,
+        scrollTrigger:{ trigger:'#heatmap', start:'top 80%' } });
+    } else if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(!e.isIntersecting) return;
+          io.disconnect();
+          cells.forEach(function(c,i){
+            c.style.transition = 'opacity .5s ease ' + (i*0.045) + 's';
+            c.style.opacity = '1'; });
+        });
+      }, {threshold:.2});
+      io.observe(document.getElementById('heatmap'));
+    } else { cells.forEach(function(c){ c.style.opacity='1'; }); }
+  }
+  function metaOf(c){
+    return { pair:c.dataset.pair, n:+c.dataset.n || 0, weight:c.dataset.weight,
+             src:c.dataset.src, carrier:c.dataset.carrier || '—' };
+  }
+  cells.forEach(function(c){
+    bind(c, function(){
+      var m = metaOf(c), r = c.getBoundingClientRect();
+      showTip('<div class="h">'+m.pair+'</div>' +
+        rows([['observations held', m.n], ['basket weight', m.weight],
+              ['weight source', m.src],
+              ['status', m.n ? 'real observations' : 'no data — never collected']]),
+        r.left + r.width/2, r.top);
+    });
+    function open(){
+      if(!detail || !body) return;
+      var m = metaOf(c);
+      detail.dataset.has = '1';
+      body.innerHTML = '<b>' + m.pair + '</b> — ' +
+        (m.n ? m.n + ' real observations, carrier ' + m.carrier
+             : 'no observations. This sector has never been collected: the live gate refuses every source and the manual protocol covered one route.') +
+        rows([['basket weight', m.weight], ['weight source', m.src],
+              ['observations', m.n], ['index contribution', m.n ? 'none — no matched pair' : 'none']]);
+      cells.forEach(function(o){ o.setAttribute('aria-pressed', o===c ? 'true':'false'); });
+      if(hasGSAP) G.fromTo(body, {opacity:0, y:6}, {opacity:1, y:0, duration:0.4, ease:'expo.out'});
+    }
+    c.addEventListener('click', open);
+    c.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); open(); }
+    });
+  });
+})();
+
+/* --------------------------------------------------- table row staggering */
+(function(){
+  var tables = [].slice.call(document.querySelectorAll('table.pf'));
+  tables.forEach(function(t){
+    var trs = [].slice.call(t.querySelectorAll('tbody tr')).slice(0, 14);
+    if(!trs.length) return;
+    trs.forEach(function(tr){ tr.classList.add('rvr'); });
+    if(RM){ trs.forEach(function(tr){ tr.style.opacity='1'; }); return; }
+    if(hasGSAP){
+      G.to(trs, { opacity:1, duration:0.4, ease:'power1.out', stagger:0.035,
+        scrollTrigger:{ trigger:t, start:'top 88%' } });
+    } else if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(!e.isIntersecting) return;
+          io.disconnect();
+          trs.forEach(function(tr,i){
+            tr.style.transition='opacity .4s ease '+(i*0.035)+'s'; tr.style.opacity='1'; });
+        });
+      }, {threshold:.1});
+      io.observe(t);
+    } else { trs.forEach(function(tr){ tr.style.opacity='1'; }); }
+  });
+})();
+
+/* ------------------------------------------------------ provenance lineage */
+(function(){
+  var picker = document.querySelector('.picker[data-for="lineage"]');
+  var lin = document.querySelector('.lin');
+  if(!picker || !lin || !D || !D.lineage) return;
+  var steps = [].slice.call(lin.querySelectorAll('.step'));
+  function paint(rec){
+    steps.forEach(function(s){
+      var k = s.dataset.k;
+      var v = s.querySelector('.v');
+      if(v && rec[k] != null) v.innerHTML = rec[k];
+      s.dataset.on = '0';
+    });
+    if(RM || !hasGSAP){
+      steps.forEach(function(s){ s.dataset.on = '1'; });
+      return;
+    }
+    /* Lineage reveals in pipeline order, so the chain reads as a traversal
+       rather than a table that happened to appear. */
+    steps.forEach(function(s, i){
+      setTimeout(function(){ s.dataset.on = '1'; }, 90 + i*110);
+    });
+  }
+  picker.querySelectorAll('button[data-i]').forEach(function(b){
+    b.addEventListener('click', function(){
+      picker.querySelectorAll('button').forEach(function(o){
+        o.setAttribute('aria-pressed', o===b ? 'true':'false'); });
+      var rec = D.lineage[+b.dataset.i];
+      if(rec) paint(rec);
+    });
+  });
+  var first = picker.querySelector('button[data-i]');
+  if(first){
+    first.setAttribute('aria-pressed','true');
+    if(RM || !hasGSAP){ paint(D.lineage[0]); }
+    else {
+      keep(ST.create({ trigger:lin, start:'top 84%', once:true,
+        onEnter:function(){ paint(D.lineage[0]); } }));
+      steps.forEach(function(s){ s.dataset.on = '0'; });
+    }
+  }
+})();
+
+/* ----------------------------------------------------------- source cards */
+(function(){
+  var cards = [].slice.call(document.querySelectorAll('.scard'));
+  if(!cards.length) return;
+  /* The status indicators animate only while the section is on screen: thirty
+     breathing dots on a page nobody is looking at is wasted battery. */
+  function setAnim(on){
+    cards.forEach(function(c){ c.dataset.anim = on && !RM ? '1' : '0'; });
+  }
+  setAnim(false);
+  if(hasGSAP){
+    G.from(cards, { opacity:0, y:12, duration:0.55, ease:'expo.out', stagger:0.03,
+      scrollTrigger:{ trigger:'#sources', start:'top 82%' } });
+    keep(ST.create({ trigger:'#sources', start:'top bottom', end:'bottom top',
+      onToggle:function(self){ setAnim(self.isActive); } }));
+  } else if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ setAnim(e.isIntersecting); });
+    }, {threshold:0.01});
+    io.observe(document.getElementById('sources'));
+  } else { setAnim(true); }
+})();
+
+/* ScrollTrigger measures at load; late fonts and the sticky nav change the
+   geometry underneath it. */
+if(hasGSAP){
+  addEventListener('load', function(){ ST.refresh(); });
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ ST.refresh(); });
+  }
+}
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', boot);
+} else { boot(); }
+})();
+</script>
 </body>

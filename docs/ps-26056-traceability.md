@@ -25,7 +25,7 @@
 | a | Scheduled daily extraction | `SchedulerConfig`, `build_plan`, `execute_plan` | `src/apix/scheduling/scheduler.py` | `test_platform.py` (12 scheduler tests) | **COMPLETE** — runs to completion with nothing cleared |
 | b | Cleaned, de-duplicated DB with origin, destination, carrier, APW, fare class, base, taxes, total | `Observation`, `FareBreakdown`, `Entitlements`, SQLite store | `src/apix/schemas/observation.py`, `src/apix/ingestion/store.py` | `test_collection_contract.py`, `test_collection_store.py`, `test_observed_panel.py` | **COMPLETE** — schema; **35 real rows held** |
 | c | Index construction on given routes and weights | Jevons, matching, chaining, Young/Modified Laspeyres, publication guards | `src/apix/statistics/` | `test_golden_values.py`, `test_pipeline_14_day.py`, `test_v2_1_invariants.py` | **COMPLETE** — engine; **no production index value** |
-| d | Interactive dashboard showing the **daily** APIx | Jury dashboard (13 chapters) + platform console (12 views: trends, heatmap, lead-time, acquisition, sources, runs, quality, provenance, backtest, methodology, architecture) | `data/dashboard.html`, `data/platform.html`, `tools/analysis/build_platform.py` | `test_dashboard_claims.py`, `test_platform_page.py` | **PARTIAL** — both pages real and offline; **no daily production index exists to show** — the daily/weekly/monthly figures on the console are labelled DEMO |
+| d | Interactive dashboard showing the **daily** APIx | Jury dashboard (13 chapters) + platform console (12 views: trends, heatmap, lead-time, acquisition, sources, runs, quality, provenance, backtest, methodology, architecture). Both are scroll-driven: shared vendored GSAP/ScrollTrigger/Lenis, animated pipeline graph, drawn curves, interactive heatmap and provenance lineage | `data/dashboard.html`, `data/platform.html`, `tools/analysis/build_platform.py`, `tools/analysis/platform_motion.py` | `test_dashboard_claims.py`, `test_platform_page.py` (27) | **PARTIAL** — both pages real, offline and reduced-motion safe; **no daily production index exists to show** — the daily/weekly/monthly figures on the console are labelled DEMO |
 
 ## Detailed description, point by point
 
@@ -48,8 +48,16 @@
 | 8 | Lead-time **elasticity** curves | Descriptive APW profile: `/lead-time` endpoint, console view, confound flag | `data/panel.json` → `apw_profile`, `api/payloads.py::lead_time` | `test_api.py::test_lead_time_is_descriptive_not_an_elasticity` | **PARTIAL** — served and plotted, labelled `DESCRIPTIVE_ONLY`; **no elasticity estimate** — one collection date, lead time confounded with travel date |
 | 9 | **API for NSO/RBI** | 13 GET endpoints, stdlib HTTP, one envelope (`output_class`, `publication_status`, `data_status`, `live_airfare_acquisition`) on every payload | `src/apix/api/server.py`, `src/apix/api/payloads.py` | `test_api.py` (24 tests: pure routing + one socket test) | **COMPLETE** — serves the real panel and RESEARCH/DEMO series; **nothing it serves is PRODUCTION**, and the tests forbid that label |
 | 10 | Documentation | README, capability matrix, claim-evidence matrix, methodology, compliance, permissions, this matrix | `docs/`, `compliance/` | `check_markdown_links.py` (104 files) | **COMPLETE** |
-| 10 | Automated testing | 791 tests; invariants, golden values, property tests, architecture boundary, API, exports, page | `tests/` | — | **COMPLETE** |
+| 10 | Automated testing | 807 tests; invariants, golden values, property tests, architecture boundary, API, exports, page, motion layer | `tests/` | — | **COMPLETE** |
 | 11 | **30-day backtest vs DGCA fare data** | Alignment, Pearson, MAE, MAPE, RMSE, directional agreement | `src/apix/backtest/compare.py` | `test_platform.py` (7 backtest tests) | **BLOCKED / INCOMPLETE** — framework complete and metrics verified; **`DGCA_FARE_BENCHMARK_STATUS = NOT_LOCATED`** |
+
+## Presentation layer
+
+| Requirement | APIx component | Path | Test | Status |
+|---|---|---|---|---|
+| Interactive, explainable presentation | Scroll-driven console: hero observation field (35 recorded points, three declared beats), animated two-lane pipeline graph, index dependency chain, drawn lead-time curve, interactive sector heatmap, provenance lineage explorer, backtest missing-data visual | `tools/analysis/platform_motion.py` | `test_platform_page.py` | **COMPLETE** |
+| Honest animation | Two rules, both tested: a figure is **revealed, never tallied** (no frame ever shows a value APIx does not hold), and motion only depicts **work that happened** (the live lane carries no packet, because zero requests were made) | same | `test_no_figure_is_tallied_from_zero`, `test_the_live_lane_carries_no_packet_and_the_index_is_drawn_refused` | **COMPLETE** |
+| Accessibility and performance | `prefers-reduced-motion` neutralises every component; rest states gated on `html.js` so a blocked script hides nothing; canvas loop stopped when offscreen; status indicators animate only while their section is on screen; 2.5-second failsafe reveals everything if the mechanism dies | same | `test_reduced_motion_neutralises_every_component_this_page_adds`, `test_rest_states_are_gated_on_the_js_class` | **COMPLETE** |
 
 ## Data exports
 

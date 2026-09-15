@@ -139,6 +139,7 @@ data/collection/collection.sqlite3          the store (real observations)
   -> data/panel.json                        the contract every renderer reads
   -> tools/analysis/build_dashboard.py      -> data/dashboard.html   (editorial)
   -> tools/analysis/build_platform.py       -> data/platform.html    (console: 12 views)
+     + tools/analysis/platform_motion.py                            (shared motion runtime)
   -> tools/analysis/panel_report.py         -> data/panel_report.txt
 
 tools/analysis/engine_demo.py               engine run on a SYNTHETIC fixture
@@ -291,6 +292,21 @@ Endpoints: `/health` `/sources` `/routes` `/observations` `/index/{daily,weekly,
 The production index endpoints return an **empty series with the readiness verdict**; `?class=demo`
 returns the synthetic-fixture series labelled `DEMO`. Nothing the API serves is `PRODUCTION`, and
 `tests/test_api.py` fails if that changes.
+
+## Motion, and what it is allowed to say
+
+Both pages are scroll-driven from the same vendored libraries (`data/vendor/`: GSAP, ScrollTrigger,
+Lenis) and obey two rules that are enforced by tests, not convention:
+
+- **A figure is revealed, never tallied.** Counting `0 → 35` would render "20 real observations" for
+  a frame, and any frame can be screenshotted. Measured numbers are masked and uncovered, so no
+  intermediate value exists — `test_no_figure_is_tallied_from_zero`.
+- **Motion animates work that happened.** The pipeline graph's live-acquisition lane carries no
+  packet, because zero requests were ever made; the evidence lane carries a real row from
+  `data/panel.json` and the index is drawn *refused* — `test_the_live_lane_carries_no_packet_and_the_index_is_drawn_refused`.
+
+With JavaScript off, the libraries absent, or `prefers-reduced-motion` set, every figure, table and
+chart is still present and reads its true value.
 
 ## Which document is authoritative
 
