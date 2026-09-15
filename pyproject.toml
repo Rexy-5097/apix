@@ -22,6 +22,13 @@ dev = [
   "mypy>=1.11",
   "pyyaml>=6.0",       # required by the AgentOS tooling in tools/scripts/
 ]
+# Live automated collection only. Nothing imports it unless the compliance gate
+# has cleared a source, and no source is cleared -- see
+# docs/engineering/automated-collection.md. Fixture mode and every test run
+# without it.
+collect = [
+  "playwright>=1.45",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
