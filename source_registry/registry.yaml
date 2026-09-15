@@ -92,6 +92,53 @@
 # but because the two sources that grant it do not sell a transactable price.
 #
 # ─────────────────────────────────────────────────────────────────────────────
+# SOURCE DISCOVERY AUDIT — 2026-09-15
+# Audit record: compliance/source-audit-2026-09-15.md
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Twenty-five candidates re-audited or added: 8 airline websites, 7 OTA and
+# metasearch sites, 10 airline, GDS, agency and aggregator APIs. robots.txt was
+# fetched directly; terms were read directly where the host served them, and
+# otherwise through a web-reading tool or a search-engine extract. Every field
+# added in this audit names its evidence grade:
+#
+#   [DIRECT]  fetched from the source host during the audit
+#   [TOOL]    fetched by a web-reading tool that returned extracted wording
+#   [INDEX]   search-engine extract; the host refused direct fetches
+#
+# No search, results, fare or booking page was requested from any source, so no
+# access control was tested. Refusals were recorded, never retried with a
+# different client.
+#
+# VOCABULARY ADDED
+#
+#   automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+#       The source publishes an official programmatic channel (an airline NDC
+#       API, a GDS or agency API) whose use needs registration, a partner
+#       agreement or written authorisation that APIx does NOT yet hold. It
+#       BLOCKS collection exactly as AUTOMATION_UNKNOWN does, and becomes
+#       AUTOMATION_ALLOWED only when the agreement text is recorded here.
+#
+#   manual_gate: MANUAL_REQUIRES_PERMISSION
+#       The terms reach manual collection too, e.g. "or any manual process".
+#
+#   technical_access   (optional)
+#       What the host did with a plain HTTP client during the audit. Recorded,
+#       never worked around. Not a compliance rating.
+#
+# AS OF 2026-09-15
+#
+#   AUTOMATION_ALLOWED with data ADMISSIBLE : none
+#   AUTOMATION_ALLOWED_WITH_PERMISSION, data not already ruled out:
+#       indigo_ndc, air_india_ndc, travelport_uapi, tbo_tripjack
+#
+# A carrier's website and its NDC API are SEPARATE source records with separate
+# gates: indigo (website) stays AUTOMATION_PROHIBITED while indigo_ndc is
+# AUTOMATION_ALLOWED_WITH_PERMISSION.
+#
+# CORRECTION: amadeus_self_service was decommissioned by Amadeus on 2026-07-17.
+#
+# ─────────────────────────────────────────────────────────────────────────────
 # AUDIT PROVENANCE
 # ─────────────────────────────────────────────────────────────────────────────
 #
@@ -111,8 +158,9 @@
 # recorded as NOT_VERIFIED with the reason. A timeout is an audit outcome. It
 # was not retried with different transport, and no control was circumvented.
 
-schema_version: "1.0.0"
+schema_version: "1.1.0"
 audit_date: "2026-09-10"
+last_audit_date: "2026-09-15"
 checkpoint: "2F"
 auditor: "@Rexy-5097"
 domain_owner: "@slazyverse"
@@ -136,14 +184,14 @@ status: "PRE-ACQUISITION AUDIT — no source is cleared for collection"
 
 source_groups:
   - group_id: carrier_direct_6e
-    members: [indigo]
+    members: [indigo, indigo_ndc]
     independence: INHERENT
     rationale: >-
       A carrier's own portal is the origin of its own inventory. Independence
       from other carriers is structural, not an assumption.
 
   - group_id: carrier_direct_ai
-    members: [air_india, air_india_express]
+    members: [air_india, air_india_express, air_india_ndc]
     independence: UNKNOWN
     rationale: >-
       Both are Air India group carriers and may share a distribution or
@@ -207,6 +255,33 @@ source_groups:
       aggregators. If so they are not independent OF THE AGGREGATORS either,
       which would collapse a large part of the frame into one group.
 
+  # ── added 2026-09-15 ──
+  - group_id: carrier_direct_9i
+    members: [alliance_air]
+    independence: INHERENT
+  - group_id: carrier_direct_s5
+    members: [star_air]
+    independence: INHERENT
+  - group_id: carrier_direct_ic
+    members: [fly91]
+    independence: INHERENT
+  - group_id: agency_channel
+    members: [travelport_uapi, tbo_tripjack]
+    independence: NOT_INDEPENDENT
+    rationale: >-
+      Agency and GDS channels resell carrier inventory. A quote from them is not
+      independent of the carrier's own channels, whatever the price shown.
+  - group_id: google_metasearch
+    members: [google_flights, serpapi_google_flights]
+    independence: NOT_INDEPENDENT
+    rationale: >-
+      Metasearch displays other channels' offers; SerpApi resells Google Flights
+      results. Neither is an independent inventory source.
+  - group_id: third_party_apis
+    members: [skyscanner_partners, kiwi_tequila, duffel]
+    independence: UNKNOWN
+    evidence: NOT_VERIFIED
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CHANNEL C — AIRLINE PORTALS (the primary observation channel, dossier p.11)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -242,6 +317,14 @@ sources:
       Largest domestic carrier by fleet and frequency, so its absence would
       distort any exploratory frame more than any other single source. It is
       also the one this audit failed to reach. Re-audit first.
+    audit_2026_09_15: >-
+      WEBSITE CHANNEL ONLY; the NDC API is the separate record indigo_ndc. A plain
+      HTTP client fetching /robots.txt was reset by the host (HTTP/2 INTERNAL_ERROR,
+      0.08 s) [DIRECT]. A search-engine extract of robots.txt shows Disallow
+      /search.html [INDEX]. A search-engine extract of the website terms shows the
+      same spider/robot/scraper prohibition with the same browser-usage carve-out
+      as the loyalty terms [INDEX]. Rating unchanged.
+    technical_access: EDGE_REFUSES_PLAIN_HTTP_CLIENT
     # ── Checkpoint 2G automation gate ──
     automation_gate: AUTOMATION_PROHIBITED
     manual_gate: MANUAL_PERMITTED
@@ -277,11 +360,23 @@ sources:
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
     # ── Checkpoint 2G automation gate ──
-    automation_gate: AUTOMATION_UNKNOWN
-    manual_gate: MANUAL_UNKNOWN
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_REQUIRES_PERMISSION
     automation_gate_basis: >-
-      No terms retrieved. robots.txt unreachable from the audit host.
-    automation_gate_date: "2026-09-11"
+      Air India Terms & Conditions, search-engine extract 2026-09-15 [INDEX]; the
+      host reset every direct fetch. Users may not access, monitor or copy
+      information on the Website "using any robot, spider, scraper, or other
+      automated means or any manual process" without express written permission,
+      nor violate robot exclusion headers.
+    manual_gate_basis: >-
+      The same clause names "any manual process", so even manual collection from
+      the website needs written permission. Stricter than IndiGo.
+    automation_gate_caveat: >-
+      INDEX-grade wording. Re-read https://www.airindia.com/in/en/terms-and-condition.html
+      from a network the host serves before relying on it. The NDC API is the
+      separate record air_india_ndc. Earlier rating (2026-09-11): AUTOMATION_UNKNOWN.
+    technical_access: EDGE_REFUSES_PLAIN_HTTP_CLIENT
+    automation_gate_date: "2026-09-15"
 
   - source_id: air_india_express
     display_name: Air India Express
@@ -328,7 +423,11 @@ sources:
     automation_gate_basis: >-
       robots.txt Disallow: /flight-availability covers the fare path. Decisive under the project's own control contract C-2, which honours robots.txt.
     automation_gate_caveat: >-
-      Terms of Use NOT read. The robots directive is not evidence of what the terms say.
+      Terms of Use read 2026-09-15 via search-engine extract [INDEX]; the terms page
+      reset direct fetches. They prohibit any automated system "including without
+      limitation, any spider, robot, cheat utility, scraper", except standard search
+      engine or browser usage. robots.txt re-fetched 2026-09-15 [DIRECT], unchanged.
+    technical_access: TERMS_PAGE_REFUSES_PLAIN_HTTP_CLIENT
     automation_gate_date: "2026-09-11"
 
   - source_id: akasa_air
@@ -406,24 +505,32 @@ sources:
       matters, because an API path is exactly what a collector would otherwise
       reach for. Read as: the rendered search page is not disallowed, the
       underlying API is.
-    tos_status: NOT_VERIFIED
+    tos_status: NOT_PERMITTED
+    tos_evidence: >-
+      SpiceJet website Disclaimer, fetched 2026-09-15 [DIRECT]
+      (https://corporate.spicejet.com/Disclaimer.aspx): the website content
+      "shall not be copied, displayed, shared, re-distributed, published, used,
+      processed" in any manner for any purpose, and access "does not imply a
+      licence" to reproduce or distribute it.
     permitted_cadence_if_stated: NOT_VERIFIED
     rate_limit_if_stated: NOT_STATED_IN_ROBOTS
-    automated_collection_status: NOT_VERIFIED
+    automated_collection_status: NOT_PERMITTED
     captcha_or_interstitial_observed: NOT_TESTED
     required_observation_fields: UNKNOWN
     known_field_gaps: UNKNOWN
-    evidence_date: "2026-09-10"
+    evidence_date: "2026-09-15"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CHANNEL D — AGGREGATOR PORTALS
 # ─────────────────────────────────────────────────────────────────────────────
-    # ── Checkpoint 2G automation gate ──
-    automation_gate: AUTOMATION_UNKNOWN
+    # ── Checkpoint 2G automation gate (spicejet; this block belongs to the entry above) ──
+    automation_gate: AUTOMATION_PROHIBITED
     manual_gate: MANUAL_UNKNOWN
     automation_gate_basis: >-
-      robots.txt does not disallow the rendered search path, but writes three absolute-URL Disallow lines whose INTENT covers /api/v1. Honour the intent. Terms of Use not retrieved.
-    automation_gate_date: "2026-09-11"
+      The website Disclaimer prohibits copying or processing site content for any
+      purpose [DIRECT, 2026-09-15]. robots.txt intent still covers /api/v1.
+      Earlier rating (2026-09-11): AUTOMATION_UNKNOWN, terms not retrieved.
+    automation_gate_date: "2026-09-15"
 
   - source_id: makemytrip
     display_name: MakeMyTrip
@@ -447,6 +554,11 @@ sources:
     manual_gate: MANUAL_UNKNOWN
     automation_gate_basis: >-
       Neither robots.txt nor terms retrieved; four attempts timed out.
+    automation_gate_caveat: >-
+      Re-audited 2026-09-15: /robots.txt reset a plain HTTP client (HTTP/2
+      INTERNAL_ERROR) [DIRECT]; the India user agreement timed out through a
+      web-reading tool three times. Still unread. UNKNOWN blocks.
+    technical_access: EDGE_REFUSES_PLAIN_HTTP_CLIENT
     automation_gate_date: "2026-09-11"
 
   - source_id: goibibo
@@ -456,9 +568,21 @@ sources:
     canonical_domain: goibibo.com
     collection_method: NOT_DESIGNED
     source_group: mmt_group
-    robots_status: NOT_VERIFIED
-    robots_evidence: "https://www.goibibo.com/robots.txt — request timed out (60s), twice."
-    tos_status: NOT_VERIFIED
+    robots_status: PARTIAL_DISALLOW
+    robots_evidence: |
+      https://www.goibibo.com/robots.txt retrieved 2026-09-15 [DIRECT]. Relevant
+      lines from the "User-agent: *" block:
+        Disallow: /flights/*?mode=*
+        Disallow: /cheap/flight-tickets/
+        Disallow: /flight/searchticket/
+        Disallow: /flights/new/
+        Disallow: /api/
+    tos_status: UNCLEAR
+    tos_evidence: >-
+      User agreement https://www.goibibo.com/info/user-agreement/ fetched
+      2026-09-15 [DIRECT]; its text contains no robot, spider, scraper, crawl or
+      automated-access clause. Silence grants nothing, and the MakeMyTrip group
+      agreement could not be read.
     permitted_cadence_if_stated: NOT_VERIFIED
     rate_limit_if_stated: NOT_VERIFIED
     automated_collection_status: NOT_VERIFIED
@@ -476,6 +600,10 @@ sources:
       Not verified by this audit. A Checkpoint 2F workflow agent REPORTED "Disallow: /flights/*?*" covering every parameterised flight URL, but the auditor could not retrieve the file to confirm it. Recorded as REPORTED, not VERIFIED, and classified UNKNOWN accordingly.
     automation_gate_caveat: >-
       If the reported directive is confirmed, this becomes AUTOMATION_PROHIBITED.
+      2026-09-15: the file was retrieved and the reported "Disallow: /flights/*?*"
+      is NOT present; the actual flight lines are listed in robots_evidence.
+      Whether they cover the results path was not tested, because that needs a
+      search request. Rating stays UNKNOWN.
     automation_gate_date: "2026-09-11"
 
   - source_id: yatra
@@ -496,11 +624,18 @@ sources:
     known_field_gaps: UNKNOWN
     evidence_date: "2026-09-10"
     # ── Checkpoint 2G automation gate ──
-    automation_gate: AUTOMATION_UNKNOWN
+    automation_gate: AUTOMATION_PROHIBITED
     manual_gate: MANUAL_UNKNOWN
     automation_gate_basis: >-
-      Neither robots.txt nor terms retrieved; four attempts timed out.
-    automation_gate_date: "2026-09-11"
+      Master User Agreement, search-engine extract 2026-09-15 [INDEX]: users may
+      not "reverse engineer, modify, copy, distribute" or otherwise reproduce or
+      sell information obtained from the Website. Earlier rating (2026-09-11):
+      AUTOMATION_UNKNOWN.
+    automation_gate_caveat: >-
+      INDEX-grade wording. robots.txt reset a plain HTTP client 2026-09-15 [DIRECT].
+      Re-read the agreement from a network the host serves.
+    technical_access: EDGE_REFUSES_PLAIN_HTTP_CLIENT
+    automation_gate_date: "2026-09-15"
 
   - source_id: easemytrip
     display_name: EaseMyTrip
@@ -522,7 +657,12 @@ sources:
       "Disallow: /flight-search/listing*" covers the flight-search results
       listing — the page that carries the fares. NOT COLLECTABLE for fares by
       that path under this project's control contract.
-    tos_status: NOT_VERIFIED
+    tos_status: NOT_PERMITTED
+    tos_evidence: >-
+      Terms https://www.easemytrip.com/terms.html read 2026-09-15 [TOOL]: copying
+      "any part or all the contents of this website without permission" is not
+      allowed except as essential to availing the paid services. No
+      robot-specific clause found.
     permitted_cadence_if_stated: NOT_VERIFIED
     rate_limit_if_stated: NOT_STATED_IN_ROBOTS
     automated_collection_status: NOT_PERMITTED
@@ -537,7 +677,7 @@ sources:
     automation_gate_basis: >-
       robots.txt Disallow: /flight-search/listing* covers the results page carrying the fares. Decisive under control contract C-2.
     automation_gate_caveat: >-
-      Terms of Use NOT read.
+      Terms read 2026-09-15 [TOOL]; see tos_evidence. robots.txt re-fetched [DIRECT], unchanged.
     automation_gate_date: "2026-09-11"
 
   - source_id: cleartrip
@@ -561,7 +701,13 @@ sources:
       A blanket "Allow: /" followed by an explicit "Disallow: /flights/search*"
       on both desktop and mobile paths, plus "/api/". The general permission
       does not survive the specific prohibition. NOT COLLECTABLE for fares.
-    tos_status: NOT_VERIFIED
+    tos_status: NOT_PERMITTED
+    tos_evidence: >-
+      Terms of Use https://corporate.cleartrip.com/termsofuse.xhtml fetched
+      2026-09-15 [DIRECT]. Users may not "access, monitor or copy any content or
+      information of this Website using any robot, spider, scraper or other
+      automated means or any manual process" without express written permission,
+      nor bypass robot exclusion headers, nor deep-link without permission.
     permitted_cadence_if_stated: NOT_VERIFIED
     rate_limit_if_stated: NOT_STATED_IN_ROBOTS
     automated_collection_status: NOT_PERMITTED
@@ -576,7 +722,9 @@ sources:
     automation_gate_basis: >-
       robots.txt Disallow: /flights/search* on desktop and mobile, plus /api/, after a blanket Allow: / . The general permission does not survive the specific prohibition (control contract C-2).
     automation_gate_caveat: >-
-      Terms of Use NOT read.
+      Terms read 2026-09-15 [DIRECT] and prohibit robots, spiders and scrapers, and
+      manual copying, without express written permission; see tos_evidence.
+    manual_gate_2026_09_15: MANUAL_REQUIRES_PERMISSION
     automation_gate_date: "2026-09-11"
 
   - source_id: ixigo
@@ -602,7 +750,13 @@ sources:
       The flight-search and results paths are disallowed for all agents. NOT
       COLLECTABLE for fares. The only Crawl-delay in the file is scoped to
       MSNBot and states nothing about a general cadence.
-    tos_status: NOT_VERIFIED
+    tos_status: NOT_PERMITTED
+    tos_evidence: >-
+      User agreement https://www.ixigo.com/about/terms-of-use/ read 2026-09-15
+      [TOOL]: prohibits any automated system "including without limitation, any
+      spider, robot, cheat utility, scraper, or offline reader", except standard
+      search engine or browser usage, and systematic retrieval to compile a
+      database without written permission.
     permitted_cadence_if_stated: NOT_STATED_FOR_GENERAL_AGENTS
     rate_limit_if_stated: "crawl-delay: 10 — MSNBot only, not general"
     automated_collection_status: NOT_PERMITTED
@@ -622,7 +776,7 @@ sources:
     automation_gate_basis: >-
       robots.txt Disallow: /flights/search and /api/ for all agents. The only crawl-delay in the file is scoped to MSNBot and states nothing about a general cadence.
     automation_gate_caveat: >-
-      Terms of Use NOT read.
+      Terms read 2026-09-15 [TOOL]; see tos_evidence. Prohibition confirmed in the terms.
     automation_gate_date: "2026-09-11"
 
   - source_id: amadeus_self_service
@@ -653,10 +807,17 @@ sources:
       Spec H.3 constrains its use: AUTHORIZED_FEED is never silently
       substituted for a LIVE_SCRAPE observation being claimed.
     # ── Checkpoint 2G automation gate ──
-    automation_gate: AUTOMATION_ALLOWED
+    automation_gate: AUTOMATION_UNKNOWN
     manual_gate: NOT_APPLICABLE
+    availability: DECOMMISSIONED
+    availability_basis: >-
+      Amadeus decommissioned the Self-Service portal on 2026-07-17; API keys were
+      disabled and only the Amadeus Enterprise portal remains (industry reports,
+      search-engine extracts, 2026-09-15) [INDEX]. The 2026-09-12 basis below is
+      kept as history. The channel no longer exists for new collection; Enterprise
+      access is a separate contract.
     automation_gate_basis: >-
-      A published Self-Service API with public documentation and open developer
+      HISTORICAL, rated AUTOMATION_ALLOWED on 2026-09-12. A published Self-Service API with public documentation and open developer
       registration. Programmatic access is the product; permission is positive and
       explicit. NOTE: automation permission is NOT sufficient -- see
       data_admissibility, which is what actually blocks this source.
@@ -760,6 +921,393 @@ sources:
     automation_gate_caveat: >-
       IndiGo's sheet was obtained this way on 2026-09-11: 41 pp, 4,729 directed routes, 100 cities, Fare-1..Fare-14 bands.
     automation_gate_date: "2026-09-11"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADDED BY THE 2026-09-15 SOURCE DISCOVERY AUDIT
+# Official APIs first, then airline websites not previously registered, then
+# metasearch and third-party APIs. Evidence grades as defined in the header.
+# ─────────────────────────────────────────────────────────────────────────────
+
+  - source_id: indigo_ndc
+    display_name: IndiGo NDC API
+    carrier_code: 6E
+    channel: LICENSED_FEED
+    channel_caveat: >-
+      PROVISIONAL. Whether an airline's own NDC offer belongs to AIRLINE_DIRECT or
+      LICENSED_FEED is a methodology ruling that has not been made. Until it is,
+      NDC quotes must never be pooled with website quotes in one cell.
+    source_type: AUTHORIZED_FEED
+    canonical_domain: developer.goindigo.in
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_6e
+    robots_status: NOT_APPLICABLE
+    robots_note: An authorised API is governed by its agreement, not by robots.txt.
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Every developer-portal page requested 2026-09-15 (home, ndcAPI, FAQs,
+      airshopping, authentication, login, serviceList, offerPrice) returned HTTP 502
+      from the portal's gateway [DIRECT]. Search-engine extracts of the portal
+      [INDEX]: developers "sign up to get API keys for accessing services for NDC
+      API"; shopping is an IATA_AirShoppingRQ answered by a Navitaire NDC Gateway
+      with an IATA_AirShoppingRS; generating an NDC token takes a subscription key
+      and an authorization key. Eligibility, UAT scope, NDC version, rate limits
+      and data-use terms are UNREAD.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      An official programmatic channel published by the carrier, with developer
+      registration for API keys [INDEX]. What APIx may do with the results --
+      shopping without booking, retaining responses, publishing a derived index --
+      is not established until the agreement is read.
+    automation_gate_caveat: >-
+      BLOCKS collection. UAT/sandbox responses, if obtained, are not market
+      observations and never index input. Clears to AUTOMATION_ALLOWED only when
+      the agreement text is recorded here.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+    data_admissibility_basis: >-
+      A production NDC offer is a transactable airline offer, but whether it equals
+      the fare displayed on goindigo.in is empirical. Assess with production access.
+
+  - source_id: air_india_ndc
+    display_name: Air India NDC API
+    carrier_code: AI
+    channel: LICENSED_FEED
+    channel_caveat: PROVISIONAL, as for indigo_ndc.
+    source_type: AUTHORIZED_FEED
+    canonical_domain: ndc.airindia.com
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_ai
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      The API terms page (https://ndc.airindia.com/en/terms-and-conditions) reset a
+      plain HTTP client and timed out through a web-reading tool on 2026-09-15.
+      Search-engine extracts [INDEX]: NDC Connect offers four access modes; the
+      agency portal "enables authorized IATA and non-IATA travel partners to access
+      and book" NDC content; onboarding contact ndcdistribution@airindia.com.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      Official carrier API with a published partner onboarding path [INDEX].
+      Partnership and data-use terms not held.
+    automation_gate_caveat: >-
+      BLOCKS collection. A second carrier makes aggregation non-degenerate, which
+      is exactly where AMB-9 blocks.
+    technical_access: EDGE_REFUSES_PLAIN_HTTP_CLIENT
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+
+  - source_id: travelport_uapi
+    display_name: Travelport Universal API (IndiGo content via GDS)
+    channel: LICENSED_FEED
+    channel_caveat: PROVISIONAL. An agency channel; see data_admissibility.
+    source_type: AUTHORIZED_FEED
+    canonical_domain: support.travelport.com
+    collection_method: NOT_DESIGNED
+    source_group: agency_channel
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      IndiGo supplier requirements read 2026-09-15 [TOOL]: "IndiGo content is now
+      available to all agencies when using credit card form of payment"; agency
+      form of payment or corporate fares require agency credentials from IndiGo and
+      a provisioned PCC; retail and corporate fare types are distinct.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      A contracted agency API; access requires a Travelport agreement and PCC.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+    data_admissibility_basis: >-
+      Agency-channel fares (retail vs corporate, agency form of payment) are not
+      automatically the household's displayed price (spec A.4). Needs a
+      comparability study before any index use.
+
+  - source_id: tbo_tripjack
+    display_name: TBO / Tripjack B2B flight APIs
+    channel: LICENSED_FEED
+    channel_caveat: PROVISIONAL. An agency channel; see data_admissibility.
+    source_type: AUTHORIZED_FEED
+    canonical_domain: tripjack.com
+    collection_method: NOT_DESIGNED
+    source_group: agency_channel
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Provider listings, search-engine extracts 2026-09-15 [INDEX]: aggregated
+      inventory from low-cost carriers, GDS, NDC, private and SOTO fares, offered
+      to registered travel agencies. Provider agreements not read.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: A commercial B2B API behind an agent account agreement.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+    data_admissibility_basis: >-
+      Private and agent fares are not the household's displayed price. Comparability
+      study required before any index use.
+
+  - source_id: alliance_air
+    display_name: Alliance Air
+    carrier_code: 9I
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: allianceair.in
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_9i
+    robots_status: NO_ROBOTS_FILE
+    robots_evidence: >-
+      https://www.allianceair.in/robots.txt fetched 2026-09-15 [DIRECT] returns HTTP
+      200 with the site's single-page-app HTML, i.e. no robots file is published.
+    tos_status: UNCLEAR
+    tos_evidence: >-
+      Terms & Conditions PDF (plone.allianceair.in/allianceair/en/assets/policy/terms-and-conditions.pdf)
+      read in full 2026-09-15 [DIRECT, 53.6k characters extracted]: it defines the
+      Website but contains no clause on website use, copying, robots, scrapers or
+      automated access.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      No prohibition found and no permission given. Silence grants nothing.
+    automation_gate_caveat: >-
+      Government-owned regional carrier: a written permission request is plausible.
+      Little value to the DEL-BOM frame.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+
+  - source_id: star_air
+    display_name: Star Air
+    carrier_code: S5
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: starair.in
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_s5
+    robots_status: NO_RELEVANT_DISALLOW
+    robots_evidence: |
+      https://www.starair.in/robots.txt retrieved 2026-09-15 [DIRECT], verbatim:
+        User-agent: *
+        Disallow: content
+        Disallow: Menudata
+        Disallow: Widget
+        User-agent: Googlebot
+        Allow: /
+    tos_status: UNCLEAR
+    tos_evidence: >-
+      Terms and Conditions contain no website-use clause [TOOL]. Disclaimer
+      (https://www.starair.in/FaresAndRules/Disclaimer) fetched 2026-09-15
+      [DIRECT]: with attribution, "limited quotations from the content are hereby
+      permitted"; copying or displaying content for redistribution to third parties
+      for commercial purposes requires prior written permission.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      The most permissive wording audited, but no affirmative permission for
+      automated collection.
+    automation_gate_caveat: Regional network; no DEL-BOM service.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+
+  - source_id: fly91
+    display_name: Fly91
+    carrier_code: IC
+    channel: AIRLINE_DIRECT
+    source_type: LIVE_SCRAPE
+    canonical_domain: fly91.in
+    collection_method: NOT_DESIGNED
+    source_group: carrier_direct_ic
+    robots_status: PARTIAL_DISALLOW
+    robots_evidence: >-
+      https://www.fly91.in/robots.txt retrieved 2026-09-15 [DIRECT]: a standard
+      Drupal file; among others "Disallow: /search/".
+    tos_status: NOT_PERMITTED
+    tos_evidence: >-
+      Terms https://fly91.in/terms-and-conditions read 2026-09-15 [TOOL]: customers
+      are prohibited from copying, replicating, transferring or selling any
+      information obtained from the Website without prior written permission, and
+      from downloading or exporting information without written permission.
+    automated_collection_status: NOT_PERMITTED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: >-
+      Copying prohibition over any information from the Website, no browser
+      carve-out [TOOL] -- the Akasa pattern.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+
+  - source_id: google_flights
+    display_name: Google Flights
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: google.com/travel/flights
+    collection_method: NOT_DESIGNED
+    source_group: google_metasearch
+    robots_status: DISALLOWS_REQUIRED_PATH
+    robots_evidence: |
+      https://www.google.com/robots.txt retrieved 2026-09-15 [DIRECT], travel lines:
+        Disallow: /travel/search
+        Disallow: /travel/flights/booking
+        Disallow: /travel/flights/s/
+        Disallow: /travel/flights/search
+    tos_status: NOT_PERMITTED
+    tos_evidence: >-
+      Google Terms of Service read 2026-09-15 [TOOL]: prohibits "using automated
+      means to access content from any of our services in violation of the
+      machine-readable instructions on our web pages", e.g. robots.txt. No public
+      flights API since QPX Express closed in 2018.
+    automated_collection_status: NOT_PERMITTED
+    captcha_or_interstitial_observed: NOT_TESTED
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: MANUAL_UNKNOWN
+    automation_gate_basis: robots.txt disallows flight search, and the terms bind automated access to it.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      Metasearch shows other channels' offers; the transactable offer is elsewhere
+      (spec A.1), and the quote belongs to that channel's source group (spec B.6).
+
+  - source_id: serpapi_google_flights
+    display_name: SerpApi Google Flights API
+    channel: AGGREGATOR
+    source_type: LIVE_SCRAPE
+    canonical_domain: serpapi.com
+    collection_method: NOT_DESIGNED
+    source_group: google_metasearch
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Vendor page, search-engine extract 2026-09-15 [INDEX]: "SerpApi handles the
+      scraping, parsing, and anti-bot challenges". Google sued SerpApi in December
+      2025 alleging circumvention of anti-scraping protections; the court dismissed
+      the DMCA claim on 2026-07-20 with leave to refile [TOOL, secondary summary].
+    automated_collection_status: NOT_PERMITTED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_PROHIBITED
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      Wraps a robots-disallowed Google path and, by its own description, defeats
+      anti-bot challenges. Excluded by collection-control-contract C-0: outsourcing
+      the circumvention does not change what the collection rests on.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: INADMISSIBLE
+
+  - source_id: skyscanner_partners
+    display_name: Skyscanner Partners API
+    channel: AGGREGATOR
+    source_type: AUTHORIZED_FEED
+    canonical_domain: partners.skyscanner.net
+    collection_method: NOT_DESIGNED
+    source_group: third_party_apis
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Developer documentation, search-engine extracts 2026-09-15 [INDEX]: "Access to
+      Skyscanner's APIs is through a commercial agreement only"; partners are
+      selected case by case; live-pricing costs are absorbed on the expectation that
+      5-20% of live-pricing sessions produce deeplink clicks.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: Commercial agreement for selected partners only [INDEX].
+    automation_gate_date: "2026-09-15"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      Metasearch prices under a conversion-driven access model; an index that
+      searches without sending bookings does not fit it, and the offer belongs to
+      another channel (spec A.1, B.6).
+
+  - source_id: kiwi_tequila
+    display_name: Kiwi.com Tequila API
+    channel: AGGREGATOR
+    source_type: AUTHORIZED_FEED
+    canonical_domain: tequila.kiwi.com
+    collection_method: NOT_DESIGNED
+    source_group: third_party_apis
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Third-party integration guides, search-engine extracts 2026-09-15 [INDEX]:
+      new partner access is invitation-only; self-serve closed in May 2024. Indian
+      domestic coverage unconfirmed.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: Invitation-only partner access [INDEX, secondary source].
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+
+  - source_id: duffel
+    display_name: Duffel Flights API
+    channel: LICENSED_FEED
+    source_type: AUTHORIZED_FEED
+    canonical_domain: duffel.com
+    collection_method: NOT_DESIGNED
+    source_group: third_party_apis
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Duffel's NDC airline page (https://duffel.com/ndc/airlines-and-ndc) read
+      2026-09-15 [TOOL]: IndiGo, Air India, Air India Express, Akasa Air and
+      SpiceJet are not listed. Terms not read.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: Terms not read.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: No Indian domestic carrier content listed.
 
 reference_sources:
   - reference_id: dgca_citypair_domestic_traffic
