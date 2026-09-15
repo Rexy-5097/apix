@@ -152,6 +152,7 @@ def nav(p: dict) -> str:
         '<span class="brand"><i></i>APIx</span>'
         f'<span class="dots">{dots}</span>'
         '<span class="sp"></span>'
+        '<a class="chip" href="platform.html">PLATFORM CONSOLE</a>'
         '<span class="chip">INDEX PENDING</span>'
         "</nav>"
     )

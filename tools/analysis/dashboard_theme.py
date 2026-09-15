@@ -310,6 +310,7 @@ html{scroll-padding-top:var(--nav-clear)}
               background:currentColor;flex-shrink:0;
               animation:pulse 2.8s var(--inout) infinite}
 @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+.nav a.chip{text-decoration:none;margin-right:8px}
 .nav[data-on-night="1"] .chip{background:#2A1A17;color:#E08878}
 .dots{display:flex;gap:7px;align-items:center}
 .dots a{display:flex;align-items:center;gap:7px;padding:0}

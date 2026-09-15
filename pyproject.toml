@@ -87,6 +87,13 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 # HTML harder to read than the Python. Its "ambiguous" characters -- the arrow,
 # the em dash, the rupee sign -- are the intended output, not typos.
 "tools/analysis/build_dashboard.py" = ["E501", "RUF001"]
+# build_platform.py is the platform-console counterpart: the same HTML-template
+# shape, the same waiver, for the same reason.
+"tools/analysis/build_platform.py" = ["E501", "RUF001"]
+# platform_motion.py is the console's CSS and JS runtime held as Python
+# strings. Its long lines are minified-adjacent stylesheet rules and its
+# typographic characters are intended output, exactly as above.
+"tools/analysis/platform_motion.py" = ["E501", "RUF001"]
 # engine_demo.py carries the same kind of HTML template for the isolated
 # engine-validation page. Only RUF001 is waived: its typographic characters are
 # intended markup. E501 is NOT waived here -- the file is mostly real code.
