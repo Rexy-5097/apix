@@ -12,6 +12,12 @@
 This is an engineering compliance record, not legal advice. It authorises
 nothing: the gates in the register do.
 
+> **Superseded in part, the same day.** [`acquisition-sweep-2026-09-15.md`](acquisition-sweep-2026-09-15.md)
+> swept twelve acquisition classes and sixteen sources and found a **third gate this
+> record does not apply: `data_rights`.** Several sources permit automated access and
+> then forbid retaining the response, which disqualifies them for APIx regardless of
+> `automation_gate`. Read both. Where they differ on a source, the sweep is later.
+
 ---
 
 ## Method

@@ -139,6 +139,63 @@
 # CORRECTION: amadeus_self_service was decommissioned by Amadeus on 2026-07-17.
 #
 # ─────────────────────────────────────────────────────────────────────────────
+# ACQUISITION SWEEP — 2026-09-15
+# Audit record: compliance/acquisition-sweep-2026-09-15.md
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The discovery audit above asked WHICH SOURCES PERMIT AUTOMATION. The sweep
+# asked a different question -- WHICH SOURCE CAN DEMONSTRATE AUTOMATED
+# ACQUISITION TODAY, ranked by time-to-demo -- across twelve acquisition
+# classes and sixteen sources. Four sources were added: sabre_dev_studio,
+# data_gov_in, dgca_publications, mospi_esankhyiki.
+#
+# THE ANSWER IS NONE, AND NOT FOR THE REASON WE WERE TRACKING.
+#
+# A THIRD GATE — data_rights
+#
+# Two sources cleared automation_gate and then failed on a property neither
+# existing gate captures: whether their terms permit RETAINING the response.
+# APIx publishes an index derived from retained, hashed observations, so a
+# source that forbids retention cannot supply a canonical Observation at all --
+# not in production, not in sandbox, not once. That is a stricter exclusion
+# than AUTOMATION_PROHIBITED, which at least leaves a manual carve-out open.
+#
+#   RETENTION_PERMITTED   the terms explicitly permit retaining responses and
+#                         publishing derived works.
+#   RETENTION_PROHIBITED  the terms explicitly forbid retaining response data,
+#                         or forbid the derived/aggregated use APIx is.
+#   RETENTION_UNKNOWN     terms unread or silent. BLOCKS use. THE DEFAULT.
+#   NOT_APPLICABLE        no response data is obtained from this source.
+#
+# Silence is not permission. RETENTION_UNKNOWN blocks for the same reason
+# NOT_VERIFIED blocks.
+#
+# THE SWEEP'S DECISIVE FINDINGS
+#
+#   travelport_uapi  fastest access of any source audited -- instant trial, no
+#                    accreditation -- and DISQUALIFIED by its own test-system
+#                    terms: "You may not retain any data from a session".
+#   duffel           instant token, and no Indian carrier in its published
+#                    airline list at all. Test mode returns a synthetic carrier.
+#   data_gov_in      the ONLY source class whose licence explicitly grants
+#                    retention, derived works and republication -- and it
+#                    carries no fares. Zero airfare datasets in 287,820.
+#   dgca             publishes no fare or tariff series. The premise that it
+#                    publishes route-wise tariff data is NOT supported.
+#
+# AS OF 2026-09-15, AFTER THE SWEEP
+#
+#   AUTOMATION_ALLOWED + data ADMISSIBLE + RETENTION_PERMITTED : none
+#   RETENTION_PERMITTED  : data_gov_in ONLY -- and it carries no fare
+#   RETENTION_PROHIBITED : travelport_uapi, duffel
+#   RETENTION_UNKNOWN    : amadeus_self_service, indigo_ndc, sabre_dev_studio,
+#                          dgca_publications, mospi_esankhyiki, and every
+#                          source whose terms this project has not read
+#
+# The intersection of "may automate", "data is usable" and "may retain" is
+# EMPTY, and the third term is the one nobody had checked.
+#
+# ─────────────────────────────────────────────────────────────────────────────
 # AUDIT PROVENANCE
 # ─────────────────────────────────────────────────────────────────────────────
 #
@@ -833,6 +890,30 @@ sources:
       a spec A.1 displayed, transactable offer -- using it would be fabrication with
       an API key attached. Only the production tier carries real fares, and that is
       contract-gated.
+    availability_corroboration: >-
+      ACQUISITION SWEEP 2026-09-15 [TOOL]. The 2026-07-17 decommissioning, recorded
+      above from search-engine extracts only, is now corroborated from Amadeus' own
+      published material: the official developer-guides repository is titled
+      "[DEPRECATED]" and states "The Amadeus for Developers Self-Service offer has
+      been deprecated", and the entire official amadeus4dev organisation -- guides,
+      OpenAPI specifications and every SDK -- was archived on 2026-07-17. The
+      developers.amadeus.com sitemap no longer references /self-service at all.
+      Amadeus' own public statement reaffirms the Enterprise portal ONLY.
+    second_disqualification: >-
+      Recorded because it would have applied even had the programme survived, and
+      because it bears on any future Amadeus Enterprise evaluation. The documented
+      Self-Service dataset EXCLUDED LOW-COST CARRIERS [TOOL]. IndiGo, SpiceJet and
+      Akasa are low-cost carriers, so an Amadeus-sourced Indian domestic index could
+      never have covered the DEL-BOM pilot's own carrier. Confirm whether the same
+      exclusion applies to Enterprise before spending any time on that contract.
+    data_rights: RETENTION_UNKNOWN
+    data_rights_basis: >-
+      Not determinable from public documentation [TOOL]. The terms link used by
+      Amadeus' own FAQ now redirects to a generic corporate website Terms of Use
+      (last updated October 2018) that governs "the Site", not the APIs, and whose
+      termination clause reads "You shall immediately delete any information
+      received or used by you which relates to the Site". The actual API terms were
+      distributed privately at production onboarding and are not public.
 
   - source_id: travelpayouts
     display_name: Travelpayouts
@@ -973,6 +1054,23 @@ sources:
     data_admissibility_basis: >-
       A production NDC offer is a transactable airline offer, but whether it equals
       the fare displayed on goindigo.in is empirical. Assess with production access.
+    technical_access: >-
+      ACQUISITION SWEEP 2026-09-15, FOURTH REPRODUCTION after 2026-09-10 and
+      2026-09-12 [DIRECT]. Every documented portal path returned HTTP 502 again:
+      /, /ndcAPI, /authentication, /FAQs, /airshopping, /offerPrice, /serviceList.
+      THE FAILURE IS NOW CHARACTERISED, and it changes how this record should be
+      read. The host resolves through an Akamai edge which is HEALTHY and passing
+      requests through (Server-Timing edge and origin both reported, cdn-cache
+      MISS), and the 502 body is emitted by Microsoft-Azure-Application-Gateway/v2
+      at the ORIGIN. There is no 401, no 403, no 429, no CAPTCHA and no bot
+      challenge anywhere in the exchange. This is the carrier's own origin having
+      no healthy backend -- NOT an access control, NOT a permission problem, and
+      NOT something APIx can influence or should escalate. Re-check periodically.
+    data_rights: RETENTION_UNKNOWN
+    data_rights_basis: >-
+      Unread, because the portal has never served. UAT scope, retention terms,
+      rate limits and permitted use are all unknown. Under the third gate this
+      blocks use independently of automation_gate.
 
   - source_id: air_india_ndc
     display_name: Air India NDC API
@@ -1038,6 +1136,28 @@ sources:
       Agency-channel fares (retail vs corporate, agency form of payment) are not
       automatically the household's displayed price (spec A.4). Needs a
       comparability study before any index use.
+    technical_access: >-
+      ACQUISITION SWEEP 2026-09-15. The developer portal (now "TripServices")
+      offers the fastest access of any source audited: "Instant trial access -
+      No payment required", self-service credentials, no accreditation and no
+      contract stated as a precondition for the trial [TOOL]. A published
+      OpenAPI reference and a credential-free documentation mock server exist.
+      Flights v11 CatalogProductOfferings is the airfare search operation.
+      NOTE the record name is historical -- the current product is TripServices
+      Flights v11, not uAPI.
+    data_rights: RETENTION_PROHIBITED
+    data_rights_basis: >-
+      DECISIVE, and it disqualifies the fastest-access source in the register.
+      Test-system terms of service, read 2026-09-15 [TOOL]: "You may not retain
+      any data from a session." The API and SDK terms of use separately prohibit
+      using "any automated process or tool to access and/or use the Service
+      (such as a BOT or a spider)" without written authorisation from
+      Travelport. A retained, automatically collected fare history is exactly
+      what both clauses address. APIx cannot produce a canonical Observation
+      without retaining the response, so this source is unusable in ANY mode --
+      live, sandbox or trial -- until that written authorisation is recorded
+      here. Do not build an adapter against it before then.
+    data_rights_date: "2026-09-15"
 
   - source_id: tbo_tripjack
     display_name: TBO / Tripjack B2B flight APIs
@@ -1308,6 +1428,212 @@ sources:
     automation_gate_date: "2026-09-15"
     data_admissibility: INADMISSIBLE
     data_admissibility_basis: No Indian domestic carrier content listed.
+    technical_access: >-
+      ACQUISITION SWEEP 2026-09-15 [TOOL]. Signup is documented as about a
+      minute and a test token is issued immediately, so this is among the
+      fastest doors in the register. The published airline list was read in
+      full and contains NO Indian carrier. Test mode returns Duffel's own
+      synthetic carrier, of which the documentation says you "won't see
+      realistic flight schedules or prices" -- so test mode could not serve as
+      an airfare source even if Indian content existed.
+    data_rights: RETENTION_PROHIBITED
+    data_rights_basis: >-
+      Services agreement read 2026-09-15 [TOOL]: restricted activities include
+      accessing or using the services "for metasearch purposes", and attempting
+      to "copy, modify, duplicate, create derivative works from ... republish,
+      download" any portion of the services. A published airfare index is a
+      derived, republished aggregate, so those clauses reach APIx directly.
+    data_rights_date: "2026-09-15"
+
+  # ── Added by the acquisition sweep, 2026-09-15 ──────────────────────────────
+
+  - source_id: sabre_dev_studio
+    display_name: Sabre Developer Hub (Bargain Finder Max, NDC AirShopping)
+    channel: LICENSED_FEED
+    channel_caveat: PROVISIONAL. An agency channel; see data_admissibility.
+    source_type: AUTHORIZED_FEED
+    canonical_domain: developer.sabre.com
+    collection_method: NOT_DESIGNED
+    source_group: agency_channel
+    robots_status: NOT_APPLICABLE
+    robots_note: An authorised API is governed by its agreement, not by robots.txt.
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Portal read in a browser 2026-09-15 [DIRECT]; it is client-rendered and
+      returns no readable text to a plain HTTP client. The product catalogue
+      lists Bargain Finder Max (REST v5) and NDC IT AirShopping, OfferPrice and
+      OrderReshop (21.3.4), both marked Premium. Reference documentation is
+      gated: requesting it returns "You might need to Sign In to access this
+      content". Terms not reachable without an account.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: UNKNOWN
+    known_field_gaps: UNKNOWN
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_ALLOWED_WITH_PERMISSION
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      An official programmatic channel published by a GDS, but credentials are
+      not self-service. The OAuth Token Create documentation states that to
+      provision a new clientId you "contact your account manager" [DIRECT].
+    automation_gate_caveat: >-
+      BLOCKS collection. No self-signup, no documented free sandbox, and the
+      schema is not publicly readable, so no fixture can be derived from
+      official material either.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: NOT_ASSESSED
+    data_admissibility_basis: >-
+      Agency/GDS-channel fares are not automatically the household's displayed
+      price (spec A.4), the same problem as travelport_uapi and tbo_tripjack.
+    data_rights: RETENTION_UNKNOWN
+    data_rights_basis: Terms not reachable without an account.
+
+  - source_id: data_gov_in
+    display_name: data.gov.in — Open Government Data Platform India (OGD)
+    channel: OFFICIAL_STATISTICS
+    source_type: AUTHORIZED_FEED
+    canonical_domain: api.data.gov.in
+    collection_method: NOT_DESIGNED
+    source_group: official_statistics
+    robots_status: NOT_APPLICABLE
+    tos_status: READ_VIA_PUBLIC_DOCUMENTATION
+    tos_evidence: >-
+      Government Open Data License - India read 2026-09-15 from an official
+      NIC-hosted copy [TOOL]. The web portal returned HTTP 403 to the audit
+      client while the API host itself answered; not retried with another
+      client.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: NONE_AVAILABLE
+    known_field_gaps: >-
+      ALL OF THEM. No flight number, departure time, travel date, advance-purchase
+      window, fare family, baggage entitlement or fare in rupees exists anywhere
+      on the platform.
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      A versioned REST API on a dedicated host (api.data.gov.in, v2.2.0) with a
+      keyed resource endpoint, which is circumstantial but NOT a published
+      permission [TOOL]. No reachable official page states that programmatic
+      access is permitted, and GODL itself is silent on crawling -- it licenses
+      what may be done with data already held, not the act of retrieval.
+      Un-prohibited is not permitted.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      THE PLATFORM CARRIES NO AIRFARE DATA. Searched 2026-09-15 [TOOL]: of
+      287,820 resources, zero carry "airfare" in title or description; the
+      373-resource Aviation sector contains no fare-titled dataset; all 17
+      "tariff" datasets are petroleum, electricity or telecom. The Ministry of
+      Civil Aviation aviation series are departures, hours, kilometres,
+      passengers, available seat kilometres, load factors and cargo -- capacity
+      and traffic, not one rupee-denominated fare -- and most were last updated
+      in 2018. The single airfare-titled resource is a 2022 Rajya Sabha answer
+      annexure whose columns are airline against six evacuation cities, created
+      and last updated the same day. Not a series, not per-flight.
+    data_rights: RETENTION_PERMITTED
+    data_rights_basis: >-
+      THE ONLY SOURCE IN THIS REGISTER WHOSE LICENCE EXPLICITLY GRANTS WHAT APIx
+      NEEDS, and it has no fares to grant it over. GODL section 3 [TOOL] gives
+      "a worldwide, royalty-free, non-exclusive license to use, adapt, publish"
+      data "(either in original, or in adapted and/or derivative forms)", to
+      "create derivative works (including products and services)", "for all
+      lawful commercial and non-commercial purposes". Section 2(g) includes
+      "copying,distribution" and "publication of original and derived works"
+      (punctuation as published). Conditions are attribution in the section 5
+      format, including DOI or URL, and non-endorsement. A derived price index
+      is squarely inside the grant. Licence is recorded PER DATASET in resource
+      metadata, so read the licence element per resource rather than assuming
+      GODL platform-wide.
+    data_rights_date: "2026-09-15"
+    permitted_use: >-
+      Route weights and denominator context only -- spec G.2 and OQ-4. Never an
+      observation source, because it contains no observations.
+
+  - source_id: dgca_publications
+    display_name: DGCA published aviation statistics
+    channel: OFFICIAL_STATISTICS
+    source_type: AUTHORIZED_FEED
+    canonical_domain: dgca.gov.in
+    collection_method: NOT_DESIGNED
+    source_group: official_statistics
+    robots_status: NOT_VERIFIED
+    tos_status: NOT_PERMITTED
+    tos_evidence: >-
+      Read 2026-09-15 [TOOL]. The site carries an all-rights-reserved notice and
+      states its information is "made available to the public ... for
+      information only". There is NO grant of reuse, redistribution or
+      derived-works rights anywhere on it -- the opposite posture to GODL.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_VERIFIED
+    required_observation_fields: NONE_AVAILABLE
+    known_field_gaps: No fare field of any kind is published.
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      Neither permitted nor addressed. No API, no developer section and no CSV
+      endpoint appears in the full A-Z index or the sitemap; publications are
+      PDF and Excel attachments behind JSP paths [TOOL].
+    automation_gate_date: "2026-09-15"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      CORRECTS A STANDING PROJECT ASSUMPTION. Both the complete A-Z index and
+      the complete sitemap were enumerated 2026-09-15 [TOOL] and contain NO
+      entry for tariff, fare, airfare, price or fare monitoring in any format.
+      The entire air-transport statistical offering is the Handbook on Civil
+      Aviation Statistics plus domestic and international traffic series. The
+      premise that DGCA PUBLISHES route-wise tariff data is therefore NOT
+      SUPPORTED by its own site. A regulator receiving data under a reporting
+      mandate is not a publication channel; if such tables exist they are
+      internal or released ad hoc, not as a machine-readable series.
+    data_rights: RETENTION_UNKNOWN
+    data_rights_basis: >-
+      No grant exists. All rights reserved, with no reuse licence and no clause
+      addressing retention either way, so nothing here permits holding or
+      republishing the content. Distinct from data_gov_in, which is GODL.
+
+  - source_id: mospi_esankhyiki
+    display_name: MoSPI eSankhyiki — CPI item index API
+    channel: OFFICIAL_STATISTICS
+    source_type: AUTHORIZED_FEED
+    canonical_domain: api.mospi.gov.in
+    collection_method: AUTOMATED_IMPLEMENTED
+    source_group: official_statistics
+    robots_status: NOT_APPLICABLE
+    tos_status: NOT_VERIFIED
+    tos_evidence: >-
+      Terms not read. The eSankhyiki portal is client-rendered and returned only
+      a JavaScript shell; mospi.gov.in and api.mospi.gov.in refused the audit
+      client at connection level (socket closed / ECONNRESET) 2026-09-15
+      [TOOL]. Not retried with another client.
+    automated_collection_status: NOT_VERIFIED
+    captcha_or_interstitial_observed: NOT_APPLICABLE
+    required_observation_fields: NONE_AVAILABLE
+    known_field_gaps: >-
+      Carries no route, carrier, flight, travel date, booking date or fare in
+      rupees. It is a monthly All-India index number.
+    evidence_date: "2026-09-15"
+    automation_gate: AUTOMATION_UNKNOWN
+    manual_gate: NOT_APPLICABLE
+    automation_gate_basis: >-
+      RECORDED AS A GAP, NOT AS A CLEARANCE. APIx ALREADY retrieves this source
+      automatically -- tools/analysis/pull_mospi_benchmark.py calls
+      api.mospi.gov.in/api/cpi/getItemIndex -- and the source was not in this
+      register until the sweep added it. It is the Dataset Link named in problem
+      statement 26056, which is why it was adopted, but its terms have never
+      been read. Read them, then rate this properly.
+    automation_gate_date: "2026-09-15"
+    data_admissibility: INADMISSIBLE
+    data_admissibility_basis: >-
+      A finished monthly index number, not a price observation. It is somebody
+      else's index and can never be an APIx input. Spec H.3 and the tool's own
+      docstring restrict it to a VALIDATION BENCHMARK, never mixed with
+      observations.
+    data_rights: RETENTION_UNKNOWN
+    data_rights_basis: Terms not read; see tos_evidence.
+    permitted_use: External validation benchmark only.
 
 reference_sources:
   - reference_id: dgca_citypair_domestic_traffic
