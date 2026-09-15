@@ -60,6 +60,14 @@ class SourceAdapter(ABC):
             "mode": self.mode.value,
         }
 
+    def credentials_present(self) -> bool:
+        """Whether the source-issued credentials this adapter needs are available.
+
+        The sandbox gate refuses without them. Adapters that need none return False,
+        which keeps them out of sandbox mode entirely.
+        """
+        return False
+
     def close(self) -> None:  # noqa: B027 -- optional hook, deliberately a no-op
         """Release any browser or file handles."""
 

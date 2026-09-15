@@ -68,6 +68,7 @@ for one another.
 | Ingestion store (SQLite) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
 | Collection bridge (manual loader) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
 | Automated collector — IndiGo adapter, fixture mode | ✅ | ✅ | ✅ | ❌ *(SYNTHETIC pages only)* | **FIXTURE-ONLY** |
+| Automated collector — IndiGo NDC API, sandbox | ✅ | gate + credentials + index boundary only | ✅ | ❌ *(no request ever sent)* | **BLOCKED** *(official request model unconfirmed; no UAT credentials)* |
 | Automated collector — IndiGo adapter, live mode | ✅ | ✅ *(selectors unverified)* | gate only | ❌ *(never run)* | **BLOCKED** *(registry: `AUTOMATION_PROHIBITED`)* |
 | Evidence / provenance grading | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
 | APW bucket assignment (§A.3) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |

@@ -30,6 +30,13 @@ collect = [
   "playwright>=1.45",
 ]
 
+# Reference-source acquisition only (tools/analysis/pull_alliance_tariff.py).
+# Nothing in src/apix imports it, and the parse functions it drives are pure and
+# standard-library only, which is why the test suite needs none of this.
+reference = [
+  "pypdf>=4.0",
+]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

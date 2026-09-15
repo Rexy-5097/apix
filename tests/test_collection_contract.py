@@ -134,12 +134,20 @@ def test_every_outcome_is_classified_exactly_once() -> None:
 
 
 def test_collector_failures_are_named() -> None:
-    """The three absences that are ours, not the market's."""
+    """The four absences that are ours, not the market's.
+
+    PERMISSION_BLOCKED joined this set when the scheduler began recording gate
+    refusals as attempts. It belongs here for the same reason the access
+    challenge does: the cell WAS expected and the reason we hold no quote is
+    ours, not the market's. Classifying it as a market fact would let a register
+    in which nothing is cleared read as an absence of flights.
+    """
     ours = {o for o in CollectionOutcome if o.is_collector_failure}
     assert ours == {
         CollectionOutcome.SOURCE_UNAVAILABLE,
         CollectionOutcome.PARSER_FAILURE,
         CollectionOutcome.CAPTCHA_OR_ANTIBOT_STOP,
+        CollectionOutcome.PERMISSION_BLOCKED,
     }
 
 
