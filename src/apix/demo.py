@@ -274,6 +274,24 @@ def stage_backtest(levels: dict[date, float]) -> dict[str, Any]:
     return result.as_dict()
 
 
+def stage_service_surface() -> dict[str, object]:
+    """Stage 7 — the surfaces NSO/RBI would consume: exports, API contract, console."""
+    from apix.api import ENDPOINTS
+    from apix.export import write_all
+
+    _head(7, "SERVICE SURFACE — EXPORTS, API CONTRACT, PLATFORM CONSOLE")
+    written = write_all()
+    print(f"  exports written     : {len(written)} files -> {written[0].parent}")
+    print(f"  API endpoints       : {len(ENDPOINTS)}  (serve: python -m apix.api --port 8760)")
+    for ep in ENDPOINTS:
+        print(f"    GET {ep}")
+    print("  platform console    : data/platform.html  (python tools/analysis/build_platform.py)")
+    print(DASH)
+    print("  Every JSON export is the API envelope: output_class, publication_status,")
+    print("  live_airfare_acquisition=BLOCKED on every payload. No PRODUCTION value exists.")
+    return {"exports": len(written), "endpoints": len(ENDPOINTS)}
+
+
 def main(argv: list[str] | None = None) -> int:
     print(BAR)
     print(" APIx — REAL-TIME AIRFARE MEASUREMENT INFRASTRUCTURE FOR INDIA")
@@ -292,8 +310,9 @@ def main(argv: list[str] | None = None) -> int:
     demo = stage_demo_index()
     periods = stage_periods(demo["levels"])
     backtest = stage_backtest(demo["levels"])
+    surface = stage_service_surface()
 
-    _head(7, "SUBMISSION STATUS")
+    _head(8, "SUBMISSION STATUS")
     rows = [
         ("Scheduled collection", "WORKING", f"{scheduler['planned_searches']} searches planned"),
         ("Compliance gate", "WORKING", f"{scheduler['requests_made']} requests made — all refused"),
@@ -303,6 +322,11 @@ def main(argv: list[str] | None = None) -> int:
         ("Index engine", "WORKING", f"{demo['links']} t/t-7 links on a SYNTHETIC fixture"),
         ("Period series", "WORKING", f"{len(periods['MONTHLY'])} monthly period(s), DEMO input"),
         ("Backtest framework", backtest["status"], "DGCA fare benchmark NOT_LOCATED"),
+        (
+            "API + exports",
+            "WORKING",
+            f"{surface['endpoints']} endpoints, {surface['exports']} export files",
+        ),
         ("Live airfare acquisition", "BLOCKED", "authorization pending — 0 of 30 sources cleared"),
     ]
     for name, status, detail in rows:

@@ -100,13 +100,14 @@ for one another.
 | Uncertainty / bootstrap | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
 | Analytics layer | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
 | AI explanation layer | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
-| API (FastAPI) | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
+| API (stdlib HTTP, 13 endpoints) | ✅ | ✅ | ✅ | ❌ | **BUILT — serves RESEARCH/DEMO only; no PRODUCTION payload exists** |
+| CSV/JSON exports (17 files) | ✅ | ✅ | ✅ | ❌ | **BUILT — same envelope as the API** |
 | SDMX serialisers | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
 | Next.js dashboard (`dashboard-planned/`) | ✅ | ❌ | ❌ | ❌ | **SPECIFIED-ONLY** |
 | AgentOS framework | ✅ | ✅ | ✅ CI | n/a | **DEV INFRASTRUCTURE — not part of the statistic** |
 
 `src/apix/statistics/tpd/`, `src/apix/statistics/uncertainty/`,
-`src/apix/analytics/`, `src/apix/ai/`, `src/apix/api/` and
+`src/apix/analytics/`, `src/apix/ai/` and
 `src/apix/experiments/` are **empty packages**. A test
 (`test_tpd_and_uncertainty_packages_are_genuinely_empty`) fails the build if
 that stops being true without the documentation being updated.
@@ -171,6 +172,9 @@ supplies too little variation for the property to be established.
 | Jevons | `src/apix/statistics/elementary/jevons.py` | `tests/test_golden_values.py` |
 | Chaining | `src/apix/statistics/index/chaining.py` | `tests/test_pipeline_14_day.py` |
 | Aggregation | `src/apix/statistics/aggregation/young_laspeyres.py` | `tests/test_golden_values.py` |
+| API | `src/apix/api/server.py`, `src/apix/api/payloads.py` | `tests/test_api.py` |
+| Exports | `src/apix/export/exports.py` | `tests/test_exports.py` |
+| Platform console | `tools/analysis/build_platform.py` → `data/platform.html` | `tests/test_platform_page.py` |
 | Publication | `src/apix/statistics/index/publication.py` | `tests/test_pipeline_14_day.py` |
 
 ---

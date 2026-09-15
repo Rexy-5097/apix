@@ -154,3 +154,4 @@ collection-input/loader/shots/
 # data/reference/*.json; the bytes themselves are provenance, not product, and
 # follow the same policy as collection-input/raw/.
 data/reference/.cache/
+data/exports/
