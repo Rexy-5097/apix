@@ -566,37 +566,37 @@ document.querySelectorAll('[data-count]').forEach(function(el){
     return;
   }
 
-  var tl = null;
-  function run(){
-    if(!hasGSAP){
-      pkt.style.opacity = '1'; place(1);
-      if(stop) stop.style.opacity = '1';
-      nodes.forEach(function(n){ if(n.dataset.blocked !== '1') n.dataset.lit = '1'; });
-      return;
-    }
-    var proxy = {p:0};
-    tl = G.timeline({ paused:true, onComplete:function(){
-      /* Next observation, same journey. This is a replay of recorded rows, not
-         a live feed, and the caption on the figure says so. */
-      si++; dress(si);
-      tl.kill(); run(); tl.play();
-    }});
-    tl.set(pkt, {opacity:0})
-      .set(stop, {opacity:0})
-      .set(proxy, {p:0})
-      .to(pkt, {opacity:1, duration:0.28, ease:'power2.out'})
-      .to(proxy, {p:1, duration:3.4, ease:'none',
-                  onUpdate:function(){ place(proxy.p); }}, '<')
-      .to(pkt, {opacity:0, duration:0.3, ease:'power2.in'}, '+=0.15')
-      .to(stop, {opacity:1, duration:0.4, ease:'expo.out'}, '<')
-      .to({}, {duration:1.5})
-      .to(stop, {opacity:0, duration:0.4}, '+=0');
-    keep(ST.create({ trigger:svg, start:'top 85%', end:'bottom 15%',
-      onToggle:function(self){
-        if(self.isActive) tl.play(); else tl.pause();
-      } }));
+  if(!hasGSAP){
+    pkt.style.opacity = '1'; place(1);
+    if(stop) stop.style.opacity = '1';
+    nodes.forEach(function(n){ if(n.dataset.blocked !== '1') n.dataset.lit = '1'; });
+    return;
   }
-  run();
+  /* ONE timeline and ONE trigger, repeating. The first version rebuilt both on
+     every pass and never killed the old trigger, so within a couple of cycles
+     several stale triggers were toggling the same timeline and pausing the run
+     that had just begun -- the packet froze mid-path. */
+  var proxy = {p:0};
+  var tl = G.timeline({ paused:true, repeat:-1, repeatDelay:0.5,
+    onRepeat:function(){
+      /* Next observation, same journey: a replay of recorded rows, never a
+         live feed. The caption on the figure says exactly that. */
+      si++; dress(si);
+    }});
+  tl.set(pkt, {opacity:0})
+    .set(stop, {opacity:0})
+    .set(proxy, {p:0})
+    .to(pkt, {opacity:1, duration:0.28, ease:'power2.out'})
+    .to(proxy, {p:1, duration:3.4, ease:'none',
+                onUpdate:function(){ place(proxy.p); }}, '<')
+    .to(pkt, {opacity:0, duration:0.3, ease:'power2.in'}, '+=0.15')
+    .to(stop, {opacity:1, duration:0.4, ease:'expo.out'}, '<')
+    .to(stop, {opacity:0, duration:0.4}, '+=1.5');
+  var trig = keep(ST.create({ trigger:svg, start:'top 85%', end:'bottom 15%',
+    onToggle:function(self){ if(self.isActive) tl.play(); else tl.pause(); } }));
+  /* onToggle only fires on a transition, so a graph already in view when the
+     trigger is created would never start. */
+  if(trig && trig.isActive) tl.play();
 })();
 
 /* ------------------------------------------- index dependency chain, drawn */
