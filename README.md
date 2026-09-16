@@ -224,6 +224,22 @@ index publication must all still work — they do, and `test_architecture.py`
 enforces it. (TPD is named in this rule by design, but is not implemented yet,
 so it is not part of what the test currently exercises.)
 
+## Exercising the browser path without collecting from anyone
+
+The Playwright adapter has never run against a real source, and cannot: the gate
+refuses every one of them. To keep that from meaning "never run at all", the same
+adapter is driven against a synthetic page this repository serves on 127.0.0.1.
+
+```bash
+pip install -e ".[collect]" && playwright install chromium
+python -m pytest tests/test_loopback_browser_proof.py -v
+```
+
+It proves the machine — browser, navigation plan, extraction script, parser,
+evidence capture, the challenge stop signal, the DOM-change signal. It does **not**
+verify that the selectors match goindigo.in; those stay `UNVERIFIED` until a source
+is authorized. See [ADR-0067](artifacts/decisions/ADR-0067-loopback-browser-proof.md).
+
 ## Compliance
 
 There is **no CAPTCHA solver, no fingerprint evasion, and no identity rotation
