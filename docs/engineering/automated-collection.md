@@ -8,13 +8,19 @@
 > |---|---|
 > | Automated collection layer (rules, normalisation, store, evidence) | **implemented and tested** |
 > | IndiGo adapter — fixture mode | **works, on SYNTHETIC pages only** |
-> | IndiGo adapter — live mode | **implemented, refused by the compliance gate, has never run** |
+> | IndiGo adapter — live mode | **implemented, refused by the compliance gate, has never run against any source** |
+> | IndiGo adapter — browser path | **exercised**, in a real Chromium, against a page this repository serves on 127.0.0.1 ([ADR-0067](../../artifacts/decisions/ADR-0067-loopback-browser-proof.md)) |
 > | IndiGo NDC API — sandbox / fixture | **gate, credentials and index boundary built; request model UNCONFIRMED, no request ever sent** — [indigo-ndc.md](indigo-ndc.md) |
 > | Other airline adapters | not implemented |
 > | OTA adapters | not implemented |
 >
 > **APIx has not automatically collected any fare from any website.** Every real
 > observation in the repository was collected manually and remains labelled so.
+>
+> The loopback proof does not change that sentence. It drives the browser against
+> **our own synthetic page**, so that the code path is exercised rather than merely
+> reviewed. Its output is `INADMISSIBLE_SYNTHETIC` and the selectors for the real
+> site remain `UNVERIFIED`.
 
 ---
 

@@ -71,21 +71,30 @@ FRAME_SUFFIX = {
     CollectionMode.LIVE: "@automated-trial",
     CollectionMode.FIXTURE: "@fixture",
     CollectionMode.SANDBOX: "@sandbox",
+    CollectionMode.LOOPBACK: "@loopback",
 }
 FRAME_TAG = {
     CollectionMode.LIVE: "automated-trial",
     CollectionMode.FIXTURE: "fixture",
     CollectionMode.SANDBOX: "sandbox",
+    CollectionMode.LOOPBACK: "loopback",
 }
 #: Fixture pages are not market observations and are labelled so at the record level.
 #: Sandbox rows come from an authorised API's test environment; the frame suffix and the
-#: index boundary, not this field, are what keep them out of the index.
+#: index boundary, not this field, are what keep them out of the index. Loopback rows
+#: come from a page this repository serves to itself, so they are SYNTHETIC for the same
+#: reason fixture rows are -- a real browser read them, but nobody published the fares.
 SOURCE_TYPE = {
     CollectionMode.LIVE: SourceType.LIVE_SCRAPE,
     CollectionMode.FIXTURE: SourceType.SYNTHETIC,
     CollectionMode.SANDBOX: SourceType.AUTHORIZED_FEED,
+    CollectionMode.LOOPBACK: SourceType.SYNTHETIC,
 }
-# Import-time invariant: no automated mode can ever produce an index-input frame.
+# Import-time invariants: every mode is mapped, and no automated mode can ever
+# produce an index-input frame. The completeness check is what makes adding a
+# CollectionMode without deciding its frame a startup failure rather than a
+# KeyError somewhere deep in a run.
+assert set(FRAME_SUFFIX) == set(FRAME_TAG) == set(SOURCE_TYPE) == set(CollectionMode)
 assert not any(s.endswith(PRIMARY_SUFFIX) for s in FRAME_SUFFIX.values())
 
 #: Exclusions meaning the page could not be read, as opposed to a contract mismatch.

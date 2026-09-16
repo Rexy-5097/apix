@@ -21,7 +21,10 @@ Status of adapters (see ``docs/engineering/automated-collection.md``):
 
 ==============  ==========================================================
 IndiGo          fixture mode implemented; live mode implemented and GATED
-                (registry: AUTOMATION_PROHIBITED) -- has never run live
+                (registry: AUTOMATION_PROHIBITED) -- has never run live.
+                The browser path itself IS exercised, against a page this
+                repository serves on 127.0.0.1 -- see ``indigo/loopback.py``
+                and ADR-0067
 Air India       not implemented
 Akasa Air       not implemented (registry: AUTOMATION_PROHIBITED)
 OTAs            not implemented

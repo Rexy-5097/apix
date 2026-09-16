@@ -36,7 +36,11 @@ from typing import Any, ClassVar
 from apix.ingestion.collectors.adapter import SourceAdapter
 from apix.ingestion.collectors.candidates import Artifact, PageState, SearchResult
 from apix.ingestion.collectors.contract import SearchParams, ist_now
-from apix.ingestion.collectors.gate import CollectionMode, require_live_clearance
+from apix.ingestion.collectors.gate import (
+    CollectionMode,
+    GateDecision,
+    require_live_clearance,
+)
 from apix.ingestion.collectors.indigo.navigation import (
     BASE_URL,
     SELECTOR_STATUS,
@@ -157,10 +161,12 @@ class LiveIndigoAdapter(SourceAdapter):
         headless: bool = False,
         timeout_ms: int = 45_000,
         clock: Callable[[], datetime] = ist_now,
+        base_url: str = BASE_URL,
     ) -> None:
         self.mode = CollectionMode.LIVE
+        self.base_url = base_url
         # FIRST: the gate. Nothing below runs for a source that is not cleared.
-        self.gate = require_live_clearance(registry_entry)
+        self.gate = self._clear_gate(registry_entry)
         try:
             self._sync_api: Any = importlib.import_module("playwright.sync_api")
         except ImportError as exc:
@@ -175,8 +181,21 @@ class LiveIndigoAdapter(SourceAdapter):
         self._browser: Any = None
         self._context: Any = None
 
+    def _clear_gate(self, registry_entry: Mapping[str, object]) -> GateDecision:
+        """The clearance this adapter requires. Overridden only by LOOPBACK mode.
+
+        A seam, not a switch: the default is the live gate and no argument can
+        change it. :class:`~apix.ingestion.collectors.indigo.loopback.LoopbackIndigoAdapter`
+        overrides it with a gate that *cannot* clear a real source.
+        """
+        return require_live_clearance(registry_entry)
+
     def environment(self) -> dict[str, str]:
-        env = {**super().environment(), "selector_status": SELECTOR_STATUS, "base_url": BASE_URL}
+        env = {
+            **super().environment(),
+            "selector_status": SELECTOR_STATUS,
+            "base_url": self.base_url,
+        }
         if self._browser is not None:
             env["browser"] = f"chromium/{self._browser.version}"
         return env
@@ -269,12 +288,13 @@ class LiveIndigoAdapter(SourceAdapter):
         try:
             try:
                 response = page.goto(
-                    BASE_URL, wait_until="domcontentloaded", timeout=self.timeout_ms
+                    self.base_url, wait_until="domcontentloaded", timeout=self.timeout_ms
                 )
             except Exception as exc:
                 capture()
                 return finish(
-                    PageState.SITE_ERROR, f"navigation to {BASE_URL} failed: {type(exc).__name__}"
+                    PageState.SITE_ERROR,
+                    f"navigation to {self.base_url} failed: {type(exc).__name__}",
                 )
             status = response.status if response is not None else None
             for step in build_navigation_plan(params):
