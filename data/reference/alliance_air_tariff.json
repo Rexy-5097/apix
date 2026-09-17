@@ -1,0 +1,3275 @@
+{
+ "reference_id": "alliance_air_domestic_tariff",
+ "role": "REFERENCE_ONLY",
+ "is_apix_input": false,
+ "data_class": "DECLARED_TARIFF",
+ "admissibility": "INADMISSIBLE",
+ "admissibility_basis": "A declared tariff structure, not a displayed transactable offer (spec A.1). It carries no flight, departure time, travel date or advance-purchase window, so it cannot be assigned an APW bucket (A.3), banded (B.2.2) or keyed to a cell. The source register rates declared tariff categories INADMISSIBLE.",
+ "must_never": [
+  "become an Observation or an UnpricedFlight",
+  "enter an APW cell or a departure band",
+  "contribute to a price relative, a Jevons index or any aggregate",
+  "be written to the primary collection store or any @primary run",
+  "be presented as an airfare observation or as a fare a traveller paid"
+ ],
+ "observation_fields_absent": [
+  "flight_number",
+  "departure_time_local",
+  "travel_date",
+  "collection_date",
+  "apw_bucket",
+  "departure_band",
+  "payable_fare",
+  "fare_family_raw",
+  "observation_id"
+ ],
+ "publisher": "Alliance Air Aviation Limited",
+ "document_title": "Domestic Fares and Penalties (Tariff Sheet)",
+ "effective_date_declared": "01SEP26",
+ "page_count": 3,
+ "provenance": {
+  "url": "https://plone.allianceair.in/allianceair/en/assets/tariff-sheet/alliance-air-domestic-tariff-sheet-01sep26.pdf",
+  "landing_page": "https://www.allianceair.in/tariffsheet",
+  "retrieved_at_utc": "2026-09-15T12:11:25+00:00",
+  "http_status": 200,
+  "content_type": "application/pdf",
+  "content_length": 699960,
+  "user_agent": "APIx-reference-fetch/1.0 (MoSPI PS26056 airfare index research; github.com/Rexy-5097/apix)",
+  "curl_stderr": null,
+  "sha256": "ef132e8751f3edfcbd756cc6702641eb83f017410064b7df279bd81adba0c076"
+ },
+ "basic_fares": {
+  "unit": "INR, basic fare per one-way sector, economy class",
+  "declared_fare_levels": 18,
+  "row_count": 92,
+  "suspect_row_count": 2,
+  "unparsed_numbered_lines": [],
+  "rows": [
+   {
+    "serial": 1,
+    "sector_raw": "Ahmedabad Jalgaon",
+    "origin": "Ahmedabad",
+    "destination": "Jalgaon",
+    "routing": "Direct",
+    "fare_levels": [
+     1100,
+     1800,
+     2200,
+     2600,
+     [
+      3005,
+      3061
+     ],
+     3500,
+     4000,
+     4600,
+     5200,
+     6000,
+     6800,
+     7700,
+     10500,
+     14500,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 2,
+    "sector_raw": "Ahmedabad Keshod",
+    "origin": "Ahmedabad",
+    "destination": "Keshod",
+    "routing": "Direct",
+    "fare_levels": [
+     1000,
+     2000,
+     2300,
+     2600,
+     3231,
+     3500,
+     4000,
+     4500,
+     5000,
+     5700,
+     6600,
+     8600,
+     11600,
+     14600,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 3,
+    "sector_raw": "Ahmedabad Daman",
+    "origin": "Ahmedabad",
+    "destination": "Daman",
+    "routing": "Direct",
+    "fare_levels": [
+     1500,
+     1800,
+     2200,
+     2400,
+     2700,
+     3100,
+     3500,
+     4000,
+     4700,
+     5600,
+     6700,
+     8000,
+     10100,
+     12600,
+     15800,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 4,
+    "sector_raw": "Aijwal Shillong",
+    "origin": "Aijwal",
+    "destination": "Shillong",
+    "routing": "Direct",
+    "fare_levels": [
+     400,
+     700,
+     1000,
+     1300,
+     1600,
+     2000,
+     2500,
+     3000,
+     3800,
+     4500,
+     5500,
+     6500,
+     7500,
+     9000,
+     12000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 5,
+    "sector_raw": "Amritsar Kullu",
+    "origin": "Amritsar",
+    "destination": "Kullu",
+    "routing": "Direct",
+    "fare_levels": [
+     1000,
+     [
+      2200,
+      1600
+     ],
+     [
+      2600,
+      2000
+     ],
+     [
+      3000,
+      2500
+     ],
+     [
+      3580,
+      2875
+     ],
+     [
+      3800,
+      3200
+     ],
+     [
+      4500,
+      4000
+     ],
+     [
+      5200,
+      5000
+     ],
+     6000,
+     7400,
+     9000,
+     11000,
+     14000,
+     17000,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 6,
+    "sector_raw": "Bengaluru Goa",
+    "origin": "Bengaluru",
+    "destination": "Goa",
+    "routing": "Direct",
+    "fare_levels": [
+     400,
+     500,
+     800,
+     1200,
+     1400,
+     [
+      1600,
+      1800
+     ],
+     [
+      1800,
+      2000
+     ],
+     [
+      2000,
+      2400
+     ],
+     [
+      2500,
+      3000
+     ],
+     [
+      3000,
+      3700
+     ],
+     [
+      4000,
+      4700
+     ],
+     [
+      5300,
+      5700
+     ],
+     [
+      6700,
+      6900
+     ],
+     7500,
+     9200,
+     11500,
+     14500,
+     18500
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 7,
+    "sector_raw": "Bengaluru Kochi",
+    "origin": "Bengaluru",
+    "destination": "Kochi",
+    "routing": "Direct",
+    "fare_levels": [
+     600,
+     1200,
+     1400,
+     1700,
+     2200,
+     2600,
+     3200,
+     3700,
+     4200,
+     5000,
+     6000,
+     7500,
+     9000,
+     12000,
+     16000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 8,
+    "sector_raw": "Bengaluru Salem",
+    "origin": "Bengaluru",
+    "destination": "Salem",
+    "routing": "Direct",
+    "fare_levels": [
+     600,
+     1200,
+     1500,
+     2000,
+     2443,
+     2800,
+     3200,
+     3800,
+     4500,
+     5500,
+     7000,
+     9000,
+     11500,
+     14000,
+     17000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 9,
+    "sector_raw": "Bilaspur Ambikapur",
+    "origin": "Bilaspur",
+    "destination": "Ambikapur",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1300,
+     1430,
+     1580,
+     1750,
+     1900,
+     2100,
+     2300,
+     2550,
+     2800,
+     3100,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 10,
+    "sector_raw": "Bilaspur Jabalpur",
+    "origin": "Bilaspur",
+    "destination": "Jabalpur",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1000,
+     1400,
+     1800,
+     2250,
+     2800,
+     3200,
+     4000,
+     5000,
+     6200,
+     7500,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 11,
+    "sector_raw": "Bilaspur Prayagraj",
+    "origin": "Bilaspur",
+    "destination": "Prayagraj",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     4500,
+     4950,
+     5450,
+     6000,
+     6600,
+     7250,
+     7500,
+     8800,
+     9650,
+     10650,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 12,
+    "sector_raw": "Dehradun Pithoragarh",
+    "origin": "Dehradun",
+    "destination": "Pithoragarh",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     [
+      361,
+      1082
+     ],
+     [
+      932,
+      1653
+     ],
+     [
+      1504,
+      2225
+     ],
+     [
+      1900,
+      2600
+     ],
+     [
+      2400,
+      3000
+     ],
+     [
+      2900,
+      3400
+     ],
+     [
+      3400,
+      3900
+     ],
+     [
+      4000,
+      4700
+     ],
+     [
+      4700,
+      5600
+     ],
+     [
+      5500,
+      6700
+     ],
+     [
+      6500,
+      8000
+     ],
+     [
+      8000,
+      10000
+     ],
+     [
+      10000,
+      12600
+     ],
+     [
+      12500,
+      15800
+     ],
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 13,
+    "sector_raw": "Delhi Ambikapur",
+    "origin": "Delhi",
+    "destination": "Ambikapur",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     null,
+     [
+      5254,
+      5357
+     ],
+     [
+      6207,
+      6310
+     ],
+     [
+      6683,
+      6786
+     ],
+     [
+      7159,
+      7262
+     ],
+     7880,
+     8670,
+     9530,
+     10480,
+     11530,
+     12690,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 14,
+    "sector_raw": "Delhi Bhatinda",
+    "origin": "Delhi",
+    "destination": "Bhatinda",
+    "routing": "Direct",
+    "fare_levels": [
+     1000,
+     1600,
+     2000,
+     2500,
+     [
+      3150,
+      3012
+     ],
+     3400,
+     3900,
+     4500,
+     5000,
+     6000,
+     7400,
+     9000,
+     11000,
+     13500,
+     16000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 15,
+    "sector_raw": "Delhi Bilaspur",
+    "origin": "Delhi",
+    "destination": "Bilaspur",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     null,
+     [
+      5254,
+      5263
+     ],
+     [
+      6207,
+      6215
+     ],
+     [
+      6683,
+      6691
+     ],
+     [
+      7159,
+      7168
+     ],
+     7900,
+     8700,
+     9600,
+     10500,
+     11600,
+     12700,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 16,
+    "sector_raw": "Delhi Chandigarh",
+    "origin": "Delhi",
+    "destination": "Chandigarh",
+    "routing": "Direct",
+    "fare_levels": [
+     800,
+     1200,
+     1500,
+     1800,
+     2100,
+     2400,
+     2800,
+     3250,
+     3800,
+     4200,
+     4700,
+     5200,
+     5700,
+     6600,
+     7500,
+     10000,
+     15000,
+     22150
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 17,
+    "sector_raw": "Delhi Daman",
+    "origin": "Delhi",
+    "destination": "Daman",
+    "routing": "Direct",
+    "fare_levels": [
+     2500,
+     4000,
+     4500,
+     5000,
+     5500,
+     6000,
+     6500,
+     7400,
+     8800,
+     10600,
+     12800,
+     15400,
+     19200,
+     24000,
+     29000
+    ],
+    "level_count": 15,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 18,
+    "sector_raw": "Delhi Dehradun",
+    "origin": "Delhi",
+    "destination": "Dehradun",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     700,
+     999,
+     1500,
+     2000,
+     2300,
+     2600,
+     3000,
+     3500,
+     4000,
+     4600,
+     5300,
+     6300,
+     8100,
+     10200,
+     12200,
+     15000,
+     20000
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 19,
+    "sector_raw": "Delhi Dharamshala",
+    "origin": "Delhi",
+    "destination": "Dharamshala",
+    "routing": "Direct",
+    "fare_levels": [
+     1500,
+     [
+      2300,
+      2387
+     ],
+     [
+      3100,
+      3000
+     ],
+     [
+      3400,
+      4000
+     ],
+     [
+      4292,
+      5200
+     ],
+     [
+      5100,
+      6800
+     ],
+     [
+      6400,
+      7500
+     ],
+     [
+      7500,
+      8600
+     ],
+     [
+      8600,
+      10200
+     ],
+     [
+      10200,
+      12200
+     ],
+     [
+      11600,
+      14700
+     ],
+     [
+      13000,
+      17000
+     ],
+     [
+      16000,
+      19500
+     ],
+     [
+      19000,
+      23000
+     ],
+     [
+      22500,
+      25000
+     ],
+     [
+      25000,
+      27000
+     ],
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 20,
+    "sector_raw": "Delhi Hyderabad",
+    "origin": "Delhi",
+    "destination": "Hyderabad",
+    "routing": "Direct",
+    "fare_levels": [
+     [
+      3000,
+      1800
+     ],
+     [
+      3000,
+      2356
+     ],
+     [
+      3500,
+      2900
+     ],
+     [
+      4000,
+      3400
+     ],
+     [
+      4500,
+      4000
+     ],
+     5000,
+     5600,
+     6200,
+     7000,
+     8000,
+     10000,
+     12000,
+     15000,
+     21150,
+     24150,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 21,
+    "sector_raw": "Delhi Hisar",
+    "origin": "Delhi",
+    "destination": "Hisar",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1000,
+     1300,
+     1600,
+     2000,
+     2500,
+     3000,
+     3600,
+     4200,
+     5000,
+     6000,
+     7500,
+     10000,
+     12500,
+     15000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 22,
+    "sector_raw": "Delhi Indore",
+    "origin": "Delhi",
+    "destination": "Indore",
+    "routing": "Direct",
+    "fare_levels": [
+     1400,
+     2030,
+     2300,
+     2530,
+     2730,
+     3030,
+     [
+      3700,
+      3530
+     ],
+     4230,
+     [
+      4830,
+      4630
+     ],
+     5430,
+     6130,
+     7130,
+     8130,
+     10030,
+     12000,
+     15030,
+     18030,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 23,
+    "sector_raw": "Delhi Jabalpur",
+    "origin": "Delhi",
+    "destination": "Jabalpur",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     1500,
+     2400,
+     2750,
+     3100,
+     3650,
+     4400,
+     5000,
+     6000,
+     7300,
+     8500,
+     10000,
+     12000,
+     14500,
+     18500,
+     24500,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 24,
+    "sector_raw": "Delhi Jaipur",
+    "origin": "Delhi",
+    "destination": "Jaipur",
+    "routing": "Direct",
+    "fare_levels": [
+     400,
+     600,
+     [
+      800,
+      700
+     ],
+     [
+      1400,
+      1200
+     ],
+     [
+      2050,
+      1850
+     ],
+     2500,
+     3000,
+     3500,
+     4100,
+     5100,
+     6100,
+     7500,
+     9200,
+     11100,
+     13600,
+     16100,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 25,
+    "sector_raw": "Delhi Jagdalpur",
+    "origin": "Delhi",
+    "destination": "Jagdalpur",
+    "routing": "Via",
+    "fare_levels": [
+     null,
+     5000,
+     5500,
+     6000,
+     6500,
+     7500,
+     9500,
+     11000,
+     12500,
+     14000,
+     16000,
+     18000,
+     20000,
+     22000,
+     24000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 26,
+    "sector_raw": "Delhi Kullu",
+    "origin": "Delhi",
+    "destination": "Kullu",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     4500,
+     6000,
+     6600,
+     7100,
+     7500,
+     [
+      10000,
+      10800
+     ],
+     [
+      11700,
+      13100
+     ],
+     [
+      12700,
+      14300
+     ],
+     [
+      13800,
+      15600
+     ],
+     [
+      14600,
+      16300
+     ],
+     [
+      16300,
+      17100
+     ],
+     18300,
+     20300,
+     22100,
+     24600,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 27,
+    "sector_raw": "Delhi Kolkata",
+    "origin": "Delhi",
+    "destination": "Kolkata",
+    "routing": "Direct",
+    "fare_levels": [
+     2500,
+     3000,
+     4000,
+     4500,
+     5000,
+     5600,
+     6500,
+     7500,
+     8500,
+     9500,
+     10600,
+     12000,
+     15000,
+     17500,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 28,
+    "sector_raw": "Delhi Prayagraj",
+    "origin": "Delhi",
+    "destination": "Prayagraj",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     [
+      1500,
+      600
+     ],
+     [
+      2200,
+      1200
+     ],
+     [
+      2600,
+      1500
+     ],
+     [
+      2800,
+      1670
+     ],
+     [
+      3100,
+      2100
+     ],
+     [
+      3200,
+      2500
+     ],
+     [
+      3500,
+      3000
+     ],
+     [
+      4400,
+      3600
+     ],
+     [
+      4900,
+      4200
+     ],
+     [
+      5400,
+      5000
+     ],
+     6500,
+     8000,
+     10000,
+     10800,
+     11000,
+     12000,
+     19000,
+     22650
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 29,
+    "sector_raw": "Delhi Pithoragarh",
+    "origin": "Delhi",
+    "destination": "Pithoragarh",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     null,
+     5000,
+     [
+      9000,
+      10500
+     ],
+     [
+      9600,
+      11200
+     ],
+     [
+      10200,
+      12800
+     ],
+     [
+      11500,
+      14000
+     ],
+     [
+      13000,
+      15200
+     ],
+     [
+      14500,
+      16600
+     ],
+     [
+      16000,
+      18500
+     ],
+     [
+      18000,
+      20500
+     ],
+     [
+      20000,
+      22500
+     ],
+     [
+      22000,
+      24500
+     ],
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 30,
+    "sector_raw": "Delhi Rewa",
+    "origin": "Delhi",
+    "destination": "Rewa",
+    "routing": "Direct",
+    "fare_levels": [
+     1700,
+     3300,
+     3600,
+     3900,
+     [
+      4650,
+      4500
+     ],
+     5000,
+     6000,
+     7000,
+     8200,
+     9400,
+     10800,
+     12300,
+     13800,
+     16300,
+     18300,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 31,
+    "sector_raw": "Delhi Shimla",
+    "origin": "Delhi",
+    "destination": "Shimla",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     6000,
+     6600,
+     7300,
+     7900,
+     8700,
+     9700,
+     10700,
+     11700,
+     12900,
+     14200,
+     16300,
+     18700,
+     21500,
+     24700,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 32,
+    "sector_raw": "Dharamshala Shimla",
+    "origin": "Dharamshala",
+    "destination": "Shimla",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     3000,
+     3400,
+     3800,
+     4200,
+     4800,
+     5500,
+     6300,
+     7300,
+     8400,
+     9600,
+     11000,
+     12500,
+     14000,
+     16000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 33,
+    "sector_raw": "Dimapur Imphal",
+    "origin": "Dimapur",
+    "destination": "Imphal",
+    "routing": "Direct",
+    "fare_levels": [
+     2000,
+     2500,
+     3000,
+     3200,
+     3400,
+     3600,
+     3800,
+     4500,
+     5500,
+     7000,
+     7500,
+     11000,
+     13000,
+     15000,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 34,
+    "sector_raw": "Guwahati Aijwal",
+    "origin": "Guwahati",
+    "destination": "Aijwal",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     600,
+     800,
+     1100,
+     1400,
+     1800,
+     2400,
+     3000,
+     4000,
+     5000,
+     6200,
+     7500,
+     9000,
+     12000,
+     15000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 35,
+    "sector_raw": "Guwahati Imphal",
+    "origin": "Guwahati",
+    "destination": "Imphal",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     800,
+     1200,
+     1500,
+     1750,
+     1950,
+     2150,
+     2500,
+     2900,
+     3300,
+     3800,
+     4500,
+     5700,
+     7000,
+     8400,
+     10900,
+     14000,
+     18000,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 36,
+    "sector_raw": "Guwahati Itanagar",
+    "origin": "Guwahati",
+    "destination": "Itanagar",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     1200,
+     1600,
+     2000,
+     2500,
+     3000,
+     3500,
+     4000,
+     5000,
+     6000,
+     7200,
+     8500,
+     10500,
+     13000,
+     16000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 37,
+    "sector_raw": "Guwahati Pasighat",
+    "origin": "Guwahati",
+    "destination": "Pasighat",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     160,
+     360,
+     560,
+     860,
+     1070,
+     1700,
+     2146,
+     2400,
+     2730,
+     3270,
+     3810,
+     4652,
+     5840,
+     11350,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 38,
+    "sector_raw": "Guwahati Rupsi",
+    "origin": "Guwahati",
+    "destination": "Rupsi",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     700,
+     1000,
+     1400,
+     2381,
+     2600,
+     3000,
+     3500,
+     4000,
+     5000,
+     6500,
+     8000,
+     10000,
+     12500,
+     15000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 39,
+    "sector_raw": "Guwahati Shillong",
+    "origin": "Guwahati",
+    "destination": "Shillong",
+    "routing": "Via",
+    "fare_levels": [
+     null,
+     400,
+     600,
+     800,
+     1200,
+     1600,
+     2000,
+     2500,
+     3000,
+     4000,
+     5200,
+     6500,
+     8500,
+     11000,
+     14000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 40,
+    "sector_raw": "Guwahati Tezu",
+    "origin": "Guwahati",
+    "destination": "Tezu",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     1000,
+     1300,
+     1600,
+     2038,
+     2300,
+     2800,
+     3500,
+     4400,
+     5200,
+     6000,
+     8000,
+     11500,
+     14500,
+     19000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 41,
+    "sector_raw": "Guwahati Ziro",
+    "origin": "Guwahati",
+    "destination": "Ziro",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     450,
+     477,
+     800,
+     1200,
+     1600,
+     2000,
+     2500,
+     3000,
+     4000,
+     5000,
+     6500,
+     8500,
+     11000,
+     15000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 42,
+    "sector_raw": "Hisar Ayodhya",
+    "origin": "Hisar",
+    "destination": "Ayodhya",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     2300,
+     2600,
+     2900,
+     3200,
+     3600,
+     4000,
+     4400,
+     4800,
+     5200,
+     5600,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 43,
+    "sector_raw": "Hisar Chandigarh",
+    "origin": "Hisar",
+    "destination": "Chandigarh",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1200,
+     1500,
+     1800,
+     2200,
+     2500,
+     3000,
+     3500,
+     4000,
+     4500,
+     5000,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 44,
+    "sector_raw": "Hisar Jaipur",
+    "origin": "Hisar",
+    "destination": "Jaipur",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1000,
+     1300,
+     1600,
+     2000,
+     2400,
+     2800,
+     3200,
+     3600,
+     4000,
+     4600,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 45,
+    "sector_raw": "Hyderabad Bengaluru",
+    "origin": "Hyderabad",
+    "destination": "Bengaluru",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     null,
+     961,
+     [
+      1000,
+      1300
+     ],
+     [
+      1300,
+      1600
+     ],
+     [
+      1400,
+      1900
+     ],
+     [
+      1600,
+      2100
+     ],
+     [
+      2000,
+      2400
+     ],
+     2600,
+     3200,
+     4000,
+     4800,
+     5800,
+     7000,
+     8200,
+     10100,
+     12000,
+     14500,
+     18500
+    ],
+    "level_count": 19,
+    "suspect": true,
+    "suspect_reasons": [
+     "19 cells exceeds the 18 declared levels"
+    ]
+   },
+   {
+    "serial": 46,
+    "sector_raw": "Hyderabad Chennai",
+    "origin": "Hyderabad",
+    "destination": "Chennai",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     1023,
+     [
+      1365,
+      1600
+     ],
+     [
+      2200,
+      2100
+     ],
+     2650,
+     [
+      3300,
+      3500
+     ],
+     [
+      4200,
+      3900
+     ],
+     4900,
+     5900,
+     6600,
+     7500,
+     8500,
+     10200,
+     12000,
+     14100,
+     20550,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 47,
+    "sector_raw": "Hyderabad Pune",
+    "origin": "Hyderabad",
+    "destination": "Pune",
+    "routing": "Direct",
+    "fare_levels": [
+     1500,
+     2000,
+     2300,
+     2600,
+     3000,
+     3500,
+     4100,
+     4700,
+     5500,
+     6500,
+     7800,
+     9100,
+     10300,
+     12100,
+     15100,
+     20250,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 48,
+    "sector_raw": "Hyderabad Rajahmundry",
+    "origin": "Hyderabad",
+    "destination": "Rajahmundry",
+    "routing": "Via",
+    "fare_levels": [
+     [
+      736,
+      841
+     ],
+     3499,
+     3600,
+     3800,
+     4100,
+     4500,
+     5200,
+     5900,
+     7000,
+     8300,
+     9800,
+     12000,
+     14000,
+     16000,
+     19000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 49,
+    "sector_raw": "Hyderabad Raipur",
+    "origin": "Hyderabad",
+    "destination": "Raipur",
+    "routing": "Via",
+    "fare_levels": [
+     null,
+     5000,
+     5500,
+     6050,
+     6700,
+     7400,
+     8100,
+     8900,
+     9800,
+     10800,
+     11800,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 50,
+    "sector_raw": "Hyderabad Tirupati",
+    "origin": "Hyderabad",
+    "destination": "Tirupati",
+    "routing": "Direct",
+    "fare_levels": [
+     1000,
+     [
+      1700,
+      1400
+     ],
+     2100,
+     2500,
+     3000,
+     3800,
+     4500,
+     5000,
+     6000,
+     7000,
+     7500,
+     9600,
+     11200,
+     13000,
+     16000,
+     20000,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 51,
+    "sector_raw": "Imphal Tezu",
+    "origin": "Imphal",
+    "destination": "Tezu",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     1000,
+     1500,
+     2000,
+     3534,
+     3800,
+     4400,
+     5000,
+     6000,
+     7200,
+     8500,
+     10000,
+     12000,
+     15000,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 52,
+    "sector_raw": "Imphal Silchar",
+    "origin": "Imphal",
+    "destination": "Silchar",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1500,
+     1900,
+     2400,
+     2800,
+     3200,
+     3700,
+     4200,
+     4800,
+     5800,
+     6800,
+     8300,
+     10200,
+     13200,
+     16200,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 53,
+    "sector_raw": "Jabalpur\u00a0 Jagdalpur",
+    "origin": "Jabalpur",
+    "destination": "Jagdalpur",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     [
+      877,
+      1472
+     ],
+     [
+      1829,
+      2425
+     ],
+     [
+      2782,
+      3377
+     ],
+     [
+      3734,
+      4329
+     ],
+     [
+      4687,
+      5282
+     ],
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 54,
+    "sector_raw": "Jagdalpur Bilaspur",
+    "origin": "Jagdalpur",
+    "destination": "Bilaspur",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1000,
+     1400,
+     1800,
+     2250,
+     3000,
+     3800,
+     4600,
+     5500,
+     6500,
+     7700,
+     8900,
+     10700,
+     13000,
+     16400,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 55,
+    "sector_raw": "Jagdalpur Hyderabad",
+    "origin": "Jagdalpur",
+    "destination": "Hyderabad",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     2500,
+     2750,
+     3025,
+     3350,
+     3660,
+     4030,
+     4430,
+     4900,
+     5400,
+     5900,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 56,
+    "sector_raw": "Jagdalpur Rewa",
+    "origin": "Jagdalpur",
+    "destination": "Rewa",
+    "routing": "Via",
+    "fare_levels": [
+     null,
+     7000,
+     8000,
+     9000,
+     10000,
+     11000,
+     12200,
+     13500,
+     14800,
+     16000,
+     17500,
+     19000,
+     20500,
+     22500,
+     25000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 57,
+    "sector_raw": "Jagdalpur Raipur",
+    "origin": "Jagdalpur",
+    "destination": "Raipur",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     2500,
+     2750,
+     3025,
+     3350,
+     3660,
+     4030,
+     4430,
+     4900,
+     5400,
+     5900,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 58,
+    "sector_raw": "Jaipur Bikaner",
+    "origin": "Jaipur",
+    "destination": "Bikaner",
+    "routing": "Direct",
+    "fare_levels": [
+     800,
+     1350,
+     1600,
+     1850,
+     2585,
+     2800,
+     3200,
+     3600,
+     4000,
+     5000,
+     6200,
+     7500,
+     9000,
+     12000,
+     15000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 59,
+    "sector_raw": "Kochi Agatti",
+    "origin": "Kochi",
+    "destination": "Agatti",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     [
+      2273,
+      2435
+     ],
+     [
+      3226,
+      3388
+     ],
+     [
+      3702,
+      3864
+     ],
+     [
+      4654,
+      4816
+     ],
+     5500,
+     7000,
+     7500,
+     8000,
+     8700,
+     9500,
+     11000,
+     14000,
+     18000,
+     21000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 60,
+    "sector_raw": "Kolkata Ambikapur",
+    "origin": "Kolkata",
+    "destination": "Ambikapur",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     null,
+     5000,
+     5500,
+     6050,
+     6700,
+     7400,
+     8100,
+     8900,
+     9800,
+     10800,
+     11800,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 61,
+    "sector_raw": "Kolkata Bilaspur",
+    "origin": "Kolkata",
+    "destination": "Bilaspur",
+    "routing": "Via",
+    "fare_levels": [
+     null,
+     5000,
+     5500,
+     6050,
+     6700,
+     7400,
+     8100,
+     8900,
+     9800,
+     10800,
+     12000,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 62,
+    "sector_raw": "Kolkata Bhubaneshwar",
+    "origin": "Kolkata",
+    "destination": "Bhubaneshwar",
+    "routing": "Direct",
+    "fare_levels": [
+     800,
+     [
+      1444,
+      1489
+     ],
+     [
+      2000,
+      1900
+     ],
+     2450,
+     2800,
+     3300,
+     3800,
+     4400,
+     5000,
+     5800,
+     6800,
+     7800,
+     9500,
+     11500,
+     13500,
+     16000,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 63,
+    "sector_raw": "Kolkata Guwahati",
+    "origin": "Kolkata",
+    "destination": "Guwahati",
+    "routing": "Direct",
+    "fare_levels": [
+     800,
+     1500,
+     1650,
+     [
+      1890,
+      1850
+     ],
+     [
+      2140,
+      2200
+     ],
+     [
+      2350,
+      2400
+     ],
+     [
+      2457,
+      2600
+     ],
+     3000,
+     [
+      3500,
+      3800
+     ],
+     [
+      4000,
+      4300
+     ],
+     [
+      4700,
+      5000
+     ],
+     6200,
+     7500,
+     8400,
+     9700,
+     10900,
+     13100,
+     15050
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 64,
+    "sector_raw": "Kolkata Imphal",
+    "origin": "Kolkata",
+    "destination": "Imphal",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     1500,
+     2004,
+     2400,
+     2800,
+     3300,
+     3800,
+     4500,
+     5300,
+     6600,
+     8000,
+     9500,
+     11000,
+     13000,
+     15000,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 65,
+    "sector_raw": "Kolkata Lilabari",
+    "origin": "Kolkata",
+    "destination": "Lilabari",
+    "routing": "Direct",
+    "fare_levels": [
+     1000,
+     1750,
+     null,
+     2250,
+     2950,
+     3350,
+     3850,
+     4450,
+     4950,
+     5450,
+     6550,
+     8350,
+     10350,
+     11350,
+     12350,
+     13350,
+     14850,
+     null,
+     null
+    ],
+    "level_count": 19,
+    "suspect": true,
+    "suspect_reasons": [
+     "19 cells exceeds the 18 declared levels"
+    ]
+   },
+   {
+    "serial": 66,
+    "sector_raw": "Kolkata Rupsi",
+    "origin": "Kolkata",
+    "destination": "Rupsi",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     1000,
+     1400,
+     1800,
+     2514,
+     2700,
+     3200,
+     4000,
+     5000,
+     6500,
+     8000,
+     10000,
+     12500,
+     15000,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 67,
+    "sector_raw": "Kolkata Jabalpur",
+    "origin": "Kolkata",
+    "destination": "Jabalpur",
+    "routing": "Direct",
+    "fare_levels": [
+     2000,
+     2500,
+     2900,
+     3300,
+     3800,
+     4400,
+     5000,
+     6000,
+     7200,
+     8800,
+     10500,
+     13000,
+     15500,
+     18500,
+     22000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 68,
+    "sector_raw": "Kolkata Rewa",
+    "origin": "Kolkata",
+    "destination": "Rewa",
+    "routing": "Direct",
+    "fare_levels": [
+     1500,
+     2000,
+     2300,
+     2700,
+     3100,
+     3500,
+     4200,
+     5000,
+     6000,
+     7300,
+     8700,
+     10900,
+     13600,
+     17200,
+     21500,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 69,
+    "sector_raw": "Kolkata Patna",
+    "origin": "Kolkata",
+    "destination": "Patna",
+    "routing": "Direct",
+    "fare_levels": [
+     1500,
+     2000,
+     2300,
+     2600,
+     3100,
+     3500,
+     4200,
+     5100,
+     6100,
+     7300,
+     8700,
+     10500,
+     12500,
+     15000,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 70,
+    "sector_raw": "Kolkata Jagdalpur",
+    "origin": "Kolkata",
+    "destination": "Jagdalpur",
+    "routing": "Direct / Via",
+    "fare_levels": [
+     1600,
+     2200,
+     2500,
+     2900,
+     3300,
+     3800,
+     4600,
+     5500,
+     6600,
+     7900,
+     9600,
+     11500,
+     13800,
+     17000,
+     21000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 71,
+    "sector_raw": "Kolkata Bhopal",
+    "origin": "Kolkata",
+    "destination": "Bhopal",
+    "routing": "Via",
+    "fare_levels": [
+     2500,
+     3200,
+     3700,
+     4200,
+     4900,
+     5600,
+     6400,
+     7400,
+     8500,
+     9800,
+     11300,
+     12900,
+     15500,
+     18600,
+     22400,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 72,
+    "sector_raw": "Kullu Dehradun",
+    "origin": "Kullu",
+    "destination": "Dehradun",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     1800,
+     2200,
+     2700,
+     3332,
+     3600,
+     4400,
+     5500,
+     7000,
+     8500,
+     10000,
+     12500,
+     15000,
+     17500,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 73,
+    "sector_raw": "Kullu Jaipur",
+    "origin": "Kullu",
+    "destination": "Jaipur",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     2400,
+     2700,
+     3000,
+     3492,
+     4000,
+     4500,
+     5000,
+     5500,
+     6500,
+     8000,
+     10000,
+     12500,
+     15000,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 74,
+    "sector_raw": "Mumbai Ahmedabad",
+    "origin": "Mumbai",
+    "destination": "Ahmedabad",
+    "routing": "Direct",
+    "fare_levels": [
+     800,
+     [
+      1500,
+      1200
+     ],
+     2000,
+     [
+      2500,
+      2600
+     ],
+     [
+      3000,
+      3200
+     ],
+     [
+      3500,
+      3800
+     ],
+     [
+      4000,
+      4400
+     ],
+     [
+      4600,
+      5000
+     ],
+     [
+      5300,
+      5800
+     ],
+     [
+      6000,
+      6500
+     ],
+     7500,
+     8500,
+     10000,
+     12500,
+     15000,
+     18000,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 75,
+    "sector_raw": "Mumbai Amravati",
+    "origin": "Mumbai",
+    "destination": "Amravati",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     2200,
+     2700,
+     3250,
+     3819,
+     4200,
+     4800,
+     5400,
+     6000,
+     7000,
+     8200,
+     10000,
+     12000,
+     14500,
+     17000
+    ],
+    "level_count": 15,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 76,
+    "sector_raw": "Mumbai Bengaluru",
+    "origin": "Mumbai",
+    "destination": "Bengaluru",
+    "routing": "Direct",
+    "fare_levels": [
+     1800,
+     2500,
+     3000,
+     3500,
+     4000,
+     4500,
+     5000,
+     6000,
+     7000,
+     8500,
+     10000,
+     12000,
+     14500,
+     17000,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 77,
+    "sector_raw": "Mumbai Diu",
+    "origin": "Mumbai",
+    "destination": "Diu",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     2650,
+     2950,
+     3650,
+     4050,
+     5050,
+     5850,
+     6650,
+     7250,
+     8250,
+     9250,
+     11250,
+     13250,
+     15250,
+     18150,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 78,
+    "sector_raw": "Mumbai Delhi",
+    "origin": "Mumbai",
+    "destination": "Delhi",
+    "routing": "Direct",
+    "fare_levels": [
+     null,
+     2500,
+     3000,
+     3500,
+     4000,
+     4800,
+     5500,
+     6300,
+     7000,
+     8000,
+     9500,
+     11000,
+     13000,
+     15000,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 79,
+    "sector_raw": "Mumbai Hyderabad",
+    "origin": "Mumbai",
+    "destination": "Hyderabad",
+    "routing": "Direct",
+    "fare_levels": [
+     1500,
+     2000,
+     2500,
+     2800,
+     3200,
+     3700,
+     4300,
+     5000,
+     6000,
+     7300,
+     8800,
+     10500,
+     13000,
+     16000,
+     19000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 80,
+    "sector_raw": "Mumbai Jalgaon",
+    "origin": "Mumbai",
+    "destination": "Jalgaon",
+    "routing": "Direct",
+    "fare_levels": [
+     1800,
+     2400,
+     2800,
+     3300,
+     3899,
+     4200,
+     4600,
+     5000,
+     6000,
+     7000,
+     8500,
+     10000,
+     12000,
+     14500,
+     17000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 81,
+    "sector_raw": "Mumbai Keshod",
+    "origin": "Mumbai",
+    "destination": "Keshod",
+    "routing": "Via",
+    "fare_levels": [
+     1800,
+     2200,
+     2600,
+     3000,
+     3500,
+     4000,
+     4600,
+     5200,
+     6200,
+     7200,
+     8600,
+     10500,
+     13000,
+     15500,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 82,
+    "sector_raw": "Mumbai Daman",
+    "origin": "Mumbai",
+    "destination": "Daman",
+    "routing": "Direct",
+    "fare_levels": [
+     600,
+     950,
+     1200,
+     1500,
+     1800,
+     2200,
+     2600,
+     3000,
+     3500,
+     4000,
+     5000,
+     6000,
+     7500,
+     9000,
+     11000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 83,
+    "sector_raw": "Passighat Aijwal",
+    "origin": "Passighat",
+    "destination": "Aijwal",
+    "routing": "Via",
+    "fare_levels": [
+     1000,
+     1500,
+     1700,
+     1900,
+     2200,
+     2500,
+     3000,
+     3500,
+     4000,
+     5000,
+     6500,
+     8500,
+     11000,
+     14000,
+     17000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 84,
+    "sector_raw": "Passighat Shillong",
+    "origin": "Passighat",
+    "destination": "Shillong",
+    "routing": "Direct",
+    "fare_levels": [
+     200,
+     500,
+     1000,
+     1500,
+     2038,
+     2200,
+     2600,
+     3000,
+     4000,
+     5000,
+     6500,
+     8500,
+     11000,
+     15000,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 85,
+    "sector_raw": "Patna Bhopal",
+    "origin": "Patna",
+    "destination": "Bhopal",
+    "routing": "Direct",
+    "fare_levels": [
+     2000,
+     2400,
+     2700,
+     3100,
+     3600,
+     4200,
+     4800,
+     5600,
+     6600,
+     7800,
+     9200,
+     11200,
+     14000,
+     17000,
+     21000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 86,
+    "sector_raw": "Porbandar Mumbai",
+    "origin": "Porbandar",
+    "destination": "Mumbai",
+    "routing": "Direct",
+    "fare_levels": [
+     1400,
+     2000,
+     2200,
+     2420,
+     2800,
+     3200,
+     3680,
+     4200,
+     5100,
+     6100,
+     7300,
+     8800,
+     10900,
+     13700,
+     17300,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 87,
+    "sector_raw": "Porbandar Keshod",
+    "origin": "Porbandar",
+    "destination": "Keshod",
+    "routing": "Direct",
+    "fare_levels": [
+     500,
+     800,
+     1000,
+     1300,
+     1700,
+     2100,
+     2600,
+     3200,
+     3800,
+     4500,
+     5200,
+     6000,
+     7500,
+     9000,
+     12000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 88,
+    "sector_raw": "Porbandar Ahmedabad",
+    "origin": "Porbandar",
+    "destination": "Ahmedabad",
+    "routing": "Via",
+    "fare_levels": [
+     1600,
+     2300,
+     2600,
+     3000,
+     3500,
+     4000,
+     4600,
+     5200,
+     6200,
+     7200,
+     8600,
+     10500,
+     13000,
+     15500,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 89,
+    "sector_raw": "Raipur Rewa",
+    "origin": "Raipur",
+    "destination": "Rewa",
+    "routing": "Direct",
+    "fare_levels": [
+     1500,
+     2100,
+     2300,
+     2600,
+     2900,
+     3300,
+     3700,
+     4100,
+     4800,
+     5800,
+     6800,
+     7800,
+     9300,
+     12300,
+     15300,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 90,
+    "sector_raw": "Rewa Bhopal",
+    "origin": "Rewa",
+    "destination": "Bhopal",
+    "routing": "Direct",
+    "fare_levels": [
+     1000,
+     1600,
+     1900,
+     2200,
+     2600,
+     3000,
+     3500,
+     4200,
+     5000,
+     6000,
+     7200,
+     8800,
+     10900,
+     13800,
+     17300,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 91,
+    "sector_raw": "Salem Kochi",
+    "origin": "Salem",
+    "destination": "Kochi",
+    "routing": "Direct",
+    "fare_levels": [
+     800,
+     1400,
+     1714,
+     2096,
+     3012,
+     3400,
+     3800,
+     4500,
+     5500,
+     6800,
+     8000,
+     10000,
+     13000,
+     15500,
+     18000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   },
+   {
+    "serial": 92,
+    "sector_raw": "Tirupati Rajahmundry",
+    "origin": "Tirupati",
+    "destination": "Rajahmundry",
+    "routing": "Direct",
+    "fare_levels": [
+     1000,
+     2300,
+     2700,
+     3500,
+     4200,
+     4800,
+     5600,
+     6500,
+     7500,
+     8500,
+     10000,
+     12500,
+     15000,
+     17500,
+     20000,
+     null,
+     null,
+     null
+    ],
+    "level_count": 18,
+    "suspect": false,
+    "suspect_reasons": []
+   }
+  ]
+ },
+ "station_fees": {
+  "status": "NOT_MACHINE_EXTRACTABLE",
+  "table": "Table 2: Domestic Taxes / Fees / Charges Applicable",
+  "columns_named_in_document": [
+   "Development Fee",
+   "CUTE Fee",
+   "User Development Fee",
+   "Passenger Service Fee (PSF)",
+   "Aviation Security Fee",
+   "Goods and Services Tax"
+  ],
+  "reason": "The document's text layer interleaves adjacent table rows at character level -- the glyphs of two different station names occupy nearly identical x and y coordinates -- so no station-to-fee mapping can be recovered. Emitting one would mean guessing which column a number belongs to, which spec A.4 forbids ('components only where displayed; blank is None, never 0').",
+  "methods_tried": [
+   "pypdf extract_text(): emits fee values on separate lines from their station, in an order that does not correspond to the station column",
+   "pdfplumber extract_tables(): returns 2 rows of character-interleaved cells; the table has no ruling lines",
+   "pdfplumber extract_words() clustered by rounded y then sorted by x: adjacent rows share coordinates, so clusters mix two stations"
+  ],
+  "consequence": "No station-level fee figure is published by this adapter.",
+  "how_to_close": "Read the figures off the PDF by eye and record them as a hand-verified table with its own provenance, exactly as the 2026-09-12 manual panel was recorded. Do not infer them."
+ },
+ "remarks_verbatim": [
+  "Table 2: Domestic Taxes / Fees / Charges Applicable",
+  "Sl. No. Station Arrival User Goods and",
+  "Goods & Service Tax (GST) as applicable would be additional 5% on (Base Fare) in ECONOMY Class",
+  "Cute Fee is Inclusive of 5% GST in ECONOMY Class",
+  "No GST is applicable on To and From North East Sectors",
+  "*To and Fro North East sectors Cute Fee of INR 100 will be applicable",
+  "Convenience Fee /Reservation and Ticket Fee of INR 299 will be charged per sector per passenger",
+  "** Arrival UDF will be charged from all stations to Delhi (DEL), Mumbai (BOM), Jaipur (JAI) and Guwahati (GAU)",
+  "Table 3: Surcharge per sector per passenger (except infants and UDAN sectors)",
+  "Flight Duration Fuel Surcharge",
+  "More than 1 Hr till 2 Hrs INR 599",
+  "Development Fee CUTE Fee User Development Fee Passenger Service Fee (PSF) Aviation Security Fee",
+  "Table 4: Domestic Fare Rules & Penalties",
+  "1. Above Charges are applicable per coupon. In case of 'non-refundable', Basic Fare will be forfeited.",
+  "2. In case of Re-issuance: Applicable Charges and difference of fare if any are applicable.",
+  "3. Concessionary Fares: RBD rules will apply for change/cancellation/refund/noshow",
+  "4. In cases of Flight Disruptions:",
+  "a) Alternate arrangements are made by the Airline - No Refund.",
+  "b) Passenger is taken back to the point of origin by the first available service - Full amount to be refunded.",
+  "c) Own arrangement for the cancelled sector is made by the passenger(s): Refund of Basic fare for the cancelled sector.",
+  "e) No Re-validation or Cancellation Fee applicable on Infant Tickets.",
+  "*These fares/fees are subject to change without prior notice",
+  "In terms of CAR issued by DGCA file no. 23-16/2016-AED effective 1st August 2016 Under no circumstances, the cancellation charges shall be more than the basic fare plus fuel charge (In Alliance Air on domestic sectors Fuel charge is already merged",
+  "d) The passanger is not taken to the ticketed destination & passanger(s) makes own arrangement : Full refund in order in respective RBD along with unutilized non-airline taxes, if any.",
+  "Change/ Cancellation allowed till",
+  "2 hours before the departure of flight. For",
+  "change/ cancellation done within 2 hours,",
+  "no show charges will apply.",
+  "change/ cancellation done within 2 hours, no",
+  "No Show Only taxes refundable Only taxes refundable Only taxes refundable",
+  "Departure 0-3 days INR 4000 or basic fare (whichever is lower) INR 4000 or basic fare (whichever is",
+  "lower) INR 4000 or basic fare (whichever is lower)",
+  "Departure 4 days & above INR 3500 or basic fare (whichever is lower) INR 3500 or basic fare (whichever is",
+  "Any changes within 48 hours of",
+  "booking, if booked at least 7 days",
+  "INR 3000 or basic fare plus fare difference",
+  "INR 3000 or basic fare plus fare",
+  "Fee for Change/Cancellation/No Show detailed under: effective 26th March 2026",
+  "Fare Families Alliance Super Saver Alliance Value Alliance Flexible"
+ ],
+ "amb11_evidence": {
+  "ambiguity": "AMB-11",
+  "question": "Does user_development_fee take departure UDF only, or departure + arrival? Spec A.4's four-way split does not anticipate two UDF lines.",
+  "quotes": [
+   "** Arrival UDF will be charged from all stations to Delhi (DEL), Mumbai (BOM), Jaipur (JAI) and Guwahati (GAU)",
+   "Development Fee CUTE Fee User Development Fee Passenger Service Fee (PSF) Aviation Security Fee"
+  ],
+  "arrival_rule_quotes": [
+   "** Arrival UDF will be charged from all stations to Delhi (DEL), Mumbai (BOM), Jaipur (JAI) and Guwahati (GAU)"
+  ],
+  "arrival_udf_stations_named": [
+   "BOM",
+   "DEL",
+   "GAU",
+   "JAI"
+  ],
+  "bearing": "The document states arrival UDF is charged at the named stations, which is positive evidence that UDF is NOT departure-only at those airports. DEL and BOM are both endpoints of the APIx pilot route.",
+  "resolves_amb11": false,
+  "why_not": "One carrier's published tariff sheet is evidence about that carrier. AMB-11 is a methodology ruling owned by @Rexy-5097 and cannot be closed by an adapter. It also says nothing about how any OTHER carrier renders the fee, nor about what a results page displays, which is what spec A.4 governs."
+ }
+}

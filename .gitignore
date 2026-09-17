@@ -149,3 +149,8 @@ collection-input/raw/
 collection-input/crop/
 collection-input/ocr/
 collection-input/loader/shots/
+
+# Reference-source raw documents. Retrieved, hashed and recorded in
+# data/reference/*.json; the bytes themselves are provenance, not product, and
+# follow the same policy as collection-input/raw/.
+data/reference/.cache/
