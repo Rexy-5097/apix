@@ -185,6 +185,17 @@ def validate_apw(values: Sequence[int]) -> tuple[int, ...]:
     return tuple(sorted(values))
 
 
+def validate_travel_date_apw(collection_date: date, travel_date: date, apw: int) -> None:
+    """A run given BOTH a travel date and an APW value must agree. Neither is rewritten."""
+    (bucket,) = validate_apw([apw])
+    lead = (travel_date - collection_date).days
+    if lead != bucket:
+        raise ConfigError(
+            f"travel date {travel_date} is T+{lead} from collection date {collection_date}, "
+            f"not the requested T+{bucket}; refusing to rewrite either"
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class CollectionConfig:
     """One run: a source, a collection date, the travel dates, and the window."""
@@ -284,4 +295,5 @@ __all__ = [
     "ist_now",
     "parse_apw",
     "validate_apw",
+    "validate_travel_date_apw",
 ]
