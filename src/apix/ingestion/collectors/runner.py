@@ -14,7 +14,7 @@ including searches that failed and searches never made because an earlier one hi
 an access challenge. Missingness is measurable only from a record of attempts.
 
 **Automated runs are never index input.** Their ``frame_id`` ends
-``@automated-trial`` (or ``@fixture``), and ``collection-windows.yaml`` admits
+``@automated-trial``, ``@sandbox`` or ``@fixture``, ``collection-windows.yaml`` admits
 only ``@primary`` runs to the index. Adopting automated collection as a
 production frame is an owner decision recorded in an ADR, not a default here.
 """
@@ -45,7 +45,12 @@ from apix.ingestion.collectors.evidence import (
     write_run_export,
 )
 from apix.ingestion.collectors.fares import FareExclusion, FareStatus, choose_contract_fare
-from apix.ingestion.collectors.gate import CollectionMode, require_live_clearance
+from apix.ingestion.collectors.gate import (
+    CollectionMode,
+    require_live_clearance,
+    require_sandbox_clearance,
+)
+from apix.ingestion.collectors.index_boundary import PRIMARY_SUFFIX, assert_not_index_input
 from apix.ingestion.collectors.normalize import to_observation, to_unpriced
 from apix.ingestion.collectors.selection import select_earliest_per_band
 from apix.ingestion.store import CollectionStore, UnpricedFlight
@@ -62,13 +67,26 @@ SOURCE_PRECEDENCE_VERSION = "spike-single-source-v1"
 #: acquisition-protocol.md s12: at most one retry, after at least 60 s.
 RETRY_DELAY_FLOOR_SECONDS = 60.0
 
-FRAME_SUFFIX = {CollectionMode.LIVE: "@automated-trial", CollectionMode.FIXTURE: "@fixture"}
-FRAME_TAG = {CollectionMode.LIVE: "automated-trial", CollectionMode.FIXTURE: "fixture"}
+FRAME_SUFFIX = {
+    CollectionMode.LIVE: "@automated-trial",
+    CollectionMode.FIXTURE: "@fixture",
+    CollectionMode.SANDBOX: "@sandbox",
+}
+FRAME_TAG = {
+    CollectionMode.LIVE: "automated-trial",
+    CollectionMode.FIXTURE: "fixture",
+    CollectionMode.SANDBOX: "sandbox",
+}
 #: Fixture pages are not market observations and are labelled so at the record level.
+#: Sandbox rows come from an authorised API's test environment; the frame suffix and the
+#: index boundary, not this field, are what keep them out of the index.
 SOURCE_TYPE = {
     CollectionMode.LIVE: SourceType.LIVE_SCRAPE,
     CollectionMode.FIXTURE: SourceType.SYNTHETIC,
+    CollectionMode.SANDBOX: SourceType.AUTHORIZED_FEED,
 }
+# Import-time invariant: no automated mode can ever produce an index-input frame.
+assert not any(s.endswith(PRIMARY_SUFFIX) for s in FRAME_SUFFIX.values())
 
 #: Exclusions meaning the page could not be read, as opposed to a contract mismatch.
 _UNREADABLE = frozenset(
@@ -504,12 +522,17 @@ def run_collection(
     """Execute one collection run end to end."""
     mode = adapter.mode
     gate_summary: dict[str, object] = {"mode": mode.value}
-    if mode is CollectionMode.LIVE:
+    if mode in (CollectionMode.LIVE, CollectionMode.SANDBOX):
         if registry_entry is None:
             raise RunRefused(
-                "a LIVE run requires the source's registry entry for the compliance gate"
+                f"a {mode.value} run requires the source's registry entry for the compliance gate"
             )
-        decision = require_live_clearance(registry_entry)  # raises GateRefused
+        if mode is CollectionMode.LIVE:
+            decision = require_live_clearance(registry_entry)  # raises GateRefused
+        else:
+            decision = require_sandbox_clearance(
+                registry_entry, credentials_present=adapter.credentials_present()
+            )
         gate_summary.update(allowed=decision.allowed, evidence=dict(decision.evidence))
     else:
         gate_summary.update(allowed=True, note="fixture mode makes no request to any source")
@@ -545,7 +568,7 @@ def run_collection(
             searches.append(ProcessedSearch(params, attempt, bands=not_evaluated))
             continue
 
-        if mode is CollectionMode.LIVE and requests:
+        if mode is not CollectionMode.FIXTURE and requests:
             sleep(config.min_interval_seconds)
         result = _safe_search(adapter, params, clock)
         requests += 1
@@ -595,6 +618,9 @@ def run_collection(
             f"actual {started:%H:%M:%S}-{finished:%H:%M:%S}"
         ),
     )
+
+    # Code-level boundary, checked before any evidence or store row is written.
+    assert_not_index_input(run)
 
     records = [
         EvidenceRecord(
