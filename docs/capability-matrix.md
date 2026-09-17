@@ -67,6 +67,8 @@ for one another.
 | Canonical observation model | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
 | Ingestion store (SQLite) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
 | Collection bridge (manual loader) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
+| Automated collector — IndiGo adapter, fixture mode | ✅ | ✅ | ✅ | ❌ *(SYNTHETIC pages only)* | **FIXTURE-ONLY** |
+| Automated collector — IndiGo adapter, live mode | ✅ | ✅ *(selectors unverified)* | gate only | ❌ *(never run)* | **BLOCKED** *(registry: `AUTOMATION_PROHIBITED`)* |
 | Evidence / provenance grading | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
 | APW bucket assignment (§A.3) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
 | Departure-band assignment (§B.2) | ✅ | ✅ | ✅ | ✅ | **REAL-DATA EXERCISED** |
