@@ -91,6 +91,9 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 # engine-validation page. Only RUF001 is waived: its typographic characters are
 # intended markup. E501 is NOT waived here -- the file is mostly real code.
 "tools/analysis/engine_demo.py" = ["RUF001"]
+# loopback_site.py is the synthetic fixture PAGE -- an HTML template held in
+# Python, exactly like build_dashboard.py above. Its long lines are markup.
+"tools/collection/loopback_site.py" = ["E501", "RUF001"]
 
 [tool.mypy]
 python_version = "3.12"

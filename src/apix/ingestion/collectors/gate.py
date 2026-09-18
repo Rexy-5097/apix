@@ -36,9 +36,11 @@ package keeps its standard-library-only runtime.
 
 from __future__ import annotations
 
+import ipaddress
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
+from urllib.parse import urlsplit
 
 
 class CollectionMode(Enum):
@@ -48,6 +50,12 @@ class CollectionMode(Enum):
     FIXTURE = "FIXTURE"
     #: An official API's test environment. Gated by SANDBOX_REQUIREMENTS; never index input.
     SANDBOX = "SANDBOX"
+    #: A page THIS REPOSITORY serves on the loopback interface, loaded by a real
+    #: browser. No external request, no third-party site, and the results are
+    #: SYNTHETIC. It exists so the browser path -- launch, navigate, extract,
+    #: parse, capture evidence -- can be exercised without collecting from
+    #: anyone. See ``indigo/loopback.py``.
+    LOOPBACK = "LOOPBACK"
 
 
 _PERMITTING_TERMS = ("CLEARLY_PERMITTED", "PERMITTED_WITH_CONDITIONS")
@@ -66,6 +74,21 @@ LIVE_REQUIREMENTS: tuple[tuple[str, tuple[str, ...]], ...] = (
 SANDBOX_REQUIREMENTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("automation_gate", ("AUTOMATION_ALLOWED", "AUTOMATION_ALLOWED_WITH_PERMISSION")),
     ("robots_status", ("NOT_APPLICABLE",)),
+)
+
+#: (registry field, values that permit driving a browser against our own page).
+#:
+#: Deliberately DISJOINT from :data:`LIVE_REQUIREMENTS` on two independent
+#: fields, so the two gates can never be satisfied by the same entry:
+#:
+#: * ``automation_gate`` -- ``AUTOMATION_SELF_HOSTED`` is not a value any real
+#:   source can hold; it means "this repository serves the page".
+#: * ``data_admissibility`` -- loopback output is ``INADMISSIBLE_SYNTHETIC``,
+#:   while live collection requires ``ADMISSIBLE``. A loopback entry therefore
+#:   fails the live gate on admissibility even if someone edits the first field.
+LOOPBACK_REQUIREMENTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("automation_gate", ("AUTOMATION_SELF_HOSTED",)),
+    ("data_admissibility", ("INADMISSIBLE_SYNTHETIC",)),
 )
 
 _EVIDENCE_FIELDS = (
@@ -165,6 +188,49 @@ def require_sandbox_clearance(
     return decision
 
 
+def is_loopback_url(url: str) -> bool:
+    """True only for a URL whose host is this machine's loopback interface.
+
+    Parsed and range-checked, never matched as a substring: ``127.0.0.1.evil``
+    and ``localhost.evil.test`` are hostnames belonging to somebody else.
+    """
+    host = urlsplit(url).hostname
+    if host is None:
+        return False
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def evaluate_loopback_gate(entry: Mapping[str, object], base_url: str) -> GateDecision:
+    """Decide whether a browser may be driven against this self-hosted page.
+
+    Two things must hold: the entry must declare itself self-hosted and
+    inadmissible, and the URL must actually be loopback. The second check is
+    what stops this mode being a way to reach a real site.
+    """
+    extra = (
+        ()
+        if is_loopback_url(base_url)
+        else (
+            f"base_url={base_url!r} is not a loopback address "
+            "(LOOPBACK mode may only load a page this repository serves)",
+        )
+    )
+    return _evaluate(entry, LOOPBACK_REQUIREMENTS, CollectionMode.LOOPBACK, extra)
+
+
+def require_loopback_clearance(entry: Mapping[str, object], base_url: str) -> GateDecision:
+    """Evaluate the loopback gate and raise :class:`GateRefused` unless it clears."""
+    decision = evaluate_loopback_gate(entry, base_url)
+    if not decision.allowed:
+        raise GateRefused(decision)
+    return decision
+
+
 def fixture_decision(source_id: str) -> GateDecision:
     """Fixture mode makes no request, so there is nothing for the gate to refuse."""
     return GateDecision(source_id=source_id, mode=CollectionMode.FIXTURE, allowed=True)
@@ -172,14 +238,18 @@ def fixture_decision(source_id: str) -> GateDecision:
 
 __all__ = [
     "LIVE_REQUIREMENTS",
+    "LOOPBACK_REQUIREMENTS",
     "SANDBOX_REQUIREMENTS",
     "CollectionMode",
     "GateDecision",
     "GateRefused",
     "evaluate_live_gate",
+    "evaluate_loopback_gate",
     "evaluate_sandbox_gate",
     "find_source",
     "fixture_decision",
+    "is_loopback_url",
     "require_live_clearance",
+    "require_loopback_clearance",
     "require_sandbox_clearance",
 ]
